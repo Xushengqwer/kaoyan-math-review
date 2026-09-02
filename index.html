@@ -57,9 +57,13 @@
 <div class="modal-backdrop" id="save-modal" hidden>
   <div class="modal modal-sm" role="dialog" aria-modal="true" aria-labelledby="save-title">
     <h2 id="save-title">已保存</h2>
-    <p class="modal-lead">笔记已存进这台设备的浏览器。要不要顺手下载一份 Markdown 备份？<br />（当前共 <b id="save-modal-count">0</b> 条，会导出全部）</p>
+    <p class="modal-lead">笔记已存进这台设备的浏览器。要不要顺手存一份 txt 到本地？</p>
+    <div class="save-file">
+      <div class="save-file-where" id="save-modal-where"></div>
+      <div class="save-file-name" id="save-modal-file"></div>
+    </div>
     <div class="modal-actions">
-      <button class="btn-primary" id="save-download">下载 .md 备份</button>
+      <button class="btn-primary" id="save-download">下载 .txt</button>
       <button class="btn-plain" id="save-skip">暂不</button>
     </div>
   </div>
@@ -74,7 +78,6 @@
 <script src="assets/js/katex-init.js"></script>
 <script src="assets/js/storage.js"></script>
 <script src="assets/data/notes.js"></script>
-<script src="assets/js/markdown.js"></script>
 <script src="assets/js/app.js"></script>
 <script>
 if ('serviceWorker' in navigator) {

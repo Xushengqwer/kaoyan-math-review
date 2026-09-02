@@ -99,7 +99,7 @@ const App = {
       const closeSave = () => { saveModal.hidden = true; };
       document.getElementById("save-skip").addEventListener("click", closeSave);
       document.getElementById("save-download").addEventListener("click", () => {
-        this.downloadMarkdown();
+        if (this._pendingDownloadId) this.downloadNote(this._pendingDownloadId);
         closeSave();
       });
       saveModal.addEventListener("click", (e) => { if (e.target === saveModal) closeSave(); });
@@ -536,75 +536,21 @@ const App = {
         <span class="mynote-label">大白话${Notes.isSeed(itemId) ? "（仓库内置）" : ""}</span>
         <button class="mynote-edit" data-action="edit">编辑</button>
       </div>
-      <div class="mynote-body">${renderMarkdown(text)}</div>
+      <div class="mynote-body">${escapeHtml(text)}</div>
     </div>`;
   },
 
-  // 工具栏：[按钮文字, 提示, 前缀, 后缀, 是否整行生效]
-  TOOLS: [
-    ["B", "加粗", "**", "**", false],
-    ["I", "斜体", "*", "*", false],
-    ["H", "小标题", "## ", "", true],
-    ["•", "无序列表", "- ", "", true],
-    ["1.", "有序列表", "1. ", "", true],
-    ["❝", "引用", "> ", "", true],
-    ["<>", "行内代码", "`", "`", false],
-    ["∑", "数学公式", "$", "$", false],
-    ["—", "分隔线", "\n---\n", "", true],
-  ],
-
   editorHtml(itemId) {
     const text = Notes.get(itemId);
-    const tools = this.TOOLS.map(
-      (t, i) => `<button class="md-tool" type="button" data-tool="${i}" title="${t[1]}">${escapeHtml(t[0])}</button>`
-    ).join("");
     return `<div class="mynote mynote-editing">
-      <div class="mynote-head">
-        <span class="mynote-label">大白话</span>
-        <div class="mynote-tabs">
-          <button class="md-tab active" data-tab="write">编辑</button>
-          <button class="md-tab" data-tab="preview">预览</button>
-        </div>
-      </div>
-      <div class="md-toolbar">${tools}</div>
-      <textarea class="mynote-input" rows="9" placeholder="用你自己的话写一遍，支持 Markdown：&#10;&#10;**对象**：…&#10;**动作**：…&#10;**意义**：&#10;- 第一点&#10;- 第二点&#10;&#10;公式直接写 $\\lim_{x\\to 0}$ 就能渲染">${escapeHtml(text)}</textarea>
-      <div class="md-preview" hidden></div>
+      <div class="mynote-head"><span class="mynote-label">大白话</span></div>
+      <textarea class="mynote-input" rows="9" placeholder="用你自己的话写一遍，比如：&#10;&#10;对象：…&#10;规则：…&#10;意义：…">${escapeHtml(text)}</textarea>
       <div class="mynote-actions">
         <button class="mynote-save" data-action="save">保存</button>
         <button class="mynote-cancel" data-action="cancel">取消</button>
         ${text ? `<button class="mynote-delete" data-action="delete">删除</button>` : ""}
       </div>
     </div>`;
-  },
-
-  // 在光标处插入 Markdown 标记
-  applyTool(ta, tool) {
-    const [, , before, after, lineMode] = tool;
-    const { selectionStart: s, selectionEnd: e, value: v } = ta;
-
-    if (lineMode) {
-      const lineStart = v.lastIndexOf("\n", s - 1) + 1;
-      let lineEnd = v.indexOf("\n", e);
-      if (lineEnd === -1) lineEnd = v.length;
-      const block = v.slice(lineStart, lineEnd);
-      const marked = block
-        .split("\n")
-        .map((l, i) => (before === "\n---\n" ? l : before.replace(/^1\. $/, () => i + 1 + ". ") + l))
-        .join("\n");
-      const insert = before === "\n---\n" ? block + "\n\n---\n" : marked;
-      ta.value = v.slice(0, lineStart) + insert + v.slice(lineEnd);
-      ta.selectionStart = ta.selectionEnd = lineStart + insert.length;
-    } else {
-      const sel = v.slice(s, e) || "";
-      ta.value = v.slice(0, s) + before + sel + after + v.slice(e);
-      if (sel) {
-        ta.selectionStart = s + before.length;
-        ta.selectionEnd = s + before.length + sel.length;
-      } else {
-        ta.selectionStart = ta.selectionEnd = s + before.length;
-      }
-    }
-    ta.focus();
   },
 
   bindNoteEditors(scope) {
@@ -615,28 +561,6 @@ const App = {
       const show = (html) => { slot.innerHTML = html; renderMath(slot); };
 
       slot.addEventListener("click", (e) => {
-        const tool = e.target.closest("[data-tool]");
-        if (tool) {
-          this.applyTool(slot.querySelector(".mynote-input"), this.TOOLS[Number(tool.dataset.tool)]);
-          return;
-        }
-
-        const tab = e.target.closest("[data-tab]");
-        if (tab) {
-          const ta = slot.querySelector(".mynote-input");
-          const pv = slot.querySelector(".md-preview");
-          const toWrite = tab.dataset.tab === "write";
-          slot.querySelectorAll(".md-tab").forEach((b) => b.classList.toggle("active", b === tab));
-          slot.querySelector(".md-toolbar").hidden = !toWrite;
-          ta.hidden = !toWrite;
-          pv.hidden = toWrite;
-          if (!toWrite) {
-            pv.innerHTML = ta.value.trim() ? renderMarkdown(ta.value) : `<p class="md-empty">还没写内容</p>`;
-            renderMath(pv);
-          }
-          return;
-        }
-
         const btn = e.target.closest("[data-action]");
         if (!btn) return;
         const action = btn.dataset.action;
@@ -655,7 +579,7 @@ const App = {
           }
           show(this.myNoteHtml(id));
           this.refreshNoteCount();
-          if (val.trim() && !(had && !val.trim())) this.askDownload();
+          if (val.trim()) this.askDownload(id);
         } else if (action === "cancel") {
           show(this.myNoteHtml(id));
         } else if (action === "delete") {
@@ -667,54 +591,70 @@ const App = {
     });
   },
 
-  // 保存后提醒：要不要顺手存一份本地 Markdown
-  askDownload() {
+  // 定位一条知识点：属于哪个学科、第几章、在本章同类里排第几
+  locate(itemId) {
+    for (const s of this.subjects) {
+      const it = KaoyanData.items(s.id).find((x) => x.id === itemId);
+      if (!it) continue;
+      const c = KaoyanData.chapter(s.id, it.chapterId);
+      const sameType = KaoyanData.itemsByChapter(s.id, it.chapterId).filter((x) => x.type === it.type);
+      const idx = sameType.findIndex((x) => x.id === itemId) + 1;
+      return { subject: s, chapter: c, item: it, typeLabel: TYPE_LABEL[it.type], index: idx };
+    }
+    return null;
+  },
+
+  // 文件名：线性代数-第3章-定义05-向量空间、基、维数的定义.txt
+  noteFileName(itemId) {
+    const p = this.locate(itemId);
+    if (!p) return "大白话笔记.txt";
+    const raw = [
+      p.subject.name.replace(/（.*?）/g, ""),
+      "第" + p.chapter.order + "章",
+      p.typeLabel + String(p.index).padStart(2, "0"),
+      p.item.title,
+    ].join("-");
+    // 去掉文件名里不能用的字符
+    return raw.replace(/[\\/:*?"<>|]/g, "_") + ".txt";
+  },
+
+  // 文件内容：头部写清出处和 id，正文是原样纯文本
+  buildNoteText(itemId) {
+    const p = this.locate(itemId);
+    const body = Notes.get(itemId).trim();
+    if (!p) return body;
+    return [
+      p.subject.name + " / 第" + p.chapter.order + "章 " + p.chapter.name +
+        " / " + p.typeLabel + " " + String(p.index).padStart(2, "0"),
+      p.item.title,
+      "id: " + itemId,
+      "",
+      "----------------------------------------",
+      "",
+      body,
+      "",
+    ].join("\n");
+  },
+
+  // 保存后提醒：要不要顺手存一份本地 txt
+  askDownload(itemId) {
     const modal = document.getElementById("save-modal");
     if (!modal) return;
-    document.getElementById("save-modal-count").textContent = Notes.count();
+    this._pendingDownloadId = itemId;
+    const p = this.locate(itemId);
+    document.getElementById("save-modal-where").textContent = p
+      ? p.subject.name + " · 第" + p.chapter.order + "章 · " + p.typeLabel + " " + String(p.index).padStart(2, "0")
+      : "";
+    document.getElementById("save-modal-file").textContent = this.noteFileName(itemId);
     modal.hidden = false;
   },
 
-  // 把所有笔记拼成一份 Markdown 文档
-  buildMarkdown() {
-    const all = Notes.exportAll();
-    const lines = [
-      "# 我的大白话笔记",
-      "",
-      "> 导出时间：" + new Date().toLocaleString("zh-CN", { hour12: false }),
-      "> 共 " + Object.keys(all).length + " 条",
-      "",
-    ];
-    this.subjects.forEach((s) => {
-      const chapters = KaoyanData.chapters(s.id);
-      const subjectHas = KaoyanData.items(s.id).some((it) => all[it.id]);
-      if (!subjectHas) return;
-      lines.push("", "## " + s.name, "");
-      chapters.forEach((c) => {
-        const items = KaoyanData.itemsByChapter(s.id, c.id).filter((it) => all[it.id]);
-        if (!items.length) return;
-        lines.push("### " + c.order + ". " + c.name, "");
-        items.forEach((it) => {
-          // 笔记里自己写的标题要降级，才能挂在「#### 知识点」下面而不是顶破文档层级
-          const body = all[it.id]
-            .trim()
-            .split("\n")
-            .map((l) => l.replace(/^(#{1,6})\s/, (m, h) => "#".repeat(Math.min(6, h.length + 4)) + " "))
-            .join("\n");
-          lines.push("#### " + it.title, "", body, "");
-        });
-      });
-    });
-    return lines.join("\n");
-  },
-
-  downloadMarkdown() {
-    const text = this.buildMarkdown();
-    const blob = new Blob([text], { type: "text/markdown;charset=utf-8" });
+  downloadNote(itemId) {
+    const blob = new Blob([this.buildNoteText(itemId)], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "我的大白话笔记-" + new Date().toISOString().slice(0, 10) + ".md";
+    a.download = this.noteFileName(itemId);
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
