@@ -487,10 +487,14 @@ const App = {
       return;
     }
 
-    let html = "";
-    TYPE_ORDER.forEach((type) => {
-      const groupItems = filtered.filter((it) => it.type === type);
-      if (groupItems.length === 0) return;
+    // 按类型分组，同一类型内从 01 开始编号
+    const groups = TYPE_ORDER.map((type) => ({
+      type,
+      items: filtered.filter((it) => it.type === type),
+    })).filter((g) => g.items.length);
+
+    let html = this.tocHtml(groups);
+    groups.forEach(({ type, items: groupItems }) => {
       html += `
         <section class="type-group ${type}">
           <h3 class="type-group-title">
@@ -504,6 +508,56 @@ const App = {
     wrap.innerHTML = html;
     renderMath(wrap);
     this.bindNoteEditors(wrap);
+    this.bindToc(wrap);
+  },
+
+  // 章节开头的目录：按类型分栏，点条目滚到对应位置
+  tocHtml(groups) {
+    const total = groups.reduce((n, g) => n + g.items.length, 0);
+    if (!total) return "";
+    const cols = groups
+      .map(
+        ({ type, items }) => `
+        <div class="toc-col ${type}">
+          <div class="toc-col-head">
+            <span class="toc-dot" aria-hidden="true"></span>
+            <span class="toc-col-name">${TYPE_LABEL[type]}</span>
+            <span class="toc-col-count">${items.length}</span>
+          </div>
+          <ol class="toc-list">
+            ${items
+              .map(
+                (it, i) => `<li>
+                  <a href="#item-${it.id}" data-goto="${it.id}">
+                    <span class="toc-no">${String(i + 1).padStart(2, "0")}</span>
+                    <span class="toc-title">${escapeHtml(it.title)}</span>
+                    ${Notes.has(it.id) ? `<span class="toc-noted" title="已写大白话">●</span>` : ""}
+                  </a>
+                </li>`
+              )
+              .join("")}
+          </ol>
+        </div>`
+      )
+      .join("");
+    return `
+      <details class="toc" open>
+        <summary class="toc-summary">本章目录<span class="toc-total">${total} 条</span></summary>
+        <div class="toc-cols">${cols}</div>
+      </details>`;
+  },
+
+  bindToc(scope) {
+    scope.querySelectorAll(".toc a[data-goto]").forEach((a) => {
+      a.addEventListener("click", (e) => {
+        e.preventDefault();
+        const node = document.getElementById("item-" + a.dataset.goto);
+        if (!node) return;
+        node.scrollIntoView({ block: "center" });
+        node.classList.add("flash");
+        setTimeout(() => node.classList.remove("flash"), 1800);
+      });
+    });
   },
 
   entryHtml(item, index) {
