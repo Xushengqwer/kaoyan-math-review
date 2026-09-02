@@ -185,16 +185,8 @@ button { font: inherit; border: none; background: none; color: inherit; cursor: 
   transition: color .15s;
 }
 .side-notes-actions button:hover { color: var(--accent); }
-.side-sync {
-  width: 100%; margin-top: 8px; padding: 8px 0;
-  border-radius: 8px; font-size: 12px; font-weight: 500;
-  background: var(--accent); color: #fff;
-  transition: opacity .15s;
-}
-.side-sync:hover { opacity: .88; }
-.side-sync-status { margin-top: 7px; padding: 0 4px; font-size: 10.5px; color: var(--text-3); }
 
-/* ---- sync modal ---- */
+/* ---- modal ---- */
 .modal-backdrop {
   position: fixed; inset: 0; z-index: 60;
   display: flex; align-items: center; justify-content: center;
@@ -208,37 +200,10 @@ button { font: inherit; border: none; background: none; color: inherit; cursor: 
   padding: 26px 28px 22px;
   background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--lift-hi);
 }
+.modal-sm { max-width: 380px; }
 .modal h2 { margin: 0 0 8px; font-size: 19px; font-weight: 600; letter-spacing: -.015em; }
-.modal-lead { margin: 0 0 20px; font-size: 13px; line-height: 1.65; color: var(--text-2); }
-.modal code {
-  padding: 1px 5px; border-radius: 4px;
-  background: var(--hairline); font-size: .92em;
-}
-
-.field { display: block; margin-bottom: 13px; }
-.field > span {
-  display: block; margin-bottom: 6px;
-  font-size: 12px; font-weight: 500; color: var(--text-2);
-}
-.field > span em { font-style: normal; font-weight: 400; color: var(--text-3); }
-.field input {
-  width: 100%; padding: 9px 13px;
-  border: 1px solid var(--border); border-radius: var(--r-sm);
-  background: var(--bg); color: var(--text);
-  font-family: inherit; font-size: 13.5px; outline: none;
-}
-.field input:focus { border-color: var(--accent); }
-
-.modal-help { margin: 6px 0 20px; font-size: 12.5px; }
-.modal-help summary { cursor: pointer; color: var(--accent); font-weight: 500; }
-.modal-help ol { margin: 12px 0 10px; padding-left: 20px; color: var(--text-2); line-height: 1.75; }
-.modal-help li { margin: 6px 0; }
-.modal-help a { color: var(--accent); text-decoration: underline; }
-.modal-warn {
-  margin: 0; padding: 10px 12px; border-radius: var(--r-sm);
-  background: var(--thm-bg); color: var(--thm);
-  font-size: 12px; line-height: 1.6;
-}
+.modal-lead { margin: 0 0 20px; font-size: 13px; line-height: 1.7; color: var(--text-2); }
+.modal-lead b { color: var(--text); font-weight: 600; }
 
 .modal-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .modal-actions button {
@@ -250,16 +215,6 @@ button { font: inherit; border: none; background: none; color: inherit; cursor: 
 .btn-primary { background: var(--accent); color: #fff; font-weight: 600; }
 .btn-plain { background: var(--hairline); color: var(--text-2); }
 .btn-plain:hover { color: var(--text); }
-.btn-danger { color: #d9333f; }
-#gh-close { margin-left: auto; }
-
-.modal-msg { margin-top: 14px; font-size: 12.5px; line-height: 1.65; color: var(--text-2); }
-.modal-msg:empty { margin-top: 0; }
-.modal-msg.ok { color: var(--prp); }
-.modal-msg.err { color: #d9333f; }
-@media (prefers-color-scheme: dark) {
-  .btn-danger, .modal-msg.err { color: #ff6b6b; }
-}
 
 .nav-overview-link {
   display: flex; align-items: center; gap: 8px;
@@ -557,9 +512,59 @@ mark { background: #ffe58a; color: inherit; border-radius: 3px; padding: 0 2px; 
   margin-left: auto; font-size: 11.5px; color: var(--text-3);
 }
 .mynote-edit:hover { color: var(--accent); }
+/* 笔记正文（Markdown 渲染结果） */
 .mynote-body { font-size: 14px; line-height: 1.85; color: var(--text); }
+.mynote-body > :first-child { margin-top: 0; }
+.mynote-body > :last-child { margin-bottom: 0; }
+.mynote-body p { margin: 0 0 10px; }
+.mynote-body h4, .mynote-body h5, .mynote-body h6 {
+  margin: 16px 0 8px; font-weight: 600; letter-spacing: -.005em;
+}
+.mynote-body h4 { font-size: 15.5px; }
+.mynote-body h5 { font-size: 14.5px; }
+.mynote-body h6 { font-size: 13.5px; color: var(--text-2); }
+.mynote-body ul, .mynote-body ol { margin: 8px 0 10px; padding-left: 22px; }
+.mynote-body li { margin: 5px 0; }
+.mynote-body li::marker { color: var(--accent); }
+.mynote-body blockquote {
+  margin: 10px 0; padding: 2px 0 2px 12px;
+  border-left: 2px solid var(--border); color: var(--text-2);
+}
+.mynote-body blockquote p { margin: 4px 0; }
+.mynote-body code {
+  padding: 1px 5px; border-radius: 4px;
+  background: var(--hairline); font-size: .9em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.mynote-body hr { margin: 14px 0; border: none; border-top: 1px solid var(--border); }
+.mynote-body strong { font-weight: 600; }
+.mynote-body del { color: var(--text-3); }
 
+/* 编辑器 */
 .mynote-editing { background: var(--surface); box-shadow: var(--lift); border-left-color: var(--accent); }
+.mynote-tabs { margin-left: auto; display: flex; gap: 4px; }
+.md-tab {
+  padding: 4px 12px; border-radius: 999px;
+  font-size: 11.5px; color: var(--text-3);
+  transition: background .15s, color .15s;
+}
+.md-tab:hover { color: var(--text); }
+.md-tab.active { background: var(--accent); color: #fff; font-weight: 600; }
+
+.md-toolbar {
+  display: flex; flex-wrap: wrap; gap: 4px;
+  margin-bottom: 8px; padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.md-tool {
+  min-width: 30px; height: 28px; padding: 0 8px;
+  border-radius: 7px;
+  font-size: 12.5px; font-weight: 600; color: var(--text-2);
+  background: var(--bg);
+  transition: background .15s, color .15s;
+}
+.md-tool:hover { background: var(--accent-soft); color: var(--accent); }
+
 .mynote-input {
   width: 100%; padding: 12px 14px;
   border: 1px solid var(--border); border-radius: var(--r-sm);
@@ -568,6 +573,34 @@ mark { background: #ffe58a; color: inherit; border-radius: 3px; padding: 0 2px; 
   resize: vertical; outline: none;
 }
 .mynote-input:focus { border-color: var(--accent); }
+
+.md-preview {
+  min-height: 120px; padding: 12px 14px;
+  border: 1px dashed var(--border); border-radius: var(--r-sm);
+  background: var(--bg);
+  font-size: 14px; line-height: 1.85; color: var(--text);
+}
+.md-preview > :first-child { margin-top: 0; }
+.md-preview > :last-child { margin-bottom: 0; }
+.md-preview p { margin: 0 0 10px; }
+.md-preview h4, .md-preview h5, .md-preview h6 { margin: 14px 0 7px; font-weight: 600; }
+.md-preview h4 { font-size: 15.5px; }
+.md-preview h5 { font-size: 14.5px; }
+.md-preview h6 { font-size: 13.5px; color: var(--text-2); }
+.md-preview ul, .md-preview ol { margin: 8px 0 10px; padding-left: 22px; }
+.md-preview li { margin: 5px 0; }
+.md-preview li::marker { color: var(--accent); }
+.md-preview blockquote {
+  margin: 10px 0; padding: 2px 0 2px 12px;
+  border-left: 2px solid var(--border); color: var(--text-2);
+}
+.md-preview code {
+  padding: 1px 5px; border-radius: 4px;
+  background: var(--hairline); font-size: .9em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.md-preview hr { margin: 14px 0; border: none; border-top: 1px solid var(--border); }
+.md-empty { color: var(--text-3); }
 .mynote-actions { display: flex; gap: 8px; margin-top: 10px; }
 .mynote-actions button {
   padding: 7px 16px; border-radius: 999px; font-size: 12.5px; font-weight: 500;

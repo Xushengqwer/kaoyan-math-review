@@ -93,111 +93,27 @@ const App = {
         e.target.value = "";
       });
     }
-    this.bindSyncModal();
+    // 保存笔记后的「要不要下载备份」提示
+    const saveModal = document.getElementById("save-modal");
+    if (saveModal) {
+      const closeSave = () => { saveModal.hidden = true; };
+      document.getElementById("save-skip").addEventListener("click", closeSave);
+      document.getElementById("save-download").addEventListener("click", () => {
+        this.downloadMarkdown();
+        closeSave();
+      });
+      saveModal.addEventListener("click", (e) => { if (e.target === saveModal) closeSave(); });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && !saveModal.hidden) closeSave();
+      });
+    }
+
     this.refreshNoteCount();
-  },
-
-  bindSyncModal() {
-    const modal = document.getElementById("sync-modal");
-    if (!modal) return;
-    const $ = (id) => document.getElementById(id);
-    const msg = $("gh-msg");
-
-    const say = (text, kind) => {
-      msg.textContent = text;
-      msg.className = "modal-msg" + (kind ? " " + kind : "");
-    };
-    const readCfg = () => ({
-      owner: $("gh-owner").value.trim(),
-      repo: $("gh-repo").value.trim(),
-      branch: $("gh-branch").value.trim() || "main",
-    });
-    const refreshTokenState = () => {
-      $("gh-token-state").textContent = GitHubSync.hasToken() ? "（已保存，留空则沿用）" : "（必填）";
-    };
-
-    const open = () => {
-      const cfg = GitHubSync.guessConfig();
-      $("gh-owner").value = cfg.owner || "";
-      $("gh-repo").value = cfg.repo || "";
-      $("gh-branch").value = cfg.branch || "main";
-      $("gh-token").value = "";
-      refreshTokenState();
-      say("");
-      modal.hidden = false;
-    };
-    const close = () => { modal.hidden = true; };
-
-    $("notes-sync").addEventListener("click", open);
-    $("gh-close").addEventListener("click", close);
-    modal.addEventListener("click", (e) => { if (e.target === modal) close(); });
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && !modal.hidden) close();
-    });
-
-    $("gh-forget").addEventListener("click", () => {
-      GitHubSync.setToken("");
-      $("gh-token").value = "";
-      refreshTokenState();
-      say("令牌已从这台设备清除。", "ok");
-    });
-
-    const prepare = () => {
-      const cfg = readCfg();
-      if (!cfg.owner || !cfg.repo) { say("请填写用户名和仓库名。", "err"); return null; }
-      const typed = $("gh-token").value.trim();
-      if (typed) GitHubSync.setToken(typed);
-      if (!GitHubSync.hasToken()) { say("请填写访问令牌。", "err"); return null; }
-      GitHubSync.setConfig(cfg);
-      $("gh-token").value = "";
-      refreshTokenState();
-      return cfg;
-    };
-
-    const run = async (btn, label, fn) => {
-      const cfg = prepare();
-      if (!cfg) return;
-      const old = btn.textContent;
-      btn.disabled = true;
-      btn.textContent = label;
-      say("处理中…");
-      try {
-        await fn(cfg);
-      } catch (err) {
-        say(err.message || String(err), "err");
-      } finally {
-        btn.disabled = false;
-        btn.textContent = old;
-      }
-    };
-
-    $("gh-push").addEventListener("click", () => run($("gh-push"), "提交中…", async (cfg) => {
-      const n = await GitHubSync.push(cfg);
-      say("已提交 " + n + " 条笔记。GitHub Pages 约 1 分钟后生效，其他设备刷新即可看到。", "ok");
-      this.setSyncStatus("上次同步 " + new Date().toLocaleString("zh-CN", { hour12: false }).slice(5, 16));
-    }));
-
-    $("gh-pull").addEventListener("click", () => run($("gh-pull"), "拉取中…", async (cfg) => {
-      const n = await GitHubSync.pull(cfg);
-      say(n ? "已拉取并合并 " + n + " 条笔记。" : "远端还没有笔记文件。", "ok");
-      this.refreshNoteCount();
-      this.renderContent();
-    }));
-  },
-
-  setSyncStatus(text) {
-    const el = document.getElementById("sync-status");
-    if (el) el.textContent = text;
-    try { localStorage.setItem("kaoyan_gh_last_v1", text); } catch (e) {}
   },
 
   refreshNoteCount() {
     const el = document.getElementById("notes-count");
     if (el) el.textContent = Notes.count();
-    const st = document.getElementById("sync-status");
-    if (st && !st.textContent) {
-      try { st.textContent = localStorage.getItem("kaoyan_gh_last_v1") || ""; } catch (e) {}
-    }
   },
 
   exportNotes() {
@@ -599,7 +515,7 @@ const App = {
           <div class="entry-statement">${item.statement}</div>
           ${item.diagram ? `<figure class="entry-figure">${item.diagram}${item.diagramCaption ? `<figcaption>${escapeHtml(item.diagramCaption)}</figcaption>` : ""}</figure>` : ""}
           <div class="entry-note"><span class="note-label">提示</span>${item.explanation}</div>
-          ${this.myNoteHtml(item.id)}
+          <div class="mynote-slot" data-note="${item.id}">${this.myNoteHtml(item.id)}</div>
           ${
             item.tags && item.tags.length
               ? `<div class="entry-tags">${item.tags.map((t) => `<span>${escapeHtml(t)}</span>`).join("")}</div>`
@@ -613,26 +529,46 @@ const App = {
   myNoteHtml(itemId) {
     const text = Notes.get(itemId);
     if (!text) {
-      return `<div class="mynote-slot" data-note="${itemId}">
-        <button class="mynote-add" data-action="edit">＋ 用大白话写一遍</button>
-      </div>`;
+      return `<button class="mynote-add" data-action="edit">＋ 用大白话写一遍</button>`;
     }
-    return `<div class="mynote-slot" data-note="${itemId}">
-      <div class="mynote">
-        <div class="mynote-head">
-          <span class="mynote-label">大白话${Notes.isSeed(itemId) ? "（仓库内置）" : ""}</span>
-          <button class="mynote-edit" data-action="edit">编辑</button>
-        </div>
-        <div class="mynote-body">${escapeHtml(text).replace(/\n/g, "<br />")}</div>
+    return `<div class="mynote">
+      <div class="mynote-head">
+        <span class="mynote-label">大白话${Notes.isSeed(itemId) ? "（仓库内置）" : ""}</span>
+        <button class="mynote-edit" data-action="edit">编辑</button>
       </div>
+      <div class="mynote-body">${renderMarkdown(text)}</div>
     </div>`;
   },
 
+  // 工具栏：[按钮文字, 提示, 前缀, 后缀, 是否整行生效]
+  TOOLS: [
+    ["B", "加粗", "**", "**", false],
+    ["I", "斜体", "*", "*", false],
+    ["H", "小标题", "## ", "", true],
+    ["•", "无序列表", "- ", "", true],
+    ["1.", "有序列表", "1. ", "", true],
+    ["❝", "引用", "> ", "", true],
+    ["<>", "行内代码", "`", "`", false],
+    ["∑", "数学公式", "$", "$", false],
+    ["—", "分隔线", "\n---\n", "", true],
+  ],
+
   editorHtml(itemId) {
     const text = Notes.get(itemId);
+    const tools = this.TOOLS.map(
+      (t, i) => `<button class="md-tool" type="button" data-tool="${i}" title="${t[1]}">${escapeHtml(t[0])}</button>`
+    ).join("");
     return `<div class="mynote mynote-editing">
-      <div class="mynote-head"><span class="mynote-label">大白话</span></div>
-      <textarea class="mynote-input" rows="6" placeholder="用你自己的话写一遍，比如：&#10;对象：…&#10;动作：…&#10;意义：…">${escapeHtml(text)}</textarea>
+      <div class="mynote-head">
+        <span class="mynote-label">大白话</span>
+        <div class="mynote-tabs">
+          <button class="md-tab active" data-tab="write">编辑</button>
+          <button class="md-tab" data-tab="preview">预览</button>
+        </div>
+      </div>
+      <div class="md-toolbar">${tools}</div>
+      <textarea class="mynote-input" rows="9" placeholder="用你自己的话写一遍，支持 Markdown：&#10;&#10;**对象**：…&#10;**动作**：…&#10;**意义**：&#10;- 第一点&#10;- 第二点&#10;&#10;公式直接写 $\\lim_{x\\to 0}$ 就能渲染">${escapeHtml(text)}</textarea>
+      <div class="md-preview" hidden></div>
       <div class="mynote-actions">
         <button class="mynote-save" data-action="save">保存</button>
         <button class="mynote-cancel" data-action="cancel">取消</button>
@@ -641,35 +577,148 @@ const App = {
     </div>`;
   },
 
+  // 在光标处插入 Markdown 标记
+  applyTool(ta, tool) {
+    const [, , before, after, lineMode] = tool;
+    const { selectionStart: s, selectionEnd: e, value: v } = ta;
+
+    if (lineMode) {
+      const lineStart = v.lastIndexOf("\n", s - 1) + 1;
+      let lineEnd = v.indexOf("\n", e);
+      if (lineEnd === -1) lineEnd = v.length;
+      const block = v.slice(lineStart, lineEnd);
+      const marked = block
+        .split("\n")
+        .map((l, i) => (before === "\n---\n" ? l : before.replace(/^1\. $/, () => i + 1 + ". ") + l))
+        .join("\n");
+      const insert = before === "\n---\n" ? block + "\n\n---\n" : marked;
+      ta.value = v.slice(0, lineStart) + insert + v.slice(lineEnd);
+      ta.selectionStart = ta.selectionEnd = lineStart + insert.length;
+    } else {
+      const sel = v.slice(s, e) || "";
+      ta.value = v.slice(0, s) + before + sel + after + v.slice(e);
+      if (sel) {
+        ta.selectionStart = s + before.length;
+        ta.selectionEnd = s + before.length + sel.length;
+      } else {
+        ta.selectionStart = ta.selectionEnd = s + before.length;
+      }
+    }
+    ta.focus();
+  },
+
   bindNoteEditors(scope) {
     scope.querySelectorAll(".mynote-slot").forEach((slot) => {
       if (slot.dataset.bound) return;
       slot.dataset.bound = "1";
+      const id = slot.dataset.note;
+      const show = (html) => { slot.innerHTML = html; renderMath(slot); };
+
       slot.addEventListener("click", (e) => {
+        const tool = e.target.closest("[data-tool]");
+        if (tool) {
+          this.applyTool(slot.querySelector(".mynote-input"), this.TOOLS[Number(tool.dataset.tool)]);
+          return;
+        }
+
+        const tab = e.target.closest("[data-tab]");
+        if (tab) {
+          const ta = slot.querySelector(".mynote-input");
+          const pv = slot.querySelector(".md-preview");
+          const toWrite = tab.dataset.tab === "write";
+          slot.querySelectorAll(".md-tab").forEach((b) => b.classList.toggle("active", b === tab));
+          slot.querySelector(".md-toolbar").hidden = !toWrite;
+          ta.hidden = !toWrite;
+          pv.hidden = toWrite;
+          if (!toWrite) {
+            pv.innerHTML = ta.value.trim() ? renderMarkdown(ta.value) : `<p class="md-empty">还没写内容</p>`;
+            renderMath(pv);
+          }
+          return;
+        }
+
         const btn = e.target.closest("[data-action]");
         if (!btn) return;
-        const id = slot.dataset.note;
         const action = btn.dataset.action;
 
         if (action === "edit") {
-          slot.innerHTML = this.editorHtml(id);
+          show(this.editorHtml(id));
           const ta = slot.querySelector(".mynote-input");
           ta.focus();
           ta.setSelectionRange(ta.value.length, ta.value.length);
         } else if (action === "save") {
           const val = slot.querySelector(".mynote-input").value;
-          if (!Notes.set(id, val)) alert("保存失败：浏览器存储空间不足或被禁用。");
-          slot.innerHTML = this.myNoteHtml(id).replace(/^<div class="mynote-slot"[^>]*>|<\/div>$/g, "");
+          const had = Notes.has(id);
+          if (!Notes.set(id, val)) {
+            alert("保存失败：浏览器存储空间不足或被禁用。");
+            return;
+          }
+          show(this.myNoteHtml(id));
           this.refreshNoteCount();
+          if (val.trim() && !(had && !val.trim())) this.askDownload();
         } else if (action === "cancel") {
-          slot.innerHTML = this.myNoteHtml(id).replace(/^<div class="mynote-slot"[^>]*>|<\/div>$/g, "");
+          show(this.myNoteHtml(id));
         } else if (action === "delete") {
           Notes.set(id, "");
-          slot.innerHTML = this.myNoteHtml(id).replace(/^<div class="mynote-slot"[^>]*>|<\/div>$/g, "");
+          show(this.myNoteHtml(id));
           this.refreshNoteCount();
         }
       });
     });
+  },
+
+  // 保存后提醒：要不要顺手存一份本地 Markdown
+  askDownload() {
+    const modal = document.getElementById("save-modal");
+    if (!modal) return;
+    document.getElementById("save-modal-count").textContent = Notes.count();
+    modal.hidden = false;
+  },
+
+  // 把所有笔记拼成一份 Markdown 文档
+  buildMarkdown() {
+    const all = Notes.exportAll();
+    const lines = [
+      "# 我的大白话笔记",
+      "",
+      "> 导出时间：" + new Date().toLocaleString("zh-CN", { hour12: false }),
+      "> 共 " + Object.keys(all).length + " 条",
+      "",
+    ];
+    this.subjects.forEach((s) => {
+      const chapters = KaoyanData.chapters(s.id);
+      const subjectHas = KaoyanData.items(s.id).some((it) => all[it.id]);
+      if (!subjectHas) return;
+      lines.push("", "## " + s.name, "");
+      chapters.forEach((c) => {
+        const items = KaoyanData.itemsByChapter(s.id, c.id).filter((it) => all[it.id]);
+        if (!items.length) return;
+        lines.push("### " + c.order + ". " + c.name, "");
+        items.forEach((it) => {
+          // 笔记里自己写的标题要降级，才能挂在「#### 知识点」下面而不是顶破文档层级
+          const body = all[it.id]
+            .trim()
+            .split("\n")
+            .map((l) => l.replace(/^(#{1,6})\s/, (m, h) => "#".repeat(Math.min(6, h.length + 4)) + " "))
+            .join("\n");
+          lines.push("#### " + it.title, "", body, "");
+        });
+      });
+    });
+    return lines.join("\n");
+  },
+
+  downloadMarkdown() {
+    const text = this.buildMarkdown();
+    const blob = new Blob([text], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "我的大白话笔记-" + new Date().toISOString().slice(0, 10) + ".md";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   },
 };
 
