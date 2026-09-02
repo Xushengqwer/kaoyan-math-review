@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>考研数学复习卡 · 定义定理性质每日速记</title>
+<meta name="description" content="考研数学一（高等数学/线性代数/概率论与数理统计）定义定理性质复习手册，分类清晰，图文并茂" />
+<link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml" />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#2563eb" />
+<link rel="stylesheet" href="assets/vendor/katex/katex.min.css" />
+<link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+
+<div class="mobile-topbar">
+  <button class="menu-btn" id="menu-btn">☰</button>
+  <span class="title">📘 考研数学复习卡</span>
+</div>
+
+<div class="app-shell">
+  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="brand">📘 考研数学复习卡<small>定义 · 定理 · 性质</small></div>
+      <button class="sidebar-close" id="sidebar-close">✕</button>
+    </div>
+
+    <a class="nav-overview-link" id="nav-overview-link" href="#overview">📊 总览</a>
+
+    <nav id="subject-nav"></nav>
+  </aside>
+
+  <main class="content">
+    <div id="content-pane"></div>
+  </main>
+</div>
+
+<button class="to-top" id="to-top" aria-label="回到顶部">↑</button>
+
+<script src="assets/vendor/katex/katex.min.js"></script>
+<script src="assets/vendor/katex/auto-render.min.js"></script>
+<script src="assets/js/data-loader.js"></script>
+<script src="assets/data/calculus.js"></script>
+<script src="assets/data/linalg.js"></script>
+<script src="assets/data/probability.js"></script>
+<script src="assets/js/katex-init.js"></script>
+<script src="assets/js/storage.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>

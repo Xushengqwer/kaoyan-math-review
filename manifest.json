@@ -1,0 +1,13 @@
+{
+  "name": "考研数学复习卡",
+  "short_name": "数学复习卡",
+  "description": "考研数学定义定理性质速记卡片",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f7fb",
+  "theme_color": "#2563eb",
+  "icons": [
+    { "src": "assets/icons/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
