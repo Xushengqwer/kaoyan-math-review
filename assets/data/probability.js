@@ -966,6 +966,24 @@ registerSubject({
       statement: "对双侧假设 $H_0:\\theta=\\theta_0$ vs $H_1:\\theta\\neq\\theta_0$，在显著性水平 $\\alpha$ 下<strong>\"接受 $H_0$\"</strong>等价于<strong>\"$\\theta_0$ 落在 $\\theta$ 的置信度为 $1-\\alpha$ 的置信区间内\"</strong>；<strong>\"拒绝 $H_0$\"</strong>等价于<strong>\"$\\theta_0$ 不在该置信区间内\"</strong>。",
       explanation: "这一<strong>对偶关系</strong>表明置信区间与假设检验本质上是同一枢轴量在不同角度下的应用：<u>置信区间回答\"参数的合理取值范围是什么\"，假设检验回答\"某个特定值是否合理\"</u>，二者可以相互转化。",
       tags: ["假设检验", "置信区间", "对偶关系"]
+    },
+    {
+      id: "prob-rv-def-hypergeometric",
+      chapterId: "random-variable",
+      type: "definition",
+      title: "超几何分布",
+      statement: "设 $N$ 件产品中有 $M$ 件次品，从中<strong>不放回</strong>地任取 $n$ 件，则其中次品数 $X$ 服从<strong>超几何分布</strong> $H(n,M,N)$，其分布律为 $$P\\{X=k\\}=\\frac{\\dbinom{M}{k}\\dbinom{N-M}{n-k}}{\\dbinom{N}{n}},\\quad k=\\max(0,\\,n-N+M),\\cdots,\\min(n,M).$$ 其期望为 $E(X)=n\\dfrac{M}{N}$。",
+      explanation: "与二项分布的核心区别在于<strong>是否放回</strong>：<u>放回抽样是二项分布（各次独立），不放回抽样是超几何分布（各次不独立）</u>。但当 $N$ 很大而 $n$ 相对很小时，抽走几件对总体比例影响甚微，此时超几何分布可用二项分布近似：$P\\{X=k\\}\\approx\\dbinom{n}{k}p^k(1-p)^{n-k}$，其中 $p=M/N$。注意两者<strong>期望公式形式相同</strong>（都是 $np$），但方差不同。",
+      tags: ["随机变量", "超几何分布", "不放回抽样"]
+    },
+    {
+      id: "prob-nc-def-covariance-matrix",
+      chapterId: "numerical-characteristics",
+      type: "definition",
+      title: "n 维随机变量的协方差矩阵",
+      statement: "设 $n$ 维随机变量 $(X_1,X_2,\\cdots,X_n)$ 的二阶混合中心矩 $c_{ij}=\\operatorname{Cov}(X_i,X_j)=E\\{[X_i-E(X_i)][X_j-E(X_j)]\\}$ 均存在，则矩阵 $$C=\\begin{pmatrix} c_{11} & c_{12} & \\cdots & c_{1n}\\\\ c_{21} & c_{22} & \\cdots & c_{2n}\\\\ \\vdots & \\vdots & & \\vdots\\\\ c_{n1} & c_{n2} & \\cdots & c_{nn}\\end{pmatrix}$$ 称为该 $n$ 维随机变量的<strong>协方差矩阵</strong>。",
+      explanation: "三个必记性质：<ul><li><strong>主对角元就是方差：</strong>$c_{ii}=\\operatorname{Cov}(X_i,X_i)=D(X_i)$</li><li><strong>对称性：</strong>$c_{ij}=c_{ji}$，故 $C$ 是<strong>实对称矩阵</strong>（可正交对角化，与线代打通）</li><li><strong>半正定性：</strong>$C$ 总是半正定的；若各分量不存在线性相关关系则为正定</li></ul><u>若 $X_1,\\cdots,X_n$ 两两不相关，则 $C$ 是对角矩阵</u>，这是判断独立性/不相关性的常用切入点。",
+      tags: ["数字特征", "协方差矩阵", "多维随机变量"]
     }
   ]
 });

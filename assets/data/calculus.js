@@ -1211,6 +1211,51 @@ registerSubject({
       statement: "设方程 $y'=f(x,y)$ 中 $f(x,y)$ 及 $\\dfrac{\\partial f}{\\partial y}$ 在矩形区域 $R=\\{(x,y)\\mid |x-x_0|\\leqslant a, |y-y_0|\\leqslant b\\}$ 上连续，则初值问题 $y'=f(x,y)$，$y(x_0)=y_0$ 在 $x_0$ 的某邻域内存在唯一解。",
       explanation: "该定理保证了在较弱的条件（$f$ 及其对 $y$ 的偏导连续）下初值问题解的<strong>存在性与唯一性</strong>，是研究微分方程解的性质（如判断两条积分曲线是否相交）的理论基础。数一部分省份考纲会涉及该定理的条件辨析。",
       tags: ["微分方程", "存在唯一性", "初值问题"]
+    },
+    {
+      id: "calc-ode-thm-exact-equation",
+      chapterId: "ode",
+      type: "theorem",
+      title: "全微分方程（恰当方程）",
+      statement: "形如 $P(x,y)\\,\\mathrm{d}x+Q(x,y)\\,\\mathrm{d}y=0$ 的方程，若左端恰为某函数 $u(x,y)$ 的全微分，即 $\\mathrm{d}u=P\\,\\mathrm{d}x+Q\\,\\mathrm{d}y$，则称为<strong>全微分方程</strong>，其通解为 $u(x,y)=C$。<u>判别条件（充要）：在单连通区域内 $P,Q$ 有连续偏导时，方程为全微分方程 $\\Leftrightarrow \\dfrac{\\partial P}{\\partial y}=\\dfrac{\\partial Q}{\\partial x}$。</u>求 $u$ 可用曲线积分 $u(x,y)=\\displaystyle\\int_{x_0}^{x}P(t,y_0)\\,\\mathrm{d}t+\\int_{y_0}^{y}Q(x,t)\\,\\mathrm{d}t$。",
+      explanation: "判别口诀：<strong>「$P$ 对 $y$ 偏导 = $Q$ 对 $x$ 偏导」</strong>。这与曲线积分中\"与路径无关\"的条件完全一致，本质是同一件事。若不满足该条件，有时可乘一个<strong>积分因子</strong> $\\mu(x,y)$ 使其变成全微分方程（常见的 $\\mu$ 只含 $x$ 或只含 $y$）。求出 $u$ 后别忘了通解是 $u=C$ 而不是 $u=0$。",
+      tags: ["微分方程", "全微分方程", "恰当方程", "积分因子"]
+    },
+    {
+      id: "calc-vec-prop-space-curve-projection",
+      chapterId: "vector-geometry",
+      type: "property",
+      title: "空间曲线在坐标面上的投影",
+      statement: "设空间曲线 $\\Gamma:\\begin{cases}F(x,y,z)=0\\\\ G(x,y,z)=0\\end{cases}$。从这两个方程中<strong>消去 $z$</strong> 得 $H(x,y)=0$，它表示以 $\\Gamma$ 为准线、母线平行于 $z$ 轴的<strong>投影柱面</strong>；于是 $\\Gamma$ 在 $xOy$ 面上的<strong>投影曲线</strong>为 $\\begin{cases}H(x,y)=0\\\\ z=0\\end{cases}$。同理消去 $x$（或 $y$）可得在 $yOz$（或 $zOx$）面上的投影。",
+      explanation: "关键动作是<strong>消元</strong>：投影到哪个坐标面，就消去哪个坐标轴对应的变量。<u>写投影曲线时必须补上该坐标面的方程（如 $z=0$），只写 $H(x,y)=0$ 得到的是柱面而不是曲线。</u>这是重积分、曲线曲面积分中确定积分区域的常用第一步。",
+      tags: ["空间解析几何", "投影柱面", "投影曲线"]
+    },
+    {
+      id: "calc-mv-prop-space-curve-tangent",
+      chapterId: "multivar-derivative",
+      type: "property",
+      title: "空间曲线的切线与法平面",
+      statement: "设曲线 $\\Gamma$ 的参数方程为 $x=\\varphi(t),\\,y=\\psi(t),\\,z=\\omega(t)$，在 $t=t_0$ 对应点 $M_0(x_0,y_0,z_0)$ 处导数不全为零，则<strong>切向量</strong>为 $\\vec{T}=(\\varphi'(t_0),\\psi'(t_0),\\omega'(t_0))$，于是：<ul><li><strong>切线方程：</strong>$\\dfrac{x-x_0}{\\varphi'(t_0)}=\\dfrac{y-y_0}{\\psi'(t_0)}=\\dfrac{z-z_0}{\\omega'(t_0)}$</li><li><strong>法平面方程：</strong>$\\varphi'(t_0)(x-x_0)+\\psi'(t_0)(y-y_0)+\\omega'(t_0)(z-z_0)=0$（过 $M_0$ 且与切线垂直的平面）</li></ul>",
+      explanation: "切线与法平面互为<strong>方向向量与法向量的关系</strong>：同一个 $\\vec T$，做切线时当方向向量，做法平面时当法向量。<u>若曲线由两曲面交线给出 $\\begin{cases}F=0\\\\ G=0\\end{cases}$，则切向量取 $\\vec T=\\nabla F\\times\\nabla G$</u>（两法向量的叉积），这是最常考的变形。",
+      tags: ["多元微分", "切线", "法平面", "空间曲线"]
+    },
+    {
+      id: "calc-mi-thm-change-of-variables",
+      chapterId: "multiple-integral",
+      type: "theorem",
+      title: "二重积分的换元法与雅可比行列式",
+      statement: "设变换 $T:x=x(u,v),\\,y=y(u,v)$ 将 $uv$ 平面上的闭区域 $D'$ 一对一地映成 $xy$ 平面上的 $D$，且 $x,y$ 有连续偏导、<strong>雅可比行列式</strong> $J(u,v)=\\dfrac{\\partial(x,y)}{\\partial(u,v)}=\\begin{vmatrix}x_u & x_v\\\\ y_u & y_v\\end{vmatrix}\\neq 0$，则 $$\\iint_D f(x,y)\\,\\mathrm{d}x\\,\\mathrm{d}y=\\iint_{D'} f\\big(x(u,v),y(u,v)\\big)\\,|J(u,v)|\\,\\mathrm{d}u\\,\\mathrm{d}v.$$",
+      explanation: "三个易错点：<strong>① 必须取绝对值 $|J|$</strong>（面积不能为负）；<strong>② $J$ 是新变量到旧变量的偏导</strong>，方向别弄反，若算出的是 $\\partial(u,v)/\\partial(x,y)$ 需取倒数；<strong>③ 积分区域要同步换成 $D'$</strong>。<u>极坐标变换正是本定理的特例：$x=r\\cos\\theta,y=r\\sin\\theta$ 时 $J=r$，所以 $\\mathrm{d}x\\mathrm{d}y=r\\,\\mathrm{d}r\\mathrm{d}\\theta$。</u>",
+      tags: ["重积分", "换元法", "雅可比行列式"]
+    },
+    {
+      id: "calc-lsi-def-divergence-curl",
+      chapterId: "line-surface-integral",
+      type: "definition",
+      title: "散度与旋度",
+      statement: "设向量场 $\\vec{A}=(P,Q,R)$，其中 $P,Q,R$ 有连续偏导数，则：<ul><li><strong>散度（标量）：</strong>$\\operatorname{div}\\vec{A}=\\dfrac{\\partial P}{\\partial x}+\\dfrac{\\partial Q}{\\partial y}+\\dfrac{\\partial R}{\\partial z}$</li><li><strong>旋度（向量）：</strong>$\\operatorname{rot}\\vec{A}=\\begin{vmatrix}\\vec{i} & \\vec{j} & \\vec{k}\\\\[2pt] \\dfrac{\\partial}{\\partial x} & \\dfrac{\\partial}{\\partial y} & \\dfrac{\\partial}{\\partial z}\\\\[2pt] P & Q & R\\end{vmatrix}$</li></ul>",
+      explanation: "记忆方式：<strong>散度是「点乘」，旋度是「叉乘」</strong>，都可借助算子 $\\nabla=\\left(\\dfrac{\\partial}{\\partial x},\\dfrac{\\partial}{\\partial y},\\dfrac{\\partial}{\\partial z}\\right)$ 写成 $\\operatorname{div}\\vec A=\\nabla\\cdot\\vec A$、$\\operatorname{rot}\\vec A=\\nabla\\times\\vec A$。<u>散度是标量（衡量该点是「源」还是「汇」），旋度是向量（衡量该点的旋转趋势）</u>。两个重要结论：$\\operatorname{div}(\\operatorname{rot}\\vec A)=0$，$\\operatorname{rot}(\\operatorname{grad}u)=\\vec 0$。高斯公式即 $\\oiint_\\Sigma \\vec A\\cdot\\mathrm{d}\\vec S=\\iiint_\\Omega \\operatorname{div}\\vec A\\,\\mathrm{d}V$，斯托克斯公式即 $\\oint_\\Gamma \\vec A\\cdot\\mathrm{d}\\vec r=\\iint_\\Sigma \\operatorname{rot}\\vec A\\cdot\\mathrm{d}\\vec S$。",
+      tags: ["曲面积分", "散度", "旋度", "向量场"]
     }
   ]
 });

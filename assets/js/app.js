@@ -38,6 +38,81 @@ const App = {
         toTop.classList.toggle("show", window.scrollY > 600);
       }, { passive: true });
     }
+
+    // 全局搜索
+    const gs = document.getElementById("global-search");
+    const gsClear = document.getElementById("global-search-clear");
+    if (gs) {
+      let timer = null;
+      gs.addEventListener("input", () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          this.globalQuery = gs.value.trim();
+          gsClear.classList.toggle("show", !!this.globalQuery);
+          if (this.globalQuery) {
+            this.current = { type: "search" };
+            this.renderContent();
+            if (this._closeMobileSidebar) this._closeMobileSidebar();
+          } else {
+            this.route();
+          }
+        }, 140);
+      });
+      gs.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") { gs.value = ""; gs.dispatchEvent(new Event("input")); gs.blur(); }
+      });
+      gsClear.addEventListener("click", () => {
+        gs.value = "";
+        gs.dispatchEvent(new Event("input"));
+        gs.focus();
+      });
+    }
+
+    // 笔记导入 / 导出
+    const exportBtn = document.getElementById("notes-export");
+    const importBtn = document.getElementById("notes-import");
+    const importFile = document.getElementById("notes-import-file");
+    if (exportBtn) exportBtn.addEventListener("click", () => this.exportNotes());
+    if (importBtn) importBtn.addEventListener("click", () => importFile.click());
+    if (importFile) {
+      importFile.addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const n = Notes.importAll(JSON.parse(reader.result));
+            alert("已导入 " + n + " 条笔记。");
+            this.renderContent();
+            this.refreshNoteCount();
+          } catch (err) {
+            alert("导入失败：文件不是合法的 JSON。");
+          }
+        };
+        reader.readAsText(file);
+        e.target.value = "";
+      });
+    }
+    this.refreshNoteCount();
+  },
+
+  refreshNoteCount() {
+    const el = document.getElementById("notes-count");
+    if (el) el.textContent = Notes.count();
+  },
+
+  exportNotes() {
+    const data = Notes.exportAll();
+    if (Object.keys(data).length === 0) { alert("还没有任何笔记。"); return; }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "kaoyan-notes-" + new Date().toISOString().slice(0, 10) + ".json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   },
 
   // 把所有学科的章节拉平成一条线性阅读顺序，用于上一章/下一章导航
@@ -72,7 +147,18 @@ const App = {
     this.renderSidebar();
     this.renderContent();
     if (this._closeMobileSidebar) this._closeMobileSidebar();
-    window.scrollTo(0, 0);
+
+    // 从搜索结果跳过来时，滚到那一条并闪一下；否则回到顶部
+    const target = this._pendingHighlight;
+    this._pendingHighlight = null;
+    const node = target && document.getElementById("item-" + target);
+    if (node) {
+      node.scrollIntoView({ block: "center" });
+      node.classList.add("flash");
+      setTimeout(() => node.classList.remove("flash"), 1800);
+    } else {
+      window.scrollTo(0, 0);
+    }
   },
 
   // ---------------- sidebar ----------------
@@ -123,6 +209,25 @@ const App = {
   renderContent() {
     const el = document.getElementById("content-pane");
     const r = this.current;
+    if (r.type === "search") {
+      el.innerHTML = this.searchViewHtml(this.globalQuery);
+      renderMath(el);
+      el.querySelectorAll(".result").forEach((a) => {
+        a.addEventListener("click", (e) => {
+          e.preventDefault();
+          this._pendingHighlight = a.dataset.item;
+          const gs = document.getElementById("global-search");
+          if (gs) gs.value = "";
+          this.globalQuery = "";
+          const clear = document.getElementById("global-search-clear");
+          if (clear) clear.classList.remove("show");
+          const target = a.getAttribute("href").slice(1);
+          if (location.hash.slice(1) === target) this.route();
+          else location.hash = target;
+        });
+      });
+      return;
+    }
     if (r.type === "chapter") {
       el.innerHTML = this.chapterViewHtml(r.subjectId, r.chapterId);
       this.bindChapterControls(r.subjectId, r.chapterId);
@@ -132,6 +237,73 @@ const App = {
       el.innerHTML = this.overviewHtml();
     }
     renderMath(el);
+  },
+
+  // ---------------- 全局搜索 ----------------
+  searchViewHtml(query) {
+    const q = (query || "").toLowerCase();
+    const hits = [];
+    this.subjects.forEach((s) => {
+      KaoyanData.items(s.id).forEach((it) => {
+        const note = Notes.get(it.id);
+        const hay = (
+          it.title + " " + it.statement + " " + it.explanation + " " +
+          (it.tags || []).join(" ") + " " + note
+        ).toLowerCase();
+        if (!hay.includes(q)) return;
+        const chapter = KaoyanData.chapter(s.id, it.chapterId);
+        // 标题命中排在前面
+        const score = it.title.toLowerCase().includes(q) ? 0 : (note.toLowerCase().includes(q) ? 1 : 2);
+        hits.push({ item: it, subject: s, chapter, score });
+      });
+    });
+    hits.sort((a, b) => a.score - b.score);
+
+    if (hits.length === 0) {
+      return `
+        <h1 class="page-title">搜索「${escapeHtml(query)}」</h1>
+        <p class="page-sub">在全部 ${KaoyanData.allItems().length} 条知识点中没有找到匹配内容</p>
+        <div class="empty-state">换个关键词试试，比如「施密特」「中值定理」「置信区间」</div>`;
+    }
+
+    const rows = hits.slice(0, 60).map(({ item, subject, chapter }) => `
+      <a class="result" href="#${subject.id}/${chapter.id}" data-item="${item.id}">
+        <span class="result-type ${item.type}">${TYPE_LABEL[item.type]}</span>
+        <span class="result-body">
+          <span class="result-title">${this.mark(item.title, query)}</span>
+          <span class="result-where">${escapeHtml(subject.name)} · ${chapter.order}. ${escapeHtml(chapter.name)}</span>
+          <span class="result-snippet">${this.snippet(item, query)}</span>
+          ${Notes.has(item.id) ? `<span class="result-hasnote">有大白话笔记</span>` : ""}
+        </span>
+      </a>`).join("");
+
+    return `
+      <h1 class="page-title">搜索「${escapeHtml(query)}」</h1>
+      <p class="page-sub">找到 ${hits.length} 条${hits.length > 60 ? "，显示前 60 条" : ""}</p>
+      <div class="result-list">${rows}</div>`;
+  },
+
+  // 取一段包含关键词的纯文本摘要（去掉 HTML 和公式，避免搜索结果里塞满 LaTeX）
+  snippet(item, query) {
+    const plain = (item.statement + " " + item.explanation)
+      .replace(/<[^>]+>/g, "")
+      .replace(/\$\$?[^$]*\$\$?/g, " ▫ ")
+      .replace(/\s+/g, " ")
+      .trim();
+    const q = (query || "").toLowerCase();
+    const i = plain.toLowerCase().indexOf(q);
+    const start = i < 0 ? 0 : Math.max(0, i - 24);
+    const text = (start > 0 ? "…" : "") + plain.slice(start, start + 110) + (plain.length > start + 110 ? "…" : "");
+    return this.mark(text, query);
+  },
+
+  // 高亮关键词（先转义再插标签，避免 XSS）
+  mark(text, query) {
+    const safe = escapeHtml(text);
+    const q = (query || "").trim();
+    if (!q) return safe;
+    const esc = escapeHtml(q).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return safe.replace(new RegExp(esc, "gi"), (m) => `<mark>${m}</mark>`);
   },
 
   chapterCardHtml(subjectId, c) {
@@ -316,17 +488,19 @@ const App = {
     });
     wrap.innerHTML = html;
     renderMath(wrap);
+    this.bindNoteEditors(wrap);
   },
 
   entryHtml(item, index) {
     return `
-      <article class="entry">
+      <article class="entry" id="item-${item.id}">
         <div class="entry-no" aria-hidden="true">${String(index).padStart(2, "0")}</div>
         <div class="entry-main">
           <h4 class="entry-title">${escapeHtml(item.title)}</h4>
           <div class="entry-statement">${item.statement}</div>
           ${item.diagram ? `<figure class="entry-figure">${item.diagram}${item.diagramCaption ? `<figcaption>${escapeHtml(item.diagramCaption)}</figcaption>` : ""}</figure>` : ""}
           <div class="entry-note"><span class="note-label">提示</span>${item.explanation}</div>
+          ${this.myNoteHtml(item.id)}
           ${
             item.tags && item.tags.length
               ? `<div class="entry-tags">${item.tags.map((t) => `<span>${escapeHtml(t)}</span>`).join("")}</div>`
@@ -334,6 +508,69 @@ const App = {
           }
         </div>
       </article>`;
+  },
+
+  // 「大白话」区块：有内容就展示，没有就显示一个添加按钮
+  myNoteHtml(itemId) {
+    const text = Notes.get(itemId);
+    if (!text) {
+      return `<div class="mynote-slot" data-note="${itemId}">
+        <button class="mynote-add" data-action="edit">＋ 用大白话写一遍</button>
+      </div>`;
+    }
+    return `<div class="mynote-slot" data-note="${itemId}">
+      <div class="mynote">
+        <div class="mynote-head">
+          <span class="mynote-label">大白话${Notes.isSeed(itemId) ? "（仓库内置）" : ""}</span>
+          <button class="mynote-edit" data-action="edit">编辑</button>
+        </div>
+        <div class="mynote-body">${escapeHtml(text).replace(/\n/g, "<br />")}</div>
+      </div>
+    </div>`;
+  },
+
+  editorHtml(itemId) {
+    const text = Notes.get(itemId);
+    return `<div class="mynote mynote-editing">
+      <div class="mynote-head"><span class="mynote-label">大白话</span></div>
+      <textarea class="mynote-input" rows="6" placeholder="用你自己的话写一遍，比如：&#10;对象：…&#10;动作：…&#10;意义：…">${escapeHtml(text)}</textarea>
+      <div class="mynote-actions">
+        <button class="mynote-save" data-action="save">保存</button>
+        <button class="mynote-cancel" data-action="cancel">取消</button>
+        ${text ? `<button class="mynote-delete" data-action="delete">删除</button>` : ""}
+      </div>
+    </div>`;
+  },
+
+  bindNoteEditors(scope) {
+    scope.querySelectorAll(".mynote-slot").forEach((slot) => {
+      if (slot.dataset.bound) return;
+      slot.dataset.bound = "1";
+      slot.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-action]");
+        if (!btn) return;
+        const id = slot.dataset.note;
+        const action = btn.dataset.action;
+
+        if (action === "edit") {
+          slot.innerHTML = this.editorHtml(id);
+          const ta = slot.querySelector(".mynote-input");
+          ta.focus();
+          ta.setSelectionRange(ta.value.length, ta.value.length);
+        } else if (action === "save") {
+          const val = slot.querySelector(".mynote-input").value;
+          if (!Notes.set(id, val)) alert("保存失败：浏览器存储空间不足或被禁用。");
+          slot.innerHTML = this.myNoteHtml(id).replace(/^<div class="mynote-slot"[^>]*>|<\/div>$/g, "");
+          this.refreshNoteCount();
+        } else if (action === "cancel") {
+          slot.innerHTML = this.myNoteHtml(id).replace(/^<div class="mynote-slot"[^>]*>|<\/div>$/g, "");
+        } else if (action === "delete") {
+          Notes.set(id, "");
+          slot.innerHTML = this.myNoteHtml(id).replace(/^<div class="mynote-slot"[^>]*>|<\/div>$/g, "");
+          this.refreshNoteCount();
+        }
+      });
+    });
   },
 };
 
