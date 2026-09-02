@@ -93,12 +93,111 @@ const App = {
         e.target.value = "";
       });
     }
+    this.bindSyncModal();
     this.refreshNoteCount();
+  },
+
+  bindSyncModal() {
+    const modal = document.getElementById("sync-modal");
+    if (!modal) return;
+    const $ = (id) => document.getElementById(id);
+    const msg = $("gh-msg");
+
+    const say = (text, kind) => {
+      msg.textContent = text;
+      msg.className = "modal-msg" + (kind ? " " + kind : "");
+    };
+    const readCfg = () => ({
+      owner: $("gh-owner").value.trim(),
+      repo: $("gh-repo").value.trim(),
+      branch: $("gh-branch").value.trim() || "main",
+    });
+    const refreshTokenState = () => {
+      $("gh-token-state").textContent = GitHubSync.hasToken() ? "（已保存，留空则沿用）" : "（必填）";
+    };
+
+    const open = () => {
+      const cfg = GitHubSync.guessConfig();
+      $("gh-owner").value = cfg.owner || "";
+      $("gh-repo").value = cfg.repo || "";
+      $("gh-branch").value = cfg.branch || "main";
+      $("gh-token").value = "";
+      refreshTokenState();
+      say("");
+      modal.hidden = false;
+    };
+    const close = () => { modal.hidden = true; };
+
+    $("notes-sync").addEventListener("click", open);
+    $("gh-close").addEventListener("click", close);
+    modal.addEventListener("click", (e) => { if (e.target === modal) close(); });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !modal.hidden) close();
+    });
+
+    $("gh-forget").addEventListener("click", () => {
+      GitHubSync.setToken("");
+      $("gh-token").value = "";
+      refreshTokenState();
+      say("令牌已从这台设备清除。", "ok");
+    });
+
+    const prepare = () => {
+      const cfg = readCfg();
+      if (!cfg.owner || !cfg.repo) { say("请填写用户名和仓库名。", "err"); return null; }
+      const typed = $("gh-token").value.trim();
+      if (typed) GitHubSync.setToken(typed);
+      if (!GitHubSync.hasToken()) { say("请填写访问令牌。", "err"); return null; }
+      GitHubSync.setConfig(cfg);
+      $("gh-token").value = "";
+      refreshTokenState();
+      return cfg;
+    };
+
+    const run = async (btn, label, fn) => {
+      const cfg = prepare();
+      if (!cfg) return;
+      const old = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = label;
+      say("处理中…");
+      try {
+        await fn(cfg);
+      } catch (err) {
+        say(err.message || String(err), "err");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = old;
+      }
+    };
+
+    $("gh-push").addEventListener("click", () => run($("gh-push"), "提交中…", async (cfg) => {
+      const n = await GitHubSync.push(cfg);
+      say("已提交 " + n + " 条笔记。GitHub Pages 约 1 分钟后生效，其他设备刷新即可看到。", "ok");
+      this.setSyncStatus("上次同步 " + new Date().toLocaleString("zh-CN", { hour12: false }).slice(5, 16));
+    }));
+
+    $("gh-pull").addEventListener("click", () => run($("gh-pull"), "拉取中…", async (cfg) => {
+      const n = await GitHubSync.pull(cfg);
+      say(n ? "已拉取并合并 " + n + " 条笔记。" : "远端还没有笔记文件。", "ok");
+      this.refreshNoteCount();
+      this.renderContent();
+    }));
+  },
+
+  setSyncStatus(text) {
+    const el = document.getElementById("sync-status");
+    if (el) el.textContent = text;
+    try { localStorage.setItem("kaoyan_gh_last_v1", text); } catch (e) {}
   },
 
   refreshNoteCount() {
     const el = document.getElementById("notes-count");
     if (el) el.textContent = Notes.count();
+    const st = document.getElementById("sync-status");
+    if (st && !st.textContent) {
+      try { st.textContent = localStorage.getItem("kaoyan_gh_last_v1") || ""; } catch (e) {}
+    }
   },
 
   exportNotes() {

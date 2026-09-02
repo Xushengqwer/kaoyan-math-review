@@ -1,5 +1,5 @@
 // 简单的离线缓存：优先使用缓存，后台静默更新，方便在地铁/宿舍弱网环境下阅读。
-const CACHE_NAME = "kaoyan-math-v4";
+const CACHE_NAME = "kaoyan-math-v5";
 const ASSETS = [
   "./",
   "index.html",
@@ -8,6 +8,7 @@ const ASSETS = [
   "assets/js/data-loader.js",
   "assets/js/storage.js",
   "assets/js/katex-init.js",
+  "assets/js/github-sync.js",
   "assets/js/app.js",
   "assets/data/calculus.js",
   "assets/data/linalg.js",
@@ -37,6 +38,8 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+  // 只缓存本站资源：GitHub API 的响应必须每次实时拿（缓存会导致 sha 过期、提交冲突）
+  if (new URL(event.request.url).origin !== self.location.origin) return;
   event.respondWith(
     caches.match(event.request).then((cached) => {
       const fetchPromise = fetch(event.request)

@@ -44,6 +44,8 @@
         <button id="notes-import">导入</button>
         <input type="file" id="notes-import-file" accept="application/json,.json" hidden />
       </div>
+      <button class="side-sync" id="notes-sync">☁ 同步到 GitHub</button>
+      <div class="side-sync-status" id="sync-status"></div>
     </div>
   </aside>
 
@@ -54,6 +56,49 @@
 
 <button class="to-top" id="to-top" aria-label="回到顶部">↑</button>
 
+<div class="modal-backdrop" id="sync-modal" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="sync-title">
+    <h2 id="sync-title">同步笔记到 GitHub</h2>
+    <p class="modal-lead">把大白话笔记提交到仓库的 <code>assets/data/notes.js</code>，这样换设备打开也能看到。</p>
+
+    <label class="field">
+      <span>GitHub 用户名</span>
+      <input type="text" id="gh-owner" autocomplete="off" spellcheck="false" />
+    </label>
+    <label class="field">
+      <span>仓库名</span>
+      <input type="text" id="gh-repo" autocomplete="off" spellcheck="false" />
+    </label>
+    <label class="field">
+      <span>分支</span>
+      <input type="text" id="gh-branch" autocomplete="off" spellcheck="false" />
+    </label>
+    <label class="field">
+      <span>访问令牌 <em id="gh-token-state"></em></span>
+      <input type="password" id="gh-token" autocomplete="off" spellcheck="false" placeholder="github_pat_..." />
+    </label>
+
+    <details class="modal-help">
+      <summary>怎么生成令牌？（点开看步骤）</summary>
+      <ol>
+        <li>打开 <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Fine-grained tokens 新建页</a></li>
+        <li><b>Repository access</b> 选 <b>Only select repositories</b>，只勾选这一个仓库</li>
+        <li><b>Permissions → Repository permissions → Contents</b> 设为 <b>Read and write</b></li>
+        <li>设一个过期时间（比如 90 天），生成后把 <code>github_pat_</code> 开头的字符串粘到上面</li>
+      </ol>
+      <p class="modal-warn">令牌只保存在这台设备的浏览器里，不会进入仓库。公用电脑上请用完点「清除令牌」。</p>
+    </details>
+
+    <div class="modal-actions">
+      <button class="btn-primary" id="gh-push">提交到 GitHub</button>
+      <button class="btn-plain" id="gh-pull">从 GitHub 拉取</button>
+      <button class="btn-plain btn-danger" id="gh-forget">清除令牌</button>
+      <button class="btn-plain" id="gh-close">关闭</button>
+    </div>
+    <div class="modal-msg" id="gh-msg"></div>
+  </div>
+</div>
+
 <script src="assets/vendor/katex/katex.min.js"></script>
 <script src="assets/vendor/katex/auto-render.min.js"></script>
 <script src="assets/js/data-loader.js"></script>
@@ -63,6 +108,7 @@
 <script src="assets/js/katex-init.js"></script>
 <script src="assets/js/storage.js"></script>
 <script src="assets/data/notes.js"></script>
+<script src="assets/js/github-sync.js"></script>
 <script src="assets/js/app.js"></script>
 <script>
 if ('serviceWorker' in navigator) {
