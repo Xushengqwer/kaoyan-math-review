@@ -588,6 +588,20 @@ mark { background: #ffe58a; color: inherit; border-radius: 3px; padding: 0 2px; 
   resize: vertical; outline: none;
 }
 .mynote-input:focus { border-color: var(--accent); }
+
+.mynote-preview-btn {
+  margin-left: auto; padding: 4px 12px; border-radius: 999px;
+  font-size: 11.5px; color: var(--text-3); background: var(--bg);
+  transition: background .15s, color .15s;
+}
+.mynote-preview-btn:hover { background: var(--accent-soft); color: var(--accent); }
+.mynote-preview {
+  min-height: 120px; padding: 12px 14px;
+  border: 1px dashed var(--border); border-radius: var(--r-sm);
+  background: var(--bg);
+  font-size: 14px; line-height: 1.9; color: var(--text);
+  white-space: pre-wrap; word-break: break-word;
+}
 .mynote-actions { display: flex; gap: 8px; margin-top: 10px; }
 .mynote-actions button {
   padding: 7px 16px; border-radius: 999px; font-size: 12.5px; font-weight: 500;

@@ -597,8 +597,12 @@ const App = {
   editorHtml(itemId) {
     const text = Notes.get(itemId);
     return `<div class="mynote mynote-editing">
-      <div class="mynote-head"><span class="mynote-label">大白话</span></div>
-      <textarea class="mynote-input" rows="9" placeholder="用你自己的话写一遍，比如：&#10;&#10;对象：…&#10;规则：…&#10;意义：…">${escapeHtml(text)}</textarea>
+      <div class="mynote-head">
+        <span class="mynote-label">大白话</span>
+        <button class="mynote-preview-btn" data-action="preview">预览公式</button>
+      </div>
+      <textarea class="mynote-input" rows="9" placeholder="用你自己的话写一遍，比如：&#10;&#10;对象：…&#10;规则：…&#10;意义：…&#10;&#10;公式用 $ 包起来会渲染，例如 $A\\vec{v}=\\lambda\\vec{v}$">${escapeHtml(text)}</textarea>
+      <div class="mynote-preview" hidden></div>
       <div class="mynote-actions">
         <button class="mynote-save" data-action="save">保存</button>
         <button class="mynote-cancel" data-action="cancel">取消</button>
@@ -624,6 +628,18 @@ const App = {
           const ta = slot.querySelector(".mynote-input");
           ta.focus();
           ta.setSelectionRange(ta.value.length, ta.value.length);
+        } else if (action === "preview") {
+          // 只是换个显示方式，不动 textarea 里的任何字符
+          const ta = slot.querySelector(".mynote-input");
+          const pv = slot.querySelector(".mynote-preview");
+          const toPreview = ta.hidden === false;
+          ta.hidden = toPreview;
+          pv.hidden = !toPreview;
+          btn.textContent = toPreview ? "回到编辑" : "预览公式";
+          if (toPreview) {
+            pv.innerHTML = ta.value.trim() ? escapeHtml(ta.value) : "还没写内容";
+            renderMath(pv);
+          }
         } else if (action === "save") {
           const val = slot.querySelector(".mynote-input").value;
           const had = Notes.has(id);
