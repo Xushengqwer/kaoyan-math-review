@@ -286,6 +286,8 @@ const App = {
       el.innerHTML = this.chapterViewHtml(r.subjectId, r.chapterId);
       this.bindChapterControls(r.subjectId, r.chapterId);
       this.bindNoteEditors(el); // 章末总结的编辑器（知识点的已在上面绑好）
+      const pdfBtn = document.getElementById("chapter-pdf");
+      if (pdfBtn) pdfBtn.addEventListener("click", () => this.printChapter(r.subjectId, r.chapterId));
     } else if (r.type === "subject") {
       el.innerHTML = this.subjectViewHtml(r.subjectId);
     } else {
@@ -496,8 +498,43 @@ const App = {
 
       <div id="chapter-item-groups"></div>
       ${this.chapterSummaryHtml(subjectId, chapterId)}
+      ${this.exportBarHtml()}
       ${this.pagerHtml(subjectId, chapterId)}
     `;
+  },
+
+  // 导出本章 PDF：走浏览器自带的打印，目标选「另存为 PDF」。
+  // 不引第三方库——公式是矢量的、中文不会乱码，也不依赖任何外部资源。
+  exportBarHtml() {
+    return `
+      <div class="export-bar">
+        <button class="export-btn" id="chapter-pdf">导出本章 PDF</button>
+        <span class="export-hint">会打开系统打印窗口，把「目标 / 打印机」选成<strong>另存为 PDF</strong>即可；手机上从分享菜单里选「打印」。</span>
+      </div>`;
+  },
+
+  // 打印前把页面整理成完整的一章：清掉筛选、展开目录、收起正在编辑的笔记
+  printChapter(subjectId, chapterId) {
+    const needsReset = this.chapterQuery || (this.chapterTypeFilter && this.chapterTypeFilter !== "all");
+    if (needsReset) {
+      this.chapterQuery = "";
+      this.chapterTypeFilter = "all";
+      const si = document.getElementById("chapter-search");
+      if (si) si.value = "";
+      document.querySelectorAll("#chapter-type-filter .chip").forEach((c) => {
+        c.classList.toggle("active", c.dataset.type === "all");
+      });
+      this.renderChapterGroups(subjectId, chapterId);
+    }
+    // 编辑中的笔记先还原成展示态，否则打印出来是个文本框
+    document.querySelectorAll(".mynote-slot").forEach((slot) => {
+      if (slot.querySelector(".mynote-editing")) {
+        slot.innerHTML = this.myNoteHtml(slot.dataset.note);
+        renderMath(slot);
+      }
+    });
+    document.querySelectorAll("details.toc").forEach((d) => { d.open = true; });
+    setTimeout(() => window.print(), 60);
   },
 
   // 章末的「本章大白话总结」：整章读完之后自己串一遍
