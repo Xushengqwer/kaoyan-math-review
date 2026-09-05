@@ -636,6 +636,13 @@ mark { background: #ffe58a; color: inherit; border-radius: 3px; padding: 0 2px; 
   font-size: 14px; line-height: 1.9; color: var(--text);
   white-space: pre-wrap; word-break: break-word;
 }
+/* **两个星号** 之间的内容显示为加粗（只在显示时转换，原文不动） */
+.mynote-body strong, .mynote-preview strong { font-weight: 700; color: var(--text); }
+/* $$...$$ 的整行大公式：太宽时自己横向滚动，不要把页面撑开 */
+.mynote-body .katex-display, .mynote-preview .katex-display {
+  overflow-x: auto; overflow-y: hidden;
+  margin: 10px 0; padding-bottom: 4px;
+}
 
 /* 编辑器 */
 .mynote-editing { background: var(--surface); box-shadow: var(--lift); border-left-color: var(--accent); }

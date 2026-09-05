@@ -744,6 +744,18 @@ const App = {
       </article>`;
   },
 
+  // 笔记正文的显示：转义之后把 **加粗** 变成 <strong>。
+  // 和 $ 公式一样，只发生在「显示的那一刻」——存储和导出的原文一个字不动。
+  // $...$ / $$...$$ 里的内容整段跳过，免得动到公式里的星号。
+  noteBodyHtml(text) {
+    const BOLD = new RegExp("\\*\\*([^*\\n]+?)\\*\\*", "g");
+    const MATH = new RegExp("(\\$\\$[\\s\\S]*?\\$\\$|\\$[^$\\n]*\\$)");
+    return escapeHtml(text)
+      .split(MATH)
+      .map((part, i) => (i % 2 ? part : part.replace(BOLD, "<strong>$1</strong>")))
+      .join("");
+  },
+
   // 仓库里有没有这条笔记
   hasSeed(noteId) {
     return !!(window.__KAOYAN_SEED_NOTES__[noteId] || "").trim();
@@ -778,7 +790,7 @@ const App = {
         }
         <button class="mynote-edit" data-action="edit">编辑</button>
       </div>
-      <div class="mynote-body">${escapeHtml(text)}</div>
+      <div class="mynote-body">${this.noteBodyHtml(text)}</div>
     </div>`;
   },
 
@@ -840,7 +852,7 @@ const App = {
           pv.hidden = !toPreview;
           btn.textContent = toPreview ? "回到编辑" : "预览公式";
           if (toPreview) {
-            pv.innerHTML = ta.value.trim() ? escapeHtml(ta.value) : "还没写内容";
+            pv.innerHTML = ta.value.trim() ? this.noteBodyHtml(ta.value) : "还没写内容";
             renderMath(pv);
           }
         } else if (action === "save") {
