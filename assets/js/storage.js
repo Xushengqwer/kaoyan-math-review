@@ -31,23 +31,39 @@ const Notes = {
     }
   },
 
-  // 本地写的优先于仓库内置的
+  // 比较「本地版和仓库版是不是同一份内容」时用的归一化。
+  // 笔记进仓库时唯一做过的改动就是给公式补上 $ 定界符（正文逐字未动），
+  // 所以比较时忽略 $，否则已经提交过的笔记会被误报成「还没进仓库」。
+  _norm(s) {
+    return String(s || "").replace(/\r\n/g, "\n").split("$").join("").trim();
+  },
+
+  // 本地写的优先于仓库内置的；两边其实是同一份内容时用仓库版（公式能正常渲染）
   get(itemId) {
     const local = this._local();
-    if (Object.prototype.hasOwnProperty.call(local, itemId)) return local[itemId];
-    return window.__KAOYAN_SEED_NOTES__[itemId] || "";
+    const seed = window.__KAOYAN_SEED_NOTES__[itemId] || "";
+    if (!Object.prototype.hasOwnProperty.call(local, itemId)) return seed;
+    const mine = local[itemId] || "";
+    if (seed && this._norm(mine) === this._norm(seed)) return seed;
+    return mine;
   },
 
   has(itemId) {
     return !!this.get(itemId).trim();
   },
 
-  // 这条笔记是不是仓库自带的（本地没改过）
-  isSeed(itemId) {
-    return (
-      !Object.prototype.hasOwnProperty.call(this._local(), itemId) &&
-      !!window.__KAOYAN_SEED_NOTES__[itemId]
-    );
+  // 「还没进仓库」：只存在这台设备的浏览器里，或者本地改过、和仓库版本不一样。
+  // 清缓存 / 换设备 / iOS Safari 七天不访问 都可能让这类笔记消失，所以要显式标出来。
+  isPending(itemId) {
+    const local = this._local();
+    if (!Object.prototype.hasOwnProperty.call(local, itemId)) return false;
+    const mine = (local[itemId] || "").trim();
+    if (!mine) return false;
+    return this._norm(mine) !== this._norm(window.__KAOYAN_SEED_NOTES__[itemId]);
+  },
+
+  pendingIds() {
+    return Object.keys(this._local()).filter((k) => this.isPending(k));
   },
 
   set(itemId, text) {

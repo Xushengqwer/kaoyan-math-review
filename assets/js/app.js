@@ -72,7 +72,9 @@ const App = {
     const exportBtn = document.getElementById("notes-export");
     const importBtn = document.getElementById("notes-import");
     const importFile = document.getElementById("notes-import-file");
+    const pendingBtn = document.getElementById("notes-pending-export");
     if (exportBtn) exportBtn.addEventListener("click", () => this.exportNotes());
+    if (pendingBtn) pendingBtn.addEventListener("click", () => this.exportPending());
     if (importBtn) importBtn.addEventListener("click", () => importFile.click());
     if (importFile) {
       importFile.addEventListener("change", (e) => {
@@ -114,6 +116,43 @@ const App = {
   refreshNoteCount() {
     const el = document.getElementById("notes-count");
     if (el) el.textContent = Notes.count();
+
+    // 「还没进仓库」提醒
+    const box = document.getElementById("side-pending");
+    if (!box) return;
+    const n = Notes.pendingIds().length;
+    box.hidden = n === 0;
+    const num = document.getElementById("side-pending-n");
+    if (num) num.textContent = n;
+  },
+
+  // 把所有「还没进仓库」的笔记打包成一个 .txt：每条都带完整出处和 id，
+  // 用分隔线隔开，直接把这个文件交出去就能原样提交进仓库。
+  exportPending() {
+    const ids = Notes.pendingIds();
+    if (ids.length === 0) { alert("所有笔记都已经在仓库里了。"); return; }
+    const date = new Date().toISOString().slice(0, 10);
+    const parts = [
+      "待提交的大白话笔记 · " + date + " · 共 " + ids.length + " 条",
+      "（下面每一段是一条笔记，正文与网页里输入的内容逐字相同）",
+      "",
+    ];
+    ids.forEach((id, i) => {
+      parts.push("========================================================");
+      parts.push("【第 " + (i + 1) + " / " + ids.length + " 条】");
+      parts.push("");
+      parts.push(this.buildNoteText(id).replace(/\s+$/, ""));
+      parts.push("");
+    });
+    const blob = new Blob([parts.join("\n")], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "待提交笔记-" + date + ".txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   },
 
   exportNotes() {
@@ -246,6 +285,7 @@ const App = {
     if (r.type === "chapter") {
       el.innerHTML = this.chapterViewHtml(r.subjectId, r.chapterId);
       this.bindChapterControls(r.subjectId, r.chapterId);
+      this.bindNoteEditors(el); // 章末总结的编辑器（知识点的已在上面绑好）
     } else if (r.type === "subject") {
       el.innerHTML = this.subjectViewHtml(r.subjectId);
     } else {
@@ -271,6 +311,14 @@ const App = {
         const score = it.title.toLowerCase().includes(q) ? 0 : (note.toLowerCase().includes(q) ? 1 : 2);
         hits.push({ item: it, subject: s, chapter, score });
       });
+      // 章末的本章总结也一起搜
+      KaoyanData.chapters(s.id).forEach((c) => {
+        const nid = this.chapterNoteId(s.id, c.id);
+        const note = Notes.get(nid);
+        if (!note) return;
+        if (!(c.name + " 本章总结 " + note).toLowerCase().includes(q)) return;
+        hits.push({ summary: true, noteId: nid, subject: s, chapter: c, score: 1 });
+      });
     });
     hits.sort((a, b) => a.score - b.score);
 
@@ -281,16 +329,31 @@ const App = {
         <div class="empty-state">换个关键词试试，比如「施密特」「中值定理」「置信区间」</div>`;
     }
 
-    const rows = hits.slice(0, 60).map(({ item, subject, chapter }) => `
-      <a class="result" href="#${subject.id}/${chapter.id}" data-item="${item.id}">
+    const rows = hits.slice(0, 60).map((h) => {
+      const where = `${escapeHtml(h.subject.name)} · ${h.chapter.order}. ${escapeHtml(h.chapter.name)}`;
+      if (h.summary) {
+        return `
+      <a class="result" href="#${h.subject.id}/${h.chapter.id}" data-item="${h.noteId}">
+        <span class="result-type summary">总结</span>
+        <span class="result-body">
+          <span class="result-title">${this.mark("本章总结：" + h.chapter.name, query)}</span>
+          <span class="result-where">${where}</span>
+          <span class="result-snippet">${this.textSnippet(Notes.get(h.noteId), query)}</span>
+        </span>
+      </a>`;
+      }
+      const item = h.item;
+      return `
+      <a class="result" href="#${h.subject.id}/${h.chapter.id}" data-item="${item.id}">
         <span class="result-type ${item.type}">${TYPE_LABEL[item.type]}</span>
         <span class="result-body">
           <span class="result-title">${this.mark(item.title, query)}</span>
-          <span class="result-where">${escapeHtml(subject.name)} · ${chapter.order}. ${escapeHtml(chapter.name)}</span>
+          <span class="result-where">${where}</span>
           <span class="result-snippet">${this.snippet(item, query)}</span>
           ${Notes.has(item.id) ? `<span class="result-hasnote">有大白话笔记</span>` : ""}
         </span>
-      </a>`).join("");
+      </a>`;
+    }).join("");
 
     return `
       <h1 class="page-title">搜索「${escapeHtml(query)}」</h1>
@@ -300,7 +363,11 @@ const App = {
 
   // 取一段包含关键词的纯文本摘要（去掉 HTML 和公式，避免搜索结果里塞满 LaTeX）
   snippet(item, query) {
-    const plain = (item.statement + " " + item.explanation)
+    return this.textSnippet(item.statement + " " + item.explanation, query);
+  },
+
+  textSnippet(raw, query) {
+    const plain = String(raw || "")
       .replace(/<[^>]+>/g, "")
       .replace(/\$\$?[^$]*\$\$?/g, " ▫ ")
       .replace(/\s+/g, " ")
@@ -428,8 +495,24 @@ const App = {
       </div>
 
       <div id="chapter-item-groups"></div>
+      ${this.chapterSummaryHtml(subjectId, chapterId)}
       ${this.pagerHtml(subjectId, chapterId)}
     `;
+  },
+
+  // 章末的「本章大白话总结」：整章读完之后自己串一遍
+  // 放在筛选容器外面，所以搜索/类型筛选不会把它藏起来
+  chapterSummaryHtml(subjectId, chapterId) {
+    const noteId = this.chapterNoteId(subjectId, chapterId);
+    const c = KaoyanData.chapter(subjectId, chapterId);
+    return `
+      <section class="chapter-summary" id="item-${noteId}">
+        <header class="chapter-summary-head">
+          <h3>本章大白话总结</h3>
+          <span class="chapter-summary-sub">第${c.order}章 ${escapeHtml(c.name)} · 用自己的话把整章串一遍</span>
+        </header>
+        <div class="mynote-slot" data-note="${noteId}">${this.myNoteHtml(noteId)}</div>
+      </section>`;
   },
 
   pagerHtml(subjectId, chapterId) {
@@ -493,7 +576,7 @@ const App = {
       items: filtered.filter((it) => it.type === type),
     })).filter((g) => g.items.length);
 
-    let html = this.tocHtml(groups);
+    let html = this.tocHtml(groups, subjectId, chapterId);
     groups.forEach(({ type, items: groupItems }) => {
       html += `
         <section class="type-group ${type}">
@@ -512,7 +595,7 @@ const App = {
   },
 
   // 章节开头的目录：按类型分栏，点条目滚到对应位置
-  tocHtml(groups) {
+  tocHtml(groups, subjectId, chapterId) {
     const total = groups.reduce((n, g) => n + g.items.length, 0);
     if (!total) return "";
     const cols = groups
@@ -531,7 +614,11 @@ const App = {
                   <a href="#item-${it.id}" data-goto="${it.id}">
                     <span class="toc-no">${String(i + 1).padStart(2, "0")}</span>
                     <span class="toc-title">${escapeHtml(it.title)}</span>
-                    ${Notes.has(it.id) ? `<span class="toc-noted" title="已写大白话">●</span>` : ""}
+                    ${
+                      Notes.has(it.id)
+                        ? `<span class="toc-noted ${Notes.isPending(it.id) ? "pending" : ""}" title="${Notes.isPending(it.id) ? "已写大白话，但还没进仓库" : "已写大白话"}">●</span>`
+                        : ""
+                    }
                   </a>
                 </li>`
               )
@@ -540,11 +627,46 @@ const App = {
         </div>`
       )
       .join("");
+    const chNote = this.chapterNoteId(subjectId, chapterId);
+    const foot = `
+      <a class="toc-foot" href="#item-${chNote}" data-goto="${chNote}">
+        <span class="toc-foot-name">本章大白话总结</span>
+        <span class="toc-foot-state${Notes.has(chNote) ? " done" : ""}">${
+          Notes.has(chNote) ? (Notes.isPending(chNote) ? "已写 · 未进仓库" : "已写") : "还没写"
+        }</span>
+      </a>`;
+
     return `
       <details class="toc" open>
         <summary class="toc-summary">本章目录<span class="toc-total">${total} 条</span></summary>
         <div class="toc-cols">${cols}</div>
+        ${foot}
       </details>`;
+  },
+
+  // 存完之后只更新目录里那一行的标记，不整块重渲染（避免页面跳动）
+  refreshTocState(noteId) {
+    const link = document.querySelector('.toc a[data-goto="' + noteId.replace(/"/g, '\\"') + '"]');
+    if (!link) return;
+    const has = Notes.has(noteId);
+    const pending = Notes.isPending(noteId);
+
+    const foot = link.querySelector(".toc-foot-state");
+    if (foot) {
+      foot.textContent = has ? (pending ? "已写 · 未进仓库" : "已写") : "还没写";
+      foot.classList.toggle("done", has);
+      return;
+    }
+    let dot = link.querySelector(".toc-noted");
+    if (!has) { if (dot) dot.remove(); return; }
+    if (!dot) {
+      dot = document.createElement("span");
+      dot.className = "toc-noted";
+      dot.textContent = "●";
+      link.appendChild(dot);
+    }
+    dot.classList.toggle("pending", pending);
+    dot.title = pending ? "已写大白话，但还没进仓库" : "已写大白话";
   },
 
   bindToc(scope) {
@@ -579,29 +701,43 @@ const App = {
       </article>`;
   },
 
+  // 一眼看出这条笔记是不是已经跟着仓库走了
+  noteFlagHtml(noteId) {
+    if (Notes.isPending(noteId)) {
+      return `<span class="mynote-flag pending" title="只存在这台设备的浏览器里。清缓存、换设备、iOS Safari 七天没打开都可能丢失。下载 .txt 交给我提交进仓库才算安全。">未进仓库</span>`;
+    }
+    return `<span class="mynote-flag saved" title="已经写进仓库文件，有 Git 历史，换任何设备打开都能看到">已进仓库</span>`;
+  },
+
   // 「大白话」区块：有内容就展示，没有就显示一个添加按钮
-  myNoteHtml(itemId) {
-    const text = Notes.get(itemId);
+  myNoteHtml(noteId) {
+    const text = Notes.get(noteId);
+    const isCh = noteId.indexOf("ch:") === 0;
     if (!text) {
-      return `<button class="mynote-add" data-action="edit">＋ 用大白话写一遍</button>`;
+      return `<button class="mynote-add" data-action="edit">＋ ${isCh ? "写一段本章总结" : "用大白话写一遍"}</button>`;
     }
     return `<div class="mynote">
       <div class="mynote-head">
-        <span class="mynote-label">大白话${Notes.isSeed(itemId) ? "（仓库内置）" : ""}</span>
+        <span class="mynote-label">${isCh ? "本章总结" : "大白话"}</span>
+        ${this.noteFlagHtml(noteId)}
         <button class="mynote-edit" data-action="edit">编辑</button>
       </div>
       <div class="mynote-body">${escapeHtml(text)}</div>
     </div>`;
   },
 
-  editorHtml(itemId) {
-    const text = Notes.get(itemId);
+  editorHtml(noteId) {
+    const text = Notes.get(noteId);
+    const isCh = noteId.indexOf("ch:") === 0;
+    const placeholder = isCh
+      ? "把整章串成一条线，比如：&#10;&#10;这一章在讲什么：…&#10;几个概念怎么串起来：…&#10;考试会怎么考：…&#10;我最容易错的地方：…&#10;&#10;公式用 $ 包起来会渲染，例如 $A\\vec{v}=\\lambda\\vec{v}$"
+      : "用你自己的话写一遍，比如：&#10;&#10;对象：…&#10;规则：…&#10;意义：…&#10;&#10;公式用 $ 包起来会渲染，例如 $A\\vec{v}=\\lambda\\vec{v}$";
     return `<div class="mynote mynote-editing">
       <div class="mynote-head">
-        <span class="mynote-label">大白话</span>
+        <span class="mynote-label">${isCh ? "本章总结" : "大白话"}</span>
         <button class="mynote-preview-btn" data-action="preview">预览公式</button>
       </div>
-      <textarea class="mynote-input" rows="9" placeholder="用你自己的话写一遍，比如：&#10;&#10;对象：…&#10;规则：…&#10;意义：…&#10;&#10;公式用 $ 包起来会渲染，例如 $A\\vec{v}=\\lambda\\vec{v}$">${escapeHtml(text)}</textarea>
+      <textarea class="mynote-input" rows="${isCh ? 14 : 9}" placeholder="${placeholder}">${escapeHtml(text)}</textarea>
       <div class="mynote-preview" hidden></div>
       <div class="mynote-actions">
         <button class="mynote-save" data-action="save">保存</button>
@@ -649,6 +785,7 @@ const App = {
           }
           show(this.myNoteHtml(id));
           this.refreshNoteCount();
+          this.refreshTocState(id);
           if (val.trim()) this.askDownload(id);
         } else if (action === "cancel") {
           show(this.myNoteHtml(id));
@@ -656,48 +793,73 @@ const App = {
           Notes.set(id, "");
           show(this.myNoteHtml(id));
           this.refreshNoteCount();
+          this.refreshTocState(id);
         }
       });
     });
   },
 
-  // 定位一条知识点：属于哪个学科、第几章、在本章同类里排第几
-  locate(itemId) {
+  // 章节总结用的笔记 id，和知识点 id 区分开
+  chapterNoteId(subjectId, chapterId) {
+    return "ch:" + subjectId + "/" + chapterId;
+  },
+
+  // 定位一条笔记：属于哪个学科、第几章；知识点还要给出在本章同类里排第几
+  locate(noteId) {
+    if (noteId.indexOf("ch:") === 0) {
+      const [subjectId, chapterId] = noteId.slice(3).split("/");
+      const s = KaoyanData.subject(subjectId);
+      const c = s && KaoyanData.chapter(subjectId, chapterId);
+      if (!c) return null;
+      return {
+        subject: s, chapter: c, item: null, isChapter: true,
+        typeLabel: "本章总结", index: 0, title: c.name,
+      };
+    }
     for (const s of this.subjects) {
-      const it = KaoyanData.items(s.id).find((x) => x.id === itemId);
+      const it = KaoyanData.items(s.id).find((x) => x.id === noteId);
       if (!it) continue;
       const c = KaoyanData.chapter(s.id, it.chapterId);
       const sameType = KaoyanData.itemsByChapter(s.id, it.chapterId).filter((x) => x.type === it.type);
-      const idx = sameType.findIndex((x) => x.id === itemId) + 1;
-      return { subject: s, chapter: c, item: it, typeLabel: TYPE_LABEL[it.type], index: idx };
+      const idx = sameType.findIndex((x) => x.id === noteId) + 1;
+      return {
+        subject: s, chapter: c, item: it, isChapter: false,
+        typeLabel: TYPE_LABEL[it.type], index: idx, title: it.title,
+      };
     }
     return null;
   },
 
+  // 一条笔记在章内的位置标签：定义05 / 本章总结
+  noteSlotLabel(p) {
+    return p.isChapter ? "本章总结" : p.typeLabel + String(p.index).padStart(2, "0");
+  },
+
   // 文件名：线性代数-第3章-定义05-向量空间、基、维数的定义.txt
-  noteFileName(itemId) {
-    const p = this.locate(itemId);
+  //         线性代数-第5章-本章总结-特征值与特征向量.txt
+  noteFileName(noteId) {
+    const p = this.locate(noteId);
     if (!p) return "大白话笔记.txt";
     const raw = [
       p.subject.name.replace(/（.*?）/g, ""),
       "第" + p.chapter.order + "章",
-      p.typeLabel + String(p.index).padStart(2, "0"),
-      p.item.title,
+      this.noteSlotLabel(p),
+      p.title,
     ].join("-");
     // 去掉文件名里不能用的字符
     return raw.replace(/[\\/:*?"<>|]/g, "_") + ".txt";
   },
 
   // 文件内容：头部写清出处和 id，正文是原样纯文本
-  buildNoteText(itemId) {
-    const p = this.locate(itemId);
-    const body = Notes.get(itemId).trim();
+  buildNoteText(noteId) {
+    const p = this.locate(noteId);
+    const body = Notes.get(noteId).trim();
     if (!p) return body;
     return [
       p.subject.name + " / 第" + p.chapter.order + "章 " + p.chapter.name +
-        " / " + p.typeLabel + " " + String(p.index).padStart(2, "0"),
-      p.item.title,
-      "id: " + itemId,
+        " / " + (p.isChapter ? "本章总结" : p.typeLabel + " " + String(p.index).padStart(2, "0")),
+      p.title,
+      "id: " + noteId,
       "",
       "----------------------------------------",
       "",
@@ -713,7 +875,8 @@ const App = {
     this._pendingDownloadId = itemId;
     const p = this.locate(itemId);
     document.getElementById("save-modal-where").textContent = p
-      ? p.subject.name + " · 第" + p.chapter.order + "章 · " + p.typeLabel + " " + String(p.index).padStart(2, "0")
+      ? p.subject.name + " · 第" + p.chapter.order + "章 · " +
+        (p.isChapter ? "本章总结" : p.typeLabel + " " + String(p.index).padStart(2, "0"))
       : "";
     document.getElementById("save-modal-file").textContent = this.noteFileName(itemId);
     modal.hidden = false;
