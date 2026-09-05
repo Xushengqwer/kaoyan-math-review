@@ -176,8 +176,8 @@ registerSubject({
       chapterId: "random-variable",
       type: "definition",
       title: "随机变量与分布函数",
-      statement: "设随机试验的样本空间为 $\\Omega$，若对每一个样本点 $\\omega\\in\\Omega$，都有唯一实数 $X(\\omega)$ 与之对应，则称 $X=X(\\omega)$ 为<strong>随机变量</strong>。设 $X$ 是一个随机变量，称函数 $F(x)=P\\{X\\leqslant x\\},\\ -\\infty<x<+\\infty$ 为 $X$ 的<strong>分布函数</strong>。",
-      explanation: "分布函数完整刻画了随机变量取值的概率规律，$P\\{a<X\\leqslant b\\}=F(b)-F(a)$。分布函数具有<strong>单调不减</strong>、<strong>右连续</strong>、$F(-\\infty)=0$、$F(+\\infty)=1$ 四条基本性质，<u>这四条是判定一个函数能否作为分布函数的充要条件</u>。",
+      statement: "设随机试验的样本空间为 $\\Omega$，若对每一个样本点 $\\omega\\in\\Omega$，都有唯一实数 $X(\\omega)$ 与之对应，则称 $X=X(\\omega)$ 为<strong>随机变量</strong>。设 $X$ 是一个随机变量，称函数 $F(x)=P\\{X\\leqslant x\\},\\ -\\infty&lt;x&lt;+\\infty$ 为 $X$ 的<strong>分布函数</strong>。",
+      explanation: "分布函数完整刻画了随机变量取值的概率规律，$P\\{a&lt;X\\leqslant b\\}=F(b)-F(a)$。分布函数具有<strong>单调不减</strong>、<strong>右连续</strong>、$F(-\\infty)=0$、$F(+\\infty)=1$ 四条基本性质，<u>这四条是判定一个函数能否作为分布函数的充要条件</u>。",
       tags: ["随机变量", "分布函数"]
     },
     {
@@ -185,7 +185,7 @@ registerSubject({
       chapterId: "random-variable",
       type: "property",
       title: "分布函数的基本性质",
-      statement: "<ul><li><strong>单调不减：</strong>$x_1<x_2\\Rightarrow F(x_1)\\leqslant F(x_2)$。</li><li><strong>有界性：</strong>$0\\leqslant F(x)\\leqslant 1$，且 $F(-\\infty)=\\lim\\limits_{x\\to-\\infty}F(x)=0$，$F(+\\infty)=\\lim\\limits_{x\\to+\\infty}F(x)=1$。</li><li><strong>右连续：</strong>$F(x+0)=F(x)$。</li></ul>",
+      statement: "<ul><li><strong>单调不减：</strong>$x_1&lt;x_2\\Rightarrow F(x_1)\\leqslant F(x_2)$。</li><li><strong>有界性：</strong>$0\\leqslant F(x)\\leqslant 1$，且 $F(-\\infty)=\\lim\\limits_{x\\to-\\infty}F(x)=0$，$F(+\\infty)=\\lim\\limits_{x\\to+\\infty}F(x)=1$。</li><li><strong>右连续：</strong>$F(x+0)=F(x)$。</li></ul>",
       explanation: "<u>反之，任何满足这三条性质的函数都可以作为某个随机变量的分布函数</u>（这是判定题的常考点）。离散型随机变量的分布函数是阶梯形右连续函数，连续型是连续函数。",
       tags: ["分布函数", "性质", "判定"]
     },
@@ -203,7 +203,7 @@ registerSubject({
       chapterId: "random-variable",
       type: "definition",
       title: "0-1分布",
-      statement: "若随机变量 $X$ 只取 $0$ 和 $1$ 两个值，其分布律为 $P\\{X=k\\}=p^k(1-p)^{1-k},\\ k=0,1\\ (0<p<1)$，则称 $X$ 服从参数为 $p$ 的<strong>0-1 分布（两点分布）</strong>，记作 $X\\sim B(1,p)$。",
+      statement: "若随机变量 $X$ 只取 $0$ 和 $1$ 两个值，其分布律为 $P\\{X=k\\}=p^k(1-p)^{1-k},\\ k=0,1\\ (0&lt;p&lt;1)$，则称 $X$ 服从参数为 $p$ 的<strong>0-1 分布（两点分布）</strong>，记作 $X\\sim B(1,p)$。",
       explanation: "0-1 分布是描述\"只有两种结果\"的伯努利试验的最基本模型，是二项分布 <strong>$n=1$ 时的特例</strong>。",
       tags: ["0-1分布", "两点分布"]
     },
@@ -212,7 +212,7 @@ registerSubject({
       chapterId: "random-variable",
       type: "definition",
       title: "二项分布",
-      statement: "若随机变量 $X$ 的分布律为 $P\\{X=k\\}=\\dbinom{n}{k}p^k(1-p)^{n-k},\\ k=0,1,\\cdots,n\\ (0<p<1)$，则称 $X$ 服从参数为 $n,p$ 的<strong>二项分布</strong>，记作 $X\\sim B(n,p)$。",
+      statement: "若随机变量 $X$ 的分布律为 $P\\{X=k\\}=\\dbinom{n}{k}p^k(1-p)^{n-k},\\ k=0,1,\\cdots,n\\ (0&lt;p&lt;1)$，则称 $X$ 服从参数为 $n,p$ 的<strong>二项分布</strong>，记作 $X\\sim B(n,p)$。",
       explanation: "二项分布是 $n$ 重伯努利试验中事件 $A$ 发生次数的分布，$E(X)=np$，$D(X)=np(1-p)$。<u>当 $n=1$ 时退化为 0-1 分布</u>。",
       tags: ["二项分布", "伯努利试验"]
     },
@@ -239,7 +239,7 @@ registerSubject({
       chapterId: "random-variable",
       type: "definition",
       title: "几何分布",
-      statement: "在伯努利试验中，事件 $A$ 发生的概率为 $p\\ (0<p<1)$，设 $X$ 为首次事件 $A$ 发生时所需的试验次数，则 $X$ 的分布律为 $P\\{X=k\\}=(1-p)^{k-1}p,\\ k=1,2,\\cdots$，称 $X$ 服从参数为 $p$ 的<strong>几何分布</strong>。",
+      statement: "在伯努利试验中，事件 $A$ 发生的概率为 $p\\ (0&lt;p&lt;1)$，设 $X$ 为首次事件 $A$ 发生时所需的试验次数，则 $X$ 的分布律为 $P\\{X=k\\}=(1-p)^{k-1}p,\\ k=1,2,\\cdots$，称 $X$ 服从参数为 $p$ 的<strong>几何分布</strong>。",
       explanation: "几何分布具有<strong>无记忆性</strong>：$P\\{X>m+n\\mid X>m\\}=P\\{X>n\\}$，<u>是离散型分布中唯一具有无记忆性的分布</u>，$E(X)=1/p$。",
       tags: ["几何分布", "无记忆性"]
     },
@@ -249,7 +249,7 @@ registerSubject({
       type: "definition",
       title: "连续型随机变量及其概率密度",
       statement: "设随机变量 $X$ 的分布函数为 $F(x)$，若存在非负可积函数 $f(x)$，使对任意实数 $x$ 有 $F(x)=\\displaystyle\\int_{-\\infty}^{x}f(t)\\,\\mathrm{d}t$，则称 $X$ 为<strong>连续型随机变量</strong>，$f(x)$ 称为 $X$ 的<strong>概率密度函数</strong>，满足 $f(x)\\geqslant 0$ 且 $\\displaystyle\\int_{-\\infty}^{+\\infty}f(x)\\,\\mathrm{d}x=1$。",
-      explanation: "<u>连续型随机变量取任一确定值的概率为零</u>：$P\\{X=a\\}=0$，因此 $P\\{a\\leqslant X\\leqslant b\\}=P\\{a<X<b\\}=P\\{a\\leqslant X<b\\}=P\\{a<X\\leqslant b\\}=\\displaystyle\\int_a^b f(x)\\,\\mathrm{d}x$，端点是否取等号不影响概率。",
+      explanation: "<u>连续型随机变量取任一确定值的概率为零</u>：$P\\{X=a\\}=0$，因此 $P\\{a\\leqslant X\\leqslant b\\}=P\\{a&lt;X&lt;b\\}=P\\{a\\leqslant X&lt;b\\}=P\\{a&lt;X\\leqslant b\\}=\\displaystyle\\int_a^b f(x)\\,\\mathrm{d}x$，端点是否取等号不影响概率。",
       tags: ["连续型", "概率密度", "定义"]
     },
     {
@@ -257,7 +257,7 @@ registerSubject({
       chapterId: "random-variable",
       type: "property",
       title: "概率密度的性质",
-      statement: "<ul><li><strong>非负性：</strong>$f(x)\\geqslant 0$。</li><li><strong>归一性：</strong>$\\displaystyle\\int_{-\\infty}^{+\\infty}f(x)\\,\\mathrm{d}x=1$。</li><li>在 $f(x)$ 的连续点处，$F'(x)=f(x)$。</li><li>对任意 $a\\leqslant b$，$P\\{a<X\\leqslant b\\}=F(b)-F(a)=\\displaystyle\\int_a^b f(x)\\,\\mathrm{d}x$。</li></ul>",
+      statement: "<ul><li><strong>非负性：</strong>$f(x)\\geqslant 0$。</li><li><strong>归一性：</strong>$\\displaystyle\\int_{-\\infty}^{+\\infty}f(x)\\,\\mathrm{d}x=1$。</li><li>在 $f(x)$ 的连续点处，$F'(x)=f(x)$。</li><li>对任意 $a\\leqslant b$，$P\\{a&lt;X\\leqslant b\\}=F(b)-F(a)=\\displaystyle\\int_a^b f(x)\\,\\mathrm{d}x$。</li></ul>",
       explanation: "判定一个函数能否作为概率密度，只需检验非负性和积分为 1 两条；<u>$f(x)$ 本身不是概率，可以大于 1，只有曲线下面积才代表概率</u>。",
       tags: ["概率密度", "性质", "判定"]
     },
@@ -266,7 +266,7 @@ registerSubject({
       chapterId: "random-variable",
       type: "definition",
       title: "均匀分布",
-      statement: "若随机变量 $X$ 的概率密度为 $f(x)=\\begin{cases}\\dfrac{1}{b-a}, & a<x<b,\\\\[4pt] 0, & \\text{其他},\\end{cases}$ 则称 $X$ 在区间 $(a,b)$ 上服从<strong>均匀分布</strong>，记作 $X\\sim U(a,b)$。",
+      statement: "若随机变量 $X$ 的概率密度为 $f(x)=\\begin{cases}\\dfrac{1}{b-a}, & a&lt;x&lt;b,\\\\[4pt] 0, & \\text{其他},\\end{cases}$ 则称 $X$ 在区间 $(a,b)$ 上服从<strong>均匀分布</strong>，记作 $X\\sim U(a,b)$。",
       explanation: "均匀分布描述<strong>\"等可能性\"</strong>，其分布函数在 $[a,b]$ 上是线性函数，$E(X)=\\dfrac{a+b}{2}$，$D(X)=\\dfrac{(b-a)^2}{12}$。",
       tags: ["均匀分布", "等可能"]
     },
@@ -284,7 +284,7 @@ registerSubject({
       chapterId: "random-variable",
       type: "definition",
       title: "正态分布",
-      statement: "若随机变量 $X$ 的概率密度为 $f(x)=\\dfrac{1}{\\sqrt{2\\pi}\\sigma}e^{-\\frac{(x-\\mu)^2}{2\\sigma^2}},\\ -\\infty<x<+\\infty$（$\\mu,\\sigma$ 为常数，$\\sigma>0$），则称 $X$ 服从参数为 $\\mu,\\sigma^2$ 的<strong>正态分布</strong>，记作 $X\\sim N(\\mu,\\sigma^2)$，此时 $E(X)=\\mu$，$D(X)=\\sigma^2$。",
+      statement: "若随机变量 $X$ 的概率密度为 $f(x)=\\dfrac{1}{\\sqrt{2\\pi}\\sigma}e^{-\\frac{(x-\\mu)^2}{2\\sigma^2}},\\ -\\infty&lt;x&lt;+\\infty$（$\\mu,\\sigma$ 为常数，$\\sigma>0$），则称 $X$ 服从参数为 $\\mu,\\sigma^2$ 的<strong>正态分布</strong>，记作 $X\\sim N(\\mu,\\sigma^2)$，此时 $E(X)=\\mu$，$D(X)=\\sigma^2$。",
       explanation: "密度曲线关于 $x=\\mu$ 对称，在 $x=\\mu$ 处取最大值，在 $x=\\mu\\pm\\sigma$ 处有拐点，是自然界和社会现象中最常见的分布，<u>中心极限定理保证了大量独立随机因素叠加近似服从正态分布</u>。",
       diagram: `<svg viewBox="0 0 320 170" xmlns="http://www.w3.org/2000/svg">
         <line x1="20" y1="150" x2="300" y2="150" stroke="currentColor" stroke-width="1.5"/>
@@ -323,7 +323,7 @@ registerSubject({
       type: "definition",
       title: "二维随机变量及联合分布函数",
       statement: "设 $X,Y$ 是定义在同一样本空间上的两个随机变量，称 $(X,Y)$ 为<strong>二维随机变量</strong>。对任意实数 $x,y$，称 $F(x,y)=P\\{X\\leqslant x, Y\\leqslant y\\}$ 为 $(X,Y)$ 的<strong>联合分布函数</strong>。",
-      explanation: "$F(x,y)$ 表示随机点 $(X,Y)$ 落在以 $(x,y)$ 为右上顶点的左下无穷矩形区域内的概率，$P\\{x_1<X\\leqslant x_2, y_1<Y\\leqslant y_2\\}=F(x_2,y_2)-F(x_1,y_2)-F(x_2,y_1)+F(x_1,y_1)$。",
+      explanation: "$F(x,y)$ 表示随机点 $(X,Y)$ 落在以 $(x,y)$ 为右上顶点的左下无穷矩形区域内的概率，$P\\{x_1&lt;X\\leqslant x_2, y_1&lt;Y\\leqslant y_2\\}=F(x_2,y_2)-F(x_1,y_2)-F(x_2,y_1)+F(x_1,y_1)$。",
       tags: ["联合分布函数", "二维随机变量"]
     },
     {
@@ -521,7 +521,7 @@ registerSubject({
       type: "definition",
       title: "协方差",
       statement: "设 $(X,Y)$ 是二维随机变量，称 $E\\{[X-E(X)][Y-E(Y)]\\}$ 为 $X$ 与 $Y$ 的<strong>协方差</strong>，记作 $\\mathrm{Cov}(X,Y)$。常用计算公式：$\\mathrm{Cov}(X,Y)=E(XY)-E(X)E(Y)$。",
-      explanation: "协方差衡量两个随机变量的线性相关程度及方向：$\\mathrm{Cov}(X,Y)>0$ 表明 $X,Y$ 有同向变化趋势，$<0$ 表明反向。若 $X,Y$ 独立，则 $\\mathrm{Cov}(X,Y)=0$，但<u>反之不一定成立</u>。",
+      explanation: "协方差衡量两个随机变量的线性相关程度及方向：$\\mathrm{Cov}(X,Y)>0$ 表明 $X,Y$ 有同向变化趋势，$&lt;0$ 表明反向。若 $X,Y$ 独立，则 $\\mathrm{Cov}(X,Y)=0$，但<u>反之不一定成立</u>。",
       tags: ["协方差", "计算公式"]
     },
     {
@@ -556,7 +556,7 @@ registerSubject({
       chapterId: "numerical-characteristics",
       type: "theorem",
       title: "多个随机变量线性组合的方差公式",
-      statement: "设 $X_1,X_2,\\cdots,X_n$ 为随机变量，$a_1,a_2,\\cdots,a_n$ 为常数，则 $D\\left(\\sum\\limits_{i=1}^{n}a_iX_i\\right)=\\sum\\limits_{i=1}^{n}a_i^2D(X_i)+2\\sum\\limits_{1\\leqslant i<j\\leqslant n}a_ia_j\\mathrm{Cov}(X_i,X_j)$。特别地，若 $X_1,\\cdots,X_n$ 两两不相关，则 $D\\left(\\sum\\limits_{i=1}^{n}a_iX_i\\right)=\\sum\\limits_{i=1}^{n}a_i^2D(X_i)$。",
+      statement: "设 $X_1,X_2,\\cdots,X_n$ 为随机变量，$a_1,a_2,\\cdots,a_n$ 为常数，则 $D\\left(\\sum\\limits_{i=1}^{n}a_iX_i\\right)=\\sum\\limits_{i=1}^{n}a_i^2D(X_i)+2\\sum\\limits_{1\\leqslant i&lt;j\\leqslant n}a_ia_j\\mathrm{Cov}(X_i,X_j)$。特别地，若 $X_1,\\cdots,X_n$ 两两不相关，则 $D\\left(\\sum\\limits_{i=1}^{n}a_iX_i\\right)=\\sum\\limits_{i=1}^{n}a_i^2D(X_i)$。",
       explanation: "该公式是 $D(X\\pm Y)=D(X)+D(Y)\\pm2\\mathrm{Cov}(X,Y)$ 在多变量情形下的推广，<u>是求样本方差、多元线性组合方差的通用工具</u>，常结合独立同分布条件化简交叉项。",
       tags: ["方差公式", "线性组合", "协方差"]
     },
@@ -601,7 +601,7 @@ registerSubject({
       chapterId: "limit-theorems",
       type: "theorem",
       title: "切比雪夫不等式",
-      statement: "设随机变量 $X$ 具有数学期望 $E(X)=\\mu$，方差 $D(X)=\\sigma^2$，则对任意 $\\varepsilon>0$，有 $P\\{|X-\\mu|\\geqslant\\varepsilon\\}\\leqslant\\dfrac{\\sigma^2}{\\varepsilon^2}$，等价地 $P\\{|X-\\mu|<\\varepsilon\\}\\geqslant 1-\\dfrac{\\sigma^2}{\\varepsilon^2}$。",
+      statement: "设随机变量 $X$ 具有数学期望 $E(X)=\\mu$，方差 $D(X)=\\sigma^2$，则对任意 $\\varepsilon>0$，有 $P\\{|X-\\mu|\\geqslant\\varepsilon\\}\\leqslant\\dfrac{\\sigma^2}{\\varepsilon^2}$，等价地 $P\\{|X-\\mu|&lt;\\varepsilon\\}\\geqslant 1-\\dfrac{\\sigma^2}{\\varepsilon^2}$。",
       explanation: "切比雪夫不等式只需知道 $X$ 的期望和方差，<strong>不依赖具体分布形式</strong>，就能给出概率的上（下）界估计，是证明大数定律的核心工具，也是理解<u>\"方差越小，取值越集中于均值附近\"</u>的定量表述。",
       tags: ["切比雪夫不等式", "概率估计"]
     },
@@ -610,7 +610,7 @@ registerSubject({
       chapterId: "limit-theorems",
       type: "definition",
       title: "依概率收敛",
-      statement: "设 $Y_1,Y_2,\\cdots,Y_n,\\cdots$ 为一随机变量序列，$a$ 为常数，若对任意 $\\varepsilon>0$，有 $\\lim\\limits_{n\\to\\infty}P\\{|Y_n-a|<\\varepsilon\\}=1$（等价地 $\\lim\\limits_{n\\to\\infty}P\\{|Y_n-a|\\geqslant\\varepsilon\\}=0$），则称序列 $Y_1,Y_2,\\cdots$ <strong>依概率收敛</strong>于 $a$，记作 $Y_n\\xrightarrow{P}a$。",
+      statement: "设 $Y_1,Y_2,\\cdots,Y_n,\\cdots$ 为一随机变量序列，$a$ 为常数，若对任意 $\\varepsilon>0$，有 $\\lim\\limits_{n\\to\\infty}P\\{|Y_n-a|&lt;\\varepsilon\\}=1$（等价地 $\\lim\\limits_{n\\to\\infty}P\\{|Y_n-a|\\geqslant\\varepsilon\\}=0$），则称序列 $Y_1,Y_2,\\cdots$ <strong>依概率收敛</strong>于 $a$，记作 $Y_n\\xrightarrow{P}a$。",
       explanation: "依概率收敛是概率论中比高等数学\"数列收敛\"更弱的收敛概念：<u>并非要求 $Y_n$ 一定趋于 $a$，而是 $Y_n$ 与 $a$ 偏差超过任意小正数的概率趋于 0</u>。这是各大数定律结论的统一表述形式。",
       tags: ["依概率收敛", "定义"]
     },
@@ -619,7 +619,7 @@ registerSubject({
       chapterId: "limit-theorems",
       type: "theorem",
       title: "切比雪夫大数定律",
-      statement: "设随机变量 $X_1,X_2,\\cdots$ <strong>相互独立</strong>（不要求同分布），且<strong>方差存在并有共同上界</strong>（即存在常数 $C$，使 $D(X_i)\\leqslant C,\\ i=1,2,\\cdots$），则对任意 $\\varepsilon>0$，有 $\\lim\\limits_{n\\to\\infty}P\\left\\{\\left|\\dfrac{1}{n}\\sum\\limits_{i=1}^{n}X_i-\\dfrac{1}{n}\\sum\\limits_{i=1}^{n}E(X_i)\\right|<\\varepsilon\\right\\}=1$，即 $\\dfrac{1}{n}\\sum\\limits_{i=1}^{n}X_i\\xrightarrow{P}\\dfrac{1}{n}\\sum\\limits_{i=1}^{n}E(X_i)$。",
+      statement: "设随机变量 $X_1,X_2,\\cdots$ <strong>相互独立</strong>（不要求同分布），且<strong>方差存在并有共同上界</strong>（即存在常数 $C$，使 $D(X_i)\\leqslant C,\\ i=1,2,\\cdots$），则对任意 $\\varepsilon>0$，有 $\\lim\\limits_{n\\to\\infty}P\\left\\{\\left|\\dfrac{1}{n}\\sum\\limits_{i=1}^{n}X_i-\\dfrac{1}{n}\\sum\\limits_{i=1}^{n}E(X_i)\\right|&lt;\\varepsilon\\right\\}=1$，即 $\\dfrac{1}{n}\\sum\\limits_{i=1}^{n}X_i\\xrightarrow{P}\\dfrac{1}{n}\\sum\\limits_{i=1}^{n}E(X_i)$。",
       explanation: "该定理说明大量相互独立、方差有界的随机变量的算术平均值，会依概率收敛于其数学期望的算术平均值，这是<u>\"平均值的稳定性\"</u>的理论依据。证明利用切比雪夫不等式对 $\\bar X_n$ 取极限即可得到。",
       tags: ["切比雪夫大数定律", "大数定律"]
     },
@@ -628,7 +628,7 @@ registerSubject({
       chapterId: "limit-theorems",
       type: "theorem",
       title: "伯努利大数定律",
-      statement: "设 $n_A$ 是 $n$ 次独立重复试验中事件 $A$ 发生的次数，$p$ 是事件 $A$ 在每次试验中发生的概率，则对任意 $\\varepsilon>0$，有 $\\lim\\limits_{n\\to\\infty}P\\left\\{\\left|\\dfrac{n_A}{n}-p\\right|<\\varepsilon\\right\\}=1$，即 $\\dfrac{n_A}{n}\\xrightarrow{P}p$。",
+      statement: "设 $n_A$ 是 $n$ 次独立重复试验中事件 $A$ 发生的次数，$p$ 是事件 $A$ 在每次试验中发生的概率，则对任意 $\\varepsilon>0$，有 $\\lim\\limits_{n\\to\\infty}P\\left\\{\\left|\\dfrac{n_A}{n}-p\\right|&lt;\\varepsilon\\right\\}=1$，即 $\\dfrac{n_A}{n}\\xrightarrow{P}p$。",
       explanation: "伯努利大数定律是切比雪夫大数定律的特例（把 $n_A$ 看成 $n$ 个独立同分布的 0-1 分布之和），它从理论上证明了<strong>频率的稳定性</strong>，<u>是用频率估计概率这一实际做法的数学基础</u>。",
       tags: ["伯努利大数定律", "频率稳定性"]
     },
@@ -655,7 +655,7 @@ registerSubject({
       chapterId: "limit-theorems",
       type: "theorem",
       title: "棣莫弗-拉普拉斯中心极限定理（二项分布的正态近似）",
-      statement: "设随机变量 $X_n\\sim B(n,p)\\ (0<p<1,\\ n=1,2,\\cdots)$，则对任意实数 $x$，有 $\\lim\\limits_{n\\to\\infty}P\\left\\{\\dfrac{X_n-np}{\\sqrt{np(1-p)}}\\leqslant x\\right\\}=\\Phi(x)$。",
+      statement: "设随机变量 $X_n\\sim B(n,p)\\ (0&lt;p&lt;1,\\ n=1,2,\\cdots)$，则对任意实数 $x$，有 $\\lim\\limits_{n\\to\\infty}P\\left\\{\\dfrac{X_n-np}{\\sqrt{np(1-p)}}\\leqslant x\\right\\}=\\Phi(x)$。",
       explanation: "该定理是林德伯格-列维中心极限定理在 $X_i$ 为 0-1 分布时的特例（$X_n=\\sum X_i$），说明当 $n$ 较大时可用正态分布 $N(np,\\,np(1-p))$ 近似二项分布 $B(n,p)$，是<strong>二项分布正态近似</strong>（而非泊松近似）的理论依据，<u>注意与泊松定理适用条件的区别</u>：泊松近似要求 $p$ 很小，正态近似要求 $n$ 很大且 $np(1-p)$ 不太小。",
       tags: ["棣莫弗-拉普拉斯定理", "二项分布正态近似"]
     },
@@ -673,7 +673,7 @@ registerSubject({
       chapterId: "limit-theorems",
       type: "definition",
       title: "大数定律的一般形式",
-      statement: "设 $Y_1,Y_2,\\cdots,Y_n,\\cdots$ 是随机变量序列，若存在常数序列 $a_n$，使当 $n\\to\\infty$ 时 $Y_n-a_n\\xrightarrow{P}0$，即对任意 $\\varepsilon>0$ 有 $\\lim\\limits_{n\\to\\infty}P\\{|Y_n-a_n|<\\varepsilon\\}=1$，则称 $\\{Y_n\\}$ 服从大数定律。通常取 $Y_n=\\dfrac{1}{n}\\sum\\limits_{i=1}^{n}X_i$，$a_n=\\dfrac{1}{n}\\sum\\limits_{i=1}^{n}E(X_i)$。",
+      statement: "设 $Y_1,Y_2,\\cdots,Y_n,\\cdots$ 是随机变量序列，若存在常数序列 $a_n$，使当 $n\\to\\infty$ 时 $Y_n-a_n\\xrightarrow{P}0$，即对任意 $\\varepsilon>0$ 有 $\\lim\\limits_{n\\to\\infty}P\\{|Y_n-a_n|&lt;\\varepsilon\\}=1$，则称 $\\{Y_n\\}$ 服从大数定律。通常取 $Y_n=\\dfrac{1}{n}\\sum\\limits_{i=1}^{n}X_i$，$a_n=\\dfrac{1}{n}\\sum\\limits_{i=1}^{n}E(X_i)$。",
       explanation: "<u>这是大数定律的统一定义</u>，切比雪夫大数定律、伯努利大数定律、辛钦大数定律都是在不同条件假设下、验证该一般形式成立的具体结论。",
       tags: ["大数定律", "一般定义"]
     },
@@ -745,7 +745,7 @@ registerSubject({
       chapterId: "statistics-basics",
       type: "definition",
       title: "上α分位点",
-      statement: "设随机变量 $X$ 的分布函数为连续函数，对给定的 $\\alpha\\ (0<\\alpha<1)$，称满足 $P\\{X>x_\\alpha\\}=\\alpha$ 的点 $x_\\alpha$ 为 $X$ 分布的<strong>上 $\\alpha$ 分位点</strong>。标准正态分布记作 $z_\\alpha$，满足 $\\Phi(z_\\alpha)=1-\\alpha$；$\\chi^2(n)$、$t(n)$、$F(n_1,n_2)$ 分布分别记作 $\\chi_\\alpha^2(n)$、$t_\\alpha(n)$、$F_\\alpha(n_1,n_2)$。",
+      statement: "设随机变量 $X$ 的分布函数为连续函数，对给定的 $\\alpha\\ (0&lt;\\alpha&lt;1)$，称满足 $P\\{X>x_\\alpha\\}=\\alpha$ 的点 $x_\\alpha$ 为 $X$ 分布的<strong>上 $\\alpha$ 分位点</strong>。标准正态分布记作 $z_\\alpha$，满足 $\\Phi(z_\\alpha)=1-\\alpha$；$\\chi^2(n)$、$t(n)$、$F(n_1,n_2)$ 分布分别记作 $\\chi_\\alpha^2(n)$、$t_\\alpha(n)$、$F_\\alpha(n_1,n_2)$。",
       explanation: "<u>由标准正态分布的对称性可得 $z_{1-\\alpha}=-z_\\alpha$；由 $t$ 分布密度关于 0 对称可得 $t_{1-\\alpha}(n)=-t_\\alpha(n)$</u>。这些分位点是构造置信区间、假设检验拒绝域的基本工具。",
       tags: ["分位点", "查表", "对称性"]
     },
@@ -826,7 +826,7 @@ registerSubject({
       chapterId: "parameter-estimation",
       type: "definition",
       title: "估计量的一致性（相合性）",
-      statement: "设 $\\hat\\theta_n=\\hat\\theta_n(X_1,\\cdots,X_n)$ 是 $\\theta$ 的估计量，若对任意 $\\theta$，当 $n\\to\\infty$ 时 $\\hat\\theta_n$ 依概率收敛于 $\\theta$，即对任意 $\\varepsilon>0$，$\\lim\\limits_{n\\to\\infty}P\\{|\\hat\\theta_n-\\theta|<\\varepsilon\\}=1$，则称 $\\hat\\theta_n$ 为 $\\theta$ 的<strong>一致估计量（相合估计量）</strong>。",
+      statement: "设 $\\hat\\theta_n=\\hat\\theta_n(X_1,\\cdots,X_n)$ 是 $\\theta$ 的估计量，若对任意 $\\theta$，当 $n\\to\\infty$ 时 $\\hat\\theta_n$ 依概率收敛于 $\\theta$，即对任意 $\\varepsilon>0$，$\\lim\\limits_{n\\to\\infty}P\\{|\\hat\\theta_n-\\theta|&lt;\\varepsilon\\}=1$，则称 $\\hat\\theta_n$ 为 $\\theta$ 的<strong>一致估计量（相合估计量）</strong>。",
       explanation: "一致性描述的是<strong>大样本性质</strong>：样本容量越大，估计量越接近真值。矩估计量在总体矩存在的条件下一般都具有一致性（依据辛钦大数定律）。",
       tags: ["一致性", "相合估计", "估计量评价标准"]
     },
@@ -835,7 +835,7 @@ registerSubject({
       chapterId: "parameter-estimation",
       type: "definition",
       title: "区间估计与置信区间",
-      statement: "设总体 $X$ 的分布中含未知参数 $\\theta$，对给定的 $\\alpha\\ (0<\\alpha<1)$，若存在统计量 $\\hat\\theta_1=\\hat\\theta_1(X_1,\\cdots,X_n)$、$\\hat\\theta_2=\\hat\\theta_2(X_1,\\cdots,X_n)$，使 $P\\{\\hat\\theta_1<\\theta<\\hat\\theta_2\\}=1-\\alpha$，则称区间 $(\\hat\\theta_1,\\hat\\theta_2)$ 为 $\\theta$ 的置信度为 $1-\\alpha$ 的<strong>置信区间</strong>，$\\hat\\theta_1,\\hat\\theta_2$ 分别称为<strong>置信下限</strong>与<strong>置信上限</strong>，$1-\\alpha$ 称为<strong>置信度（置信水平）</strong>。",
+      statement: "设总体 $X$ 的分布中含未知参数 $\\theta$，对给定的 $\\alpha\\ (0&lt;\\alpha&lt;1)$，若存在统计量 $\\hat\\theta_1=\\hat\\theta_1(X_1,\\cdots,X_n)$、$\\hat\\theta_2=\\hat\\theta_2(X_1,\\cdots,X_n)$，使 $P\\{\\hat\\theta_1&lt;\\theta&lt;\\hat\\theta_2\\}=1-\\alpha$，则称区间 $(\\hat\\theta_1,\\hat\\theta_2)$ 为 $\\theta$ 的置信度为 $1-\\alpha$ 的<strong>置信区间</strong>，$\\hat\\theta_1,\\hat\\theta_2$ 分别称为<strong>置信下限</strong>与<strong>置信上限</strong>，$1-\\alpha$ 称为<strong>置信度（置信水平）</strong>。",
       explanation: "置信区间的正确理解：<u>反复抽样多次构造区间，大约有 $1-\\alpha$ 比例的区间会包含真值 $\\theta$</u>，而不是\"$\\theta$ 落在某个具体区间内的概率是 $1-\\alpha$\"（$\\theta$ 是常数，具体区间要么包含要么不包含）。构造方法一般是找到一个含 $\\theta$ 且分布已知的<strong>枢轴量</strong>，再由分位点解出不等式。",
       diagram: `<svg viewBox="0 0 320 100" xmlns="http://www.w3.org/2000/svg">
         <line x1="20" y1="60" x2="300" y2="60" stroke="currentColor" stroke-width="1.5"/>
@@ -873,7 +873,7 @@ registerSubject({
       chapterId: "parameter-estimation",
       type: "definition",
       title: "单侧置信区间",
-      statement: "设总体参数为 $\\theta$：<ul><li>若统计量 $\\hat\\theta_1=\\hat\\theta_1(X_1,\\cdots,X_n)$ 满足 $P\\{\\theta>\\hat\\theta_1\\}=1-\\alpha$，则称 $\\hat\\theta_1$ 为 $\\theta$ 的置信度为 $1-\\alpha$ 的<strong>单侧置信下限</strong>，$(\\hat\\theta_1,+\\infty)$ 称为单侧置信区间。</li><li>类似地可定义满足 $P\\{\\theta<\\hat\\theta_2\\}=1-\\alpha$ 的<strong>单侧置信上限</strong> $\\hat\\theta_2$。</li></ul>",
+      statement: "设总体参数为 $\\theta$：<ul><li>若统计量 $\\hat\\theta_1=\\hat\\theta_1(X_1,\\cdots,X_n)$ 满足 $P\\{\\theta>\\hat\\theta_1\\}=1-\\alpha$，则称 $\\hat\\theta_1$ 为 $\\theta$ 的置信度为 $1-\\alpha$ 的<strong>单侧置信下限</strong>，$(\\hat\\theta_1,+\\infty)$ 称为单侧置信区间。</li><li>类似地可定义满足 $P\\{\\theta&lt;\\hat\\theta_2\\}=1-\\alpha$ 的<strong>单侧置信上限</strong> $\\hat\\theta_2$。</li></ul>",
       explanation: "当只关心参数不小于（或不大于）某个界限时（如产品寿命下限、误差上限），<u>采用单侧置信区间比双侧区间更贴合实际需求</u>，构造方法与双侧区间类似，只是把显著性水平 $\\alpha$ 全部分配到一侧的分位点上。",
       tags: ["单侧置信区间", "置信下限", "置信上限"]
     },
@@ -910,7 +910,7 @@ registerSubject({
       type: "theorem",
       title: "单个正态总体均值的检验（方差已知，Z检验）",
       statement: "设总体 $X\\sim N(\\mu,\\sigma^2)$，$\\sigma^2$ <strong>已知</strong>，检验假设 $H_0:\\mu=\\mu_0$ vs $H_1:\\mu\\neq\\mu_0$。取检验统计量 $Z=\\dfrac{\\bar X-\\mu_0}{\\sigma/\\sqrt{n}}$，在 $H_0$ 成立时 $Z\\sim N(0,1)$。给定显著性水平 $\\alpha$，拒绝域为 $|Z|\\geqslant z_{\\alpha/2}$。",
-      explanation: "该检验称为 <strong>Z 检验（U 检验）</strong>。对单侧备择假设 $H_1:\\mu>\\mu_0$，拒绝域为 $Z\\geqslant z_\\alpha$；对 $H_1:\\mu<\\mu_0$，拒绝域为 $Z\\leqslant -z_\\alpha$。<u>检验统计量与相应置信区间的枢轴量形式完全一致</u>，这是区间估计与假设检验内在联系的体现。",
+      explanation: "该检验称为 <strong>Z 检验（U 检验）</strong>。对单侧备择假设 $H_1:\\mu>\\mu_0$，拒绝域为 $Z\\geqslant z_\\alpha$；对 $H_1:\\mu&lt;\\mu_0$，拒绝域为 $Z\\leqslant -z_\\alpha$。<u>检验统计量与相应置信区间的枢轴量形式完全一致</u>，这是区间估计与假设检验内在联系的体现。",
       tags: ["Z检验", "均值检验", "方差已知"]
     },
     {

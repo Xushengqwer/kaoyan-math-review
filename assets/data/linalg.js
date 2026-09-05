@@ -115,7 +115,7 @@ registerSubject({
       chapterId: "determinant",
       type: "property",
       title: "范德蒙德行列式",
-      statement: "$V_n=\\begin{vmatrix}1&1&\\cdots&1\\\\x_1&x_2&\\cdots&x_n\\\\x_1^2&x_2^2&\\cdots&x_n^2\\\\\\vdots&\\vdots&&\\vdots\\\\x_1^{n-1}&x_2^{n-1}&\\cdots&x_n^{n-1}\\end{vmatrix}=\\prod_{1\\le j<i\\le n}(x_i-x_j)$。",
+      statement: "$V_n=\\begin{vmatrix}1&1&\\cdots&1\\\\x_1&x_2&\\cdots&x_n\\\\x_1^2&x_2^2&\\cdots&x_n^2\\\\\\vdots&\\vdots&&\\vdots\\\\x_1^{n-1}&x_2^{n-1}&\\cdots&x_n^{n-1}\\end{vmatrix}=\\prod_{1\\le j&lt;i\\le n}(x_i-x_j)$。",
       explanation: "范德蒙德行列式等于所有下标差 $(x_i-x_j)$（$i>j$）的连乘积。它<strong>为零当且仅当 $x_1,x_2,\\cdots,x_n$ 中至少有两个相等</strong>，是考研中判断特征值互异、矩阵可对角化等问题的常用工具。",
       tags: ["行列式", "范德蒙德", "性质"]
     },
@@ -160,8 +160,8 @@ registerSubject({
       chapterId: "determinant",
       type: "property",
       title: "伴随矩阵的秩",
-      statement: "设 $A$ 为 $n$ 阶方阵，则 $r(A^{*})=\\begin{cases}n, & r(A)=n\\\\1, & r(A)=n-1\\\\0, & r(A)<n-1\\end{cases}$。",
-      explanation: "记忆要点：<ul><li><strong>$r(A)=n$（满秩）：</strong>伴随矩阵也满秩。</li><li><strong>$r(A)=n-1$：</strong>即 $|A|=0$ 但存在非零的 $n-1$ 阶子式，此时伴随矩阵秩为 1。</li><li><strong>$r(A)<n-1$：</strong>所有 $n-1$ 阶子式都为零，伴随矩阵为零矩阵。</li></ul>这是考研高频考点。",
+      statement: "设 $A$ 为 $n$ 阶方阵，则 $r(A^{*})=\\begin{cases}n, & r(A)=n\\\\1, & r(A)=n-1\\\\0, & r(A)&lt;n-1\\end{cases}$。",
+      explanation: "记忆要点：<ul><li><strong>$r(A)=n$（满秩）：</strong>伴随矩阵也满秩。</li><li><strong>$r(A)=n-1$：</strong>即 $|A|=0$ 但存在非零的 $n-1$ 阶子式，此时伴随矩阵秩为 1。</li><li><strong>$r(A)&lt;n-1$：</strong>所有 $n-1$ 阶子式都为零，伴随矩阵为零矩阵。</li></ul>这是考研高频考点。",
       tags: ["行列式", "伴随矩阵", "秩"]
     },
     {
@@ -178,7 +178,7 @@ registerSubject({
       chapterId: "determinant",
       type: "definition",
       title: "排列的逆序数",
-      statement: "对 $1,2,\\cdots,n$ 的一个排列 $p_1p_2\\cdots p_n$，若前面某数大于后面某数，即 $p_i>p_j$ 但 $i<j$，则称这两个数构成一个<strong>逆序</strong>。一个排列中逆序的总数称为该排列的<strong>逆序数</strong>，记作 $\\tau(p_1p_2\\cdots p_n)$。",
+      statement: "对 $1,2,\\cdots,n$ 的一个排列 $p_1p_2\\cdots p_n$，若前面某数大于后面某数，即 $p_i>p_j$ 但 $i&lt;j$，则称这两个数构成一个<strong>逆序</strong>。一个排列中逆序的总数称为该排列的<strong>逆序数</strong>，记作 $\\tau(p_1p_2\\cdots p_n)$。",
       explanation: "逆序数为偶数的排列称为<strong>偶排列</strong>，为奇数的称为<strong>奇排列</strong>。行列式展开式中每一项的符号由对应排列的奇偶性决定，这是理解 $n$ 阶行列式定义的基础概念。",
       tags: ["行列式", "排列", "逆序数"]
     },
@@ -392,7 +392,7 @@ registerSubject({
       chapterId: "vector-space",
       type: "theorem",
       title: "线性相关性与矩阵秩的关系",
-      statement: "向量组 $\\alpha_1,\\alpha_2,\\cdots,\\alpha_m$ 线性相关的充要条件是由这些向量为列构成的矩阵 $A=(\\alpha_1,\\alpha_2,\\cdots,\\alpha_m)$ 的秩 <strong>$r(A)<m$</strong>；线性无关的充要条件是 <strong>$r(A)=m$</strong>。特别地，当 $m=n$（向量个数等于维数）时，$\\alpha_1,\\cdots,\\alpha_n$ 线性无关的充要条件是 $|A|\\neq0$。",
+      statement: "向量组 $\\alpha_1,\\alpha_2,\\cdots,\\alpha_m$ 线性相关的充要条件是由这些向量为列构成的矩阵 $A=(\\alpha_1,\\alpha_2,\\cdots,\\alpha_m)$ 的秩 <strong>$r(A)&lt;m$</strong>；线性无关的充要条件是 <strong>$r(A)=m$</strong>。特别地，当 $m=n$（向量个数等于维数）时，$\\alpha_1,\\cdots,\\alpha_n$ 线性无关的充要条件是 $|A|\\neq0$。",
       explanation: "这是判断线性相关性的核心计算方法：<strong>把向量组按列（或行）排成矩阵，通过初等变换求秩，与向量个数比较</strong>。这一定理把“线性相关性”这一代数概念转化为可直接计算的“矩阵秩”问题。",
       tags: ["向量组", "线性相关", "秩", "定理"]
     },
@@ -402,7 +402,7 @@ registerSubject({
       type: "theorem",
       title: "向量个数超过维数必相关",
       statement: "若向量组 $\\alpha_1,\\alpha_2,\\cdots,\\alpha_m$ 中每个向量都是 $n$ 维向量，且 $m>n$，则该向量组<strong>必线性相关</strong>。特别地，$n+1$ 个 $n$ 维向量一定线性相关。",
-      explanation: "这是因为 $r(A)\\le n<m$，秩必小于向量个数。此结论常用于快速判断“<strong>个数大于维数</strong>”的向量组一定相关，无需具体计算。",
+      explanation: "这是因为 $r(A)\\le n&lt;m$，秩必小于向量个数。此结论常用于快速判断“<strong>个数大于维数</strong>”的向量组一定相关，无需具体计算。",
       tags: ["向量组", "线性相关", "定理"]
     },
     {
@@ -527,7 +527,7 @@ registerSubject({
       chapterId: "linear-equations",
       type: "theorem",
       title: "齐次线性方程组解的判定定理",
-      statement: "设 $A$ 为 $m\\times n$ 矩阵，则：<ul><li><strong>只有零解</strong>的充要条件是 $r(A)=n$（系数矩阵列满秩）。</li><li><strong>有非零解</strong>的充要条件是 $r(A)<n$。</li><li>当 $m=n$ 时，有非零解的充要条件是 <strong>$|A|=0$</strong>。</li></ul>",
+      statement: "设 $A$ 为 $m\\times n$ 矩阵，则：<ul><li><strong>只有零解</strong>的充要条件是 $r(A)=n$（系数矩阵列满秩）。</li><li><strong>有非零解</strong>的充要条件是 $r(A)&lt;n$。</li><li>当 $m=n$ 时，有非零解的充要条件是 <strong>$|A|=0$</strong>。</li></ul>",
       explanation: "这是判断齐次方程组解的情况的核心定理：<strong>未知数个数 $n$ 与系数矩阵秩 $r(A)$ 的比较直接决定解的情况</strong>，与方程个数 $m$ 无直接关系（多余方程可能是冗余的）。",
       tags: ["线性方程组", "齐次", "定理"]
     },
@@ -536,7 +536,7 @@ registerSubject({
       chapterId: "linear-equations",
       type: "theorem",
       title: "非齐次线性方程组解的判定定理",
-      statement: "非齐次线性方程组 $Ax=b$ <strong>有解</strong>的充要条件是系数矩阵的秩等于增广矩阵的秩，即 <strong>$r(A)=r(A,b)$</strong>。在有解的前提下：<ul><li>若 $r(A)=n$（未知数个数），则有<strong>唯一解</strong>。</li><li>若 $r(A)<n$，则有<strong>无穷多解</strong>。</li><li>当 $r(A)\\neq r(A,b)$ 时，方程组<strong>无解</strong>。</li></ul>",
+      statement: "非齐次线性方程组 $Ax=b$ <strong>有解</strong>的充要条件是系数矩阵的秩等于增广矩阵的秩，即 <strong>$r(A)=r(A,b)$</strong>。在有解的前提下：<ul><li>若 $r(A)=n$（未知数个数），则有<strong>唯一解</strong>。</li><li>若 $r(A)&lt;n$，则有<strong>无穷多解</strong>。</li><li>当 $r(A)\\neq r(A,b)$ 时，方程组<strong>无解</strong>。</li></ul>",
       explanation: "这是线性方程组解的存在性与唯一性判定的核心定理，考研中几乎每年都会考查。记忆口诀：<strong>“秩相等有解，秩等于未知数个数则唯一，小于则无穷多”</strong>。",
       tags: ["线性方程组", "非齐次", "定理"]
     },
@@ -554,7 +554,7 @@ registerSubject({
       chapterId: "linear-equations",
       type: "theorem",
       title: "齐次线性方程组的通解结构",
-      statement: "设 $A$ 为 $m\\times n$ 矩阵，$r(A)=r<n$，则 $Ax=0$ 的基础解系含 <strong>$n-r$ 个</strong>线性无关的解向量 $\\xi_1,\\xi_2,\\cdots,\\xi_{n-r}$，其<strong>通解</strong>为 $x=k_1\\xi_1+k_2\\xi_2+\\cdots+k_{n-r}\\xi_{n-r}$，其中 $k_1,\\cdots,k_{n-r}$ 为任意常数。解空间的维数为 $n-r(A)$。",
+      statement: "设 $A$ 为 $m\\times n$ 矩阵，$r(A)=r&lt;n$，则 $Ax=0$ 的基础解系含 <strong>$n-r$ 个</strong>线性无关的解向量 $\\xi_1,\\xi_2,\\cdots,\\xi_{n-r}$，其<strong>通解</strong>为 $x=k_1\\xi_1+k_2\\xi_2+\\cdots+k_{n-r}\\xi_{n-r}$，其中 $k_1,\\cdots,k_{n-r}$ 为任意常数。解空间的维数为 $n-r(A)$。",
       explanation: "解空间维数 $n-r(A)$ 是考研高频考点，常需<strong>先求 $r(A)$ 再确定基础解系所含向量个数</strong>。当 $r(A)=n$ 时基础解系为空集，此时只有零解。",
       tags: ["线性方程组", "齐次", "通解", "定理"]
     },
@@ -626,7 +626,7 @@ registerSubject({
       chapterId: "linear-equations",
       type: "property",
       title: "自由未知量的选取",
-      statement: "设 $r(A)=r<n$，将增广矩阵化为行阶梯形后，选取 $r$ 个非零首元所在的列对应的未知量为<strong>约束未知量</strong>，其余 $n-r$ 个未知量为<strong>自由未知量</strong>；自由未知量可任意取值，约束未知量由自由未知量唯一线性表出。",
+      statement: "设 $r(A)=r&lt;n$，将增广矩阵化为行阶梯形后，选取 $r$ 个非零首元所在的列对应的未知量为<strong>约束未知量</strong>，其余 $n-r$ 个未知量为<strong>自由未知量</strong>；自由未知量可任意取值，约束未知量由自由未知量唯一线性表出。",
       explanation: "自由未知量的选取不唯一（依赖于所选的 $r$ 阶非零子式），但<strong>个数 $n-r$ 是唯一确定的</strong>。令各自由未知量依次取标准基向量 $(1,0,\\cdots,0),(0,1,\\cdots,0),\\cdots$ 即可得到一个基础解系。",
       tags: ["线性方程组", "自由未知量", "性质"]
     },
@@ -644,7 +644,7 @@ registerSubject({
       chapterId: "linear-equations",
       type: "property",
       title: "矛盾方程与无解的快速识别",
-      statement: "对增广矩阵 $(A\\ \\vdots\\ b)$ 作初等行变换化为行阶梯形后，若出现形如 $(0,0,\\cdots,0\\ \\vdots\\ d)$ 且 $d\\neq0$ 的行（该行对应<strong>矛盾方程</strong> $0=d$），则原方程组<strong>无解</strong>，此时必有 $r(A)<r(A,b)$。",
+      statement: "对增广矩阵 $(A\\ \\vdots\\ b)$ 作初等行变换化为行阶梯形后，若出现形如 $(0,0,\\cdots,0\\ \\vdots\\ d)$ 且 $d\\neq0$ 的行（该行对应<strong>矛盾方程</strong> $0=d$），则原方程组<strong>无解</strong>，此时必有 $r(A)&lt;r(A,b)$。",
       explanation: "这是高斯消元过程中判断方程组无解<strong>最直观的标志</strong>，比单独计算比较 $r(A)$ 与 $r(A,b)$ 更便于在具体运算中即时发现，是解方程组类计算题的常规检查手段。",
       tags: ["线性方程组", "无解", "性质"]
     },
@@ -844,7 +844,7 @@ registerSubject({
       chapterId: "quadratic-form",
       type: "definition",
       title: "正定二次型（正定矩阵）的定义",
-      statement: "设二次型 $f=x^{T}Ax$（$A$ 为实对称矩阵），若对任意<strong>非零向量</strong> $x$ 都有 $f(x)=x^{T}Ax>0$，则称 $f$ 为<strong>正定二次型</strong>，称 $A$ 为<strong>正定矩阵</strong>。类似地可定义：<ul><li><strong>负定：</strong>恒 $<0$</li><li><strong>半正定：</strong>恒 $\\ge0$</li><li><strong>半负定：</strong>恒 $\\le0$</li><li><strong>不定：</strong>可正可负</li></ul>",
+      statement: "设二次型 $f=x^{T}Ax$（$A$ 为实对称矩阵），若对任意<strong>非零向量</strong> $x$ 都有 $f(x)=x^{T}Ax>0$，则称 $f$ 为<strong>正定二次型</strong>，称 $A$ 为<strong>正定矩阵</strong>。类似地可定义：<ul><li><strong>负定：</strong>恒 $&lt;0$</li><li><strong>半正定：</strong>恒 $\\ge0$</li><li><strong>半负定：</strong>恒 $\\le0$</li><li><strong>不定：</strong>可正可负</li></ul>",
       explanation: "正定性是二次型最重要的性质之一，在最优化（判断极值点是否为极小值点，即黑塞矩阵正定）等应用中极为关键。判断正定性<strong>不能只代入个别数值</strong>，需要用后面的判定定理系统检验。",
       tags: ["二次型", "正定", "定义"]
     },
@@ -862,7 +862,7 @@ registerSubject({
       chapterId: "quadratic-form",
       type: "theorem",
       title: "正定的顺序主子式判别法",
-      statement: "实对称矩阵 $A=(a_{ij})_{n\\times n}$ <strong>正定</strong>的充要条件是 $A$ 的<strong>各阶顺序主子式都大于零</strong>，即 $a_{11}>0,\\ \\begin{vmatrix}a_{11}&a_{12}\\\\a_{21}&a_{22}\\end{vmatrix}>0,\\ \\cdots,\\ |A|>0$。$A$ <strong>负定</strong>的充要条件是奇数阶顺序主子式为负、偶数阶顺序主子式为正，即<strong>顺序主子式正负相间且 $a_{11}<0$</strong>。",
+      statement: "实对称矩阵 $A=(a_{ij})_{n\\times n}$ <strong>正定</strong>的充要条件是 $A$ 的<strong>各阶顺序主子式都大于零</strong>，即 $a_{11}>0,\\ \\begin{vmatrix}a_{11}&a_{12}\\\\a_{21}&a_{22}\\end{vmatrix}>0,\\ \\cdots,\\ |A|>0$。$A$ <strong>负定</strong>的充要条件是奇数阶顺序主子式为负、偶数阶顺序主子式为正，即<strong>顺序主子式正负相间且 $a_{11}&lt;0$</strong>。",
       explanation: "这是霍尔维茨（Hurwitz）判别法，是考研计算题中判断具体数值矩阵正定性最常用的方法，<strong>不需要求特征值，只需逐阶计算顺序主子式的行列式值</strong>。注意负定的符号规律是“正负相间，从负开始”。",
       tags: ["二次型", "正定", "顺序主子式", "定理"]
     },
@@ -943,7 +943,7 @@ registerSubject({
       chapterId: "quadratic-form",
       type: "definition",
       title: "主子式与顺序主子式",
-      statement: "在 $n$ 阶方阵 $A$ 中任取 $k$ 个下标 $1\\le i_1<i_2<\\cdots<i_k\\le n$，保留这些下标对应的行与列所成的 $k$ 阶行列式，称为 $A$ 的一个 $k$ 阶<strong>主子式</strong>；特别地，取下标为 $1,2,\\cdots,k$（即左上角 $k\\times k$ 部分）所得的主子式称为 $k$ 阶<strong>顺序主子式</strong>。",
+      statement: "在 $n$ 阶方阵 $A$ 中任取 $k$ 个下标 $1\\le i_1&lt;i_2&lt;\\cdots&lt;i_k\\le n$，保留这些下标对应的行与列所成的 $k$ 阶行列式，称为 $A$ 的一个 $k$ 阶<strong>主子式</strong>；特别地，取下标为 $1,2,\\cdots,k$（即左上角 $k\\times k$ 部分）所得的主子式称为 $k$ 阶<strong>顺序主子式</strong>。",
       explanation: "$n$ 阶方阵的 $k$ 阶主子式共有 $\\binom{n}{k}$ 个，而 $k$ 阶顺序主子式只有唯一的一个。正定判别只需检验顺序主子式（共 $n$ 个），而半正定判别需要检验全部主子式，<strong>二者不能混用</strong>，是本章重要的辨析点。",
       tags: ["二次型", "主子式", "定义"]
     }

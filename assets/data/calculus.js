@@ -19,7 +19,7 @@ registerSubject({
       chapterId: "limit",
       type: "definition",
       title: "数列极限的 ε-N 定义",
-      statement: "设数列 $\\{x_n\\}$，若存在常数 $A$，对任意给定的 $\\varepsilon>0$，总存在正整数 $N$，使得当 $n>N$ 时恒有 $|x_n-A|<\\varepsilon$，则称数列 $\\{x_n\\}$ <strong>收敛于</strong> $A$，记作 $\\lim\\limits_{n\\to\\infty}x_n=A$。",
+      statement: "设数列 $\\{x_n\\}$，若存在常数 $A$，对任意给定的 $\\varepsilon>0$，总存在正整数 $N$，使得当 $n>N$ 时恒有 $|x_n-A|&lt;\\varepsilon$，则称数列 $\\{x_n\\}$ <strong>收敛于</strong> $A$，记作 $\\lim\\limits_{n\\to\\infty}x_n=A$。",
       explanation: "<strong>几何意义</strong>：数列从某一项之后，所有点都落在区间 $(A-\\varepsilon, A+\\varepsilon)$ 内。<strong>记忆口诀</strong>：\"任意小的 ε，总能找到 N，N 之后都在范围内\"。<strong>易错点</strong>：N 依赖于 ε，且 N 不唯一，只需存在即可。",
       tags: ["极限", "数列", "ε-N语言"]
     },
@@ -28,7 +28,7 @@ registerSubject({
       chapterId: "limit",
       type: "definition",
       title: "函数极限的 ε-δ 定义",
-      statement: "设函数 $f(x)$ 在点 $x_0$ 的某<strong>去心邻域</strong>内有定义，若存在常数 $A$，对任意给定的 $\\varepsilon>0$，总存在 $\\delta>0$，使得当 $0<|x-x_0|<\\delta$ 时恒有 $|f(x)-A|<\\varepsilon$，则称当 $x\\to x_0$ 时函数 $f(x)$ <strong>以 $A$ 为极限</strong>，记作 $\\lim\\limits_{x\\to x_0}f(x)=A$。",
+      statement: "设函数 $f(x)$ 在点 $x_0$ 的某<strong>去心邻域</strong>内有定义，若存在常数 $A$，对任意给定的 $\\varepsilon>0$，总存在 $\\delta>0$，使得当 $0&lt;|x-x_0|&lt;\\delta$ 时恒有 $|f(x)-A|&lt;\\varepsilon$，则称当 $x\\to x_0$ 时函数 $f(x)$ <strong>以 $A$ 为极限</strong>，记作 $\\lim\\limits_{x\\to x_0}f(x)=A$。",
       explanation: "<strong>去心邻域</strong>强调极限与 $f(x_0)$ 是否存在、是否相等<strong>无关</strong>。类似地可定义 $x\\to\\infty$、单侧极限（$x\\to x_0^+$、$x\\to x_0^-$）的 ε-δ（ε-X）语言，只需把邻域改成相应形式。",
       tags: ["极限", "函数", "ε-δ语言"]
     },
@@ -82,7 +82,7 @@ registerSubject({
       chapterId: "limit",
       type: "theorem",
       title: "介值定理与零点定理",
-      statement: "设 $f(x)$ 在闭区间 $[a,b]$ 上连续，且 $f(a)\\neq f(b)$，则对介于 $f(a)$ 与 $f(b)$ 之间的任意 $\\mu$，至少存在一点 $\\xi\\in(a,b)$，使得 $f(\\xi)=\\mu$（<strong>介值定理</strong>）。特别地，若 $f(a)\\cdot f(b)<0$，则至少存在一点 $\\xi\\in(a,b)$，使 $f(\\xi)=0$（<strong>零点定理</strong>/根的存在定理）。",
+      statement: "设 $f(x)$ 在闭区间 $[a,b]$ 上连续，且 $f(a)\\neq f(b)$，则对介于 $f(a)$ 与 $f(b)$ 之间的任意 $\\mu$，至少存在一点 $\\xi\\in(a,b)$，使得 $f(\\xi)=\\mu$（<strong>介值定理</strong>）。特别地，若 $f(a)\\cdot f(b)&lt;0$，则至少存在一点 $\\xi\\in(a,b)$，使 $f(\\xi)=0$（<strong>零点定理</strong>/根的存在定理）。",
       explanation: "零点定理是介值定理在 $\\mu=0$ 时的特例，是证明方程根存在性的<strong>核心工具</strong>：构造辅助函数、验证端点异号即可。前提<strong>闭区间上连续</strong>不可省略。",
       tags: ["连续", "介值定理", "零点定理"]
     },
@@ -285,7 +285,7 @@ registerSubject({
       chapterId: "derivative",
       type: "theorem",
       title: "函数单调性的判别法",
-      statement: "设函数 $f(x)$ 在区间 $I$ 上可导。若在 $I$ 内 $f'(x)>0$（$f'(x)<0$），则 $f(x)$ 在 $I$ 上<strong>单调增加</strong>（<strong>单调减少</strong>）；若 $f'(x)\\geqslant 0$ 且等号只在有限个点成立，$f(x)$ 仍严格单调增加。",
+      statement: "设函数 $f(x)$ 在区间 $I$ 上可导。若在 $I$ 内 $f'(x)>0$（$f'(x)&lt;0$），则 $f(x)$ 在 $I$ 上<strong>单调增加</strong>（<strong>单调减少</strong>）；若 $f'(x)\\geqslant 0$ 且等号只在有限个点成立，$f(x)$ 仍严格单调增加。",
       explanation: "用一阶导数符号判断单调区间是研究函数性态、证明不等式的基础方法。判断单调性时要注意定义域，先求导、令导数为零或不存在的点划分区间，再逐区间判号。",
       tags: ["单调性", "导数", "判别法"]
     },
@@ -294,7 +294,7 @@ registerSubject({
       chapterId: "derivative",
       type: "theorem",
       title: "极值的第二充分条件",
-      statement: "设函数 $f(x)$ 在点 $x_0$ 处具有二阶导数，且 $f'(x_0)=0$，$f''(x_0)\\neq 0$。<ul><li>若 $f''(x_0)<0$，则 $f(x)$ 在 $x_0$ 处取得<strong>极大值</strong>；</li><li>若 $f''(x_0)>0$，则取得<strong>极小值</strong>。</li></ul>",
+      statement: "设函数 $f(x)$ 在点 $x_0$ 处具有二阶导数，且 $f'(x_0)=0$，$f''(x_0)\\neq 0$。<ul><li>若 $f''(x_0)&lt;0$，则 $f(x)$ 在 $x_0$ 处取得<strong>极大值</strong>；</li><li>若 $f''(x_0)>0$，则取得<strong>极小值</strong>。</li></ul>",
       explanation: "当 $f''(x_0)=0$ 时该判别法<strong>失效</strong>，需改用一阶导数在 $x_0$ 两侧的符号变化（第一充分条件）或更高阶导数判别。第一充分条件适用范围更广（不要求二阶可导），第二充分条件计算更简便。",
       tags: ["极值", "二阶导数", "判别法"]
     },
@@ -303,7 +303,7 @@ registerSubject({
       chapterId: "derivative",
       type: "definition",
       title: "凹凸性的定义与判别",
-      statement: "设 $f(x)$ 在区间 $I$ 上连续，若对 $I$ 上任意两点 $x_1\\neq x_2$ 恒有 $f\\left(\\dfrac{x_1+x_2}{2}\\right)<\\dfrac{f(x_1)+f(x_2)}{2}$，称曲线在 $I$ 上是<strong>凹的</strong>（下凸）；不等号反向则为<strong>凸的</strong>（上凸）。若 $f(x)$ 在 $I$ 内具有二阶导数，则 $f''(x)>0$ 时曲线在 $I$ 上是凹的，$f''(x)<0$ 时是凸的。使 $f''(x)$ 变号的点 $(x_0,f(x_0))$ 称为<strong>拐点</strong>。",
+      statement: "设 $f(x)$ 在区间 $I$ 上连续，若对 $I$ 上任意两点 $x_1\\neq x_2$ 恒有 $f\\left(\\dfrac{x_1+x_2}{2}\\right)&lt;\\dfrac{f(x_1)+f(x_2)}{2}$，称曲线在 $I$ 上是<strong>凹的</strong>（下凸）；不等号反向则为<strong>凸的</strong>（上凸）。若 $f(x)$ 在 $I$ 内具有二阶导数，则 $f''(x)>0$ 时曲线在 $I$ 上是凹的，$f''(x)&lt;0$ 时是凸的。使 $f''(x)$ 变号的点 $(x_0,f(x_0))$ 称为<strong>拐点</strong>。",
       explanation: "国内教材（同济版）\"凹\"对应 $f''>0$（开口向上，如 $y=x^2$），与部分英文教材\"concave/convex\"叫法相反，需以<u>\"$f''$ 符号\"为准记忆</u>。判断拐点需验证 $f''(x_0)=0$ 且两侧异号（或 $f''$ 不存在但变号）。",
       tags: ["凹凸性", "拐点", "二阶导数"]
     },
@@ -425,8 +425,8 @@ registerSubject({
       chapterId: "integral",
       type: "property",
       title: "定积分的比较性质与估值性质",
-      statement: "设 $f(x)\\leqslant g(x)$ 在 $[a,b]$ 上恒成立，则 $\\displaystyle\\int_a^b f(x)\\mathrm{d}x\\leqslant\\displaystyle\\int_a^b g(x)\\mathrm{d}x$（$a<b$）；又 $\\left|\\displaystyle\\int_a^b f(x)\\mathrm{d}x\\right|\\leqslant\\displaystyle\\int_a^b |f(x)|\\mathrm{d}x$；若 $m\\leqslant f(x)\\leqslant M$，则 $m(b-a)\\leqslant\\displaystyle\\int_a^b f(x)\\mathrm{d}x\\leqslant M(b-a)$（估值定理）。",
-      explanation: "比较性质<strong>要求 $a<b$</strong>，否则不等号可能反向，做题时需先确认积分上下限大小。估值定理常用于证明积分不等式或估计积分值的范围，是构造辅助函数法之外的重要证明手段。",
+      statement: "设 $f(x)\\leqslant g(x)$ 在 $[a,b]$ 上恒成立，则 $\\displaystyle\\int_a^b f(x)\\mathrm{d}x\\leqslant\\displaystyle\\int_a^b g(x)\\mathrm{d}x$（$a&lt;b$）；又 $\\left|\\displaystyle\\int_a^b f(x)\\mathrm{d}x\\right|\\leqslant\\displaystyle\\int_a^b |f(x)|\\mathrm{d}x$；若 $m\\leqslant f(x)\\leqslant M$，则 $m(b-a)\\leqslant\\displaystyle\\int_a^b f(x)\\mathrm{d}x\\leqslant M(b-a)$（估值定理）。",
+      explanation: "比较性质<strong>要求 $a&lt;b$</strong>，否则不等号可能反向，做题时需先确认积分上下限大小。估值定理常用于证明积分不等式或估计积分值的范围，是构造辅助函数法之外的重要证明手段。",
       tags: ["定积分", "比较性质", "估值定理"]
     },
     {
@@ -461,7 +461,7 @@ registerSubject({
       chapterId: "integral",
       type: "property",
       title: "有理函数积分法（部分分式法）",
-      statement: "有理真分式 $\\dfrac{P(x)}{Q(x)}$（分子次数低于分母次数）可分解为若干个形如 $\\dfrac{A}{(x-a)^k}$ 与 $\\dfrac{Mx+N}{(x^2+px+q)^k}$（$p^2-4q<0$）的部分分式之和，再逐项积分；若分子次数不低于分母次数，需先做多项式除法化为多项式加真分式。",
+      statement: "有理真分式 $\\dfrac{P(x)}{Q(x)}$（分子次数低于分母次数）可分解为若干个形如 $\\dfrac{A}{(x-a)^k}$ 与 $\\dfrac{Mx+N}{(x^2+px+q)^k}$（$p^2-4q&lt;0$）的部分分式之和，再逐项积分；若分子次数不低于分母次数，需先做多项式除法化为多项式加真分式。",
       explanation: "任何有理函数的不定积分都可积出初等函数，这是有理函数积分<strong>\"总能积出来\"</strong>的理论依据。三角函数有理式积分常通过<strong>万能代换</strong> $t=\\tan\\frac{x}{2}$ 化为有理函数积分。",
       tags: ["不定积分", "有理函数", "部分分式"]
     },
@@ -480,7 +480,7 @@ registerSubject({
       type: "definition",
       title: "无界函数的反常积分（瑕积分）",
       statement: "设 $f(x)$ 在 $(a,b]$ 上连续，$\\lim\\limits_{x\\to a^+}f(x)=\\infty$（$a$ 为<strong>瑕点</strong>），定义 $\\displaystyle\\int_a^{b}f(x)\\mathrm{d}x=\\lim\\limits_{\\varepsilon\\to 0^+}\\displaystyle\\int_{a+\\varepsilon}^{b}f(x)\\mathrm{d}x$，极限存在则称该反常积分收敛，否则发散。瑕点在其他位置（$b$ 或区间内部）时类似处理。",
-      explanation: "常见判别参照：$\\int_a^b \\frac{1}{(x-a)^p}\\mathrm{d}x$（$a$ 为瑕点）当 $p<1$ 收敛，$p\\geqslant 1$ 发散。做题时首先要能<strong>识别瑕点</strong>（被积函数无界的点），<u>瑕点可能隐藏在区间内部而非仅在端点</u>。",
+      explanation: "常见判别参照：$\\int_a^b \\frac{1}{(x-a)^p}\\mathrm{d}x$（$a$ 为瑕点）当 $p&lt;1$ 收敛，$p\\geqslant 1$ 发散。做题时首先要能<strong>识别瑕点</strong>（被积函数无界的点），<u>瑕点可能隐藏在区间内部而非仅在端点</u>。",
       tags: ["反常积分", "瑕积分", "无界函数"]
     },
     {
@@ -632,7 +632,7 @@ registerSubject({
       chapterId: "vector-geometry",
       type: "definition",
       title: "柱面坐标与球面坐标",
-      statement: "<ul><li><strong>柱面坐标</strong> $(\\rho,\\theta,z)$ 与直角坐标的关系：$x=\\rho\\cos\\theta,\\ y=\\rho\\sin\\theta,\\ z=z$（$\\rho\\geqslant 0,0\\leqslant\\theta<2\\pi$）。</li><li><strong>球面坐标</strong> $(r,\\varphi,\\theta)$ 与直角坐标的关系：$x=r\\sin\\varphi\\cos\\theta,\\ y=r\\sin\\varphi\\sin\\theta,\\ z=r\\cos\\varphi$（$r\\geqslant 0,0\\leqslant\\varphi\\leqslant\\pi,0\\leqslant\\theta<2\\pi$）。</li></ul>",
+      statement: "<ul><li><strong>柱面坐标</strong> $(\\rho,\\theta,z)$ 与直角坐标的关系：$x=\\rho\\cos\\theta,\\ y=\\rho\\sin\\theta,\\ z=z$（$\\rho\\geqslant 0,0\\leqslant\\theta&lt;2\\pi$）。</li><li><strong>球面坐标</strong> $(r,\\varphi,\\theta)$ 与直角坐标的关系：$x=r\\sin\\varphi\\cos\\theta,\\ y=r\\sin\\varphi\\sin\\theta,\\ z=r\\cos\\varphi$（$r\\geqslant 0,0\\leqslant\\varphi\\leqslant\\pi,0\\leqslant\\theta&lt;2\\pi$）。</li></ul>",
       explanation: "柱面坐标是极坐标加上 $z$ 轴，适合处理含 $x^2+y^2$ 结构（圆柱、旋转曲面）的三重积分；球面坐标中 $\\varphi$ 是与正 $z$ 轴的夹角、$\\theta$ 是方位角，适合处理含 $x^2+y^2+z^2$（球体、球面）结构的三重积分，是三重积分换元最重要的<strong>两套坐标系</strong>。",
       tags: ["柱面坐标", "球面坐标", "坐标系"]
     },
@@ -713,7 +713,7 @@ registerSubject({
       chapterId: "multivar-derivative",
       type: "theorem",
       title: "多元函数极值的充分条件（判别式法）",
-      statement: "设 $z=f(x,y)$ 在驻点 $(x_0,y_0)$ 的某邻域内具有二阶连续偏导数，记 $A=f_{xx}(x_0,y_0)$，$B=f_{xy}(x_0,y_0)$，$C=f_{yy}(x_0,y_0)$，$D=AC-B^2$。<ul><li>$D>0$ 且 $A<0$ 时取<strong>极大值</strong>；</li><li>$D>0$ 且 $A>0$ 时取<strong>极小值</strong>；</li><li>$D<0$ 时<strong>不是极值点</strong>；</li><li>$D=0$ 时不能确定，需另行讨论。</li></ul>",
+      statement: "设 $z=f(x,y)$ 在驻点 $(x_0,y_0)$ 的某邻域内具有二阶连续偏导数，记 $A=f_{xx}(x_0,y_0)$，$B=f_{xy}(x_0,y_0)$，$C=f_{yy}(x_0,y_0)$，$D=AC-B^2$。<ul><li>$D>0$ 且 $A&lt;0$ 时取<strong>极大值</strong>；</li><li>$D>0$ 且 $A>0$ 时取<strong>极小值</strong>；</li><li>$D&lt;0$ 时<strong>不是极值点</strong>；</li><li>$D=0$ 时不能确定，需另行讨论。</li></ul>",
       explanation: "该判别式常记作 $D=AC-B^2$（或用 Hesse 矩阵行列式表示），是二元函数极值判别的标准方法。求条件极值（约束条件下求极值）则用<strong>拉格朗日乘数法</strong>。",
       tags: ["极值", "判别式", "二阶偏导数"]
     },
@@ -749,7 +749,7 @@ registerSubject({
       chapterId: "multivar-derivative",
       type: "definition",
       title: "二元函数的极限与连续",
-      statement: "设函数 $f(x,y)$ 在点 $P_0(x_0,y_0)$ 的某去心邻域内有定义，若存在常数 $A$，对任意 $\\varepsilon>0$，存在 $\\delta>0$，使得当点 $P(x,y)$ 满足 $0<|PP_0|<\\delta$ 时恒有 $|f(x,y)-A|<\\varepsilon$，则称 $\\lim\\limits_{(x,y)\\to(x_0,y_0)}f(x,y)=A$。若 $\\lim\\limits_{(x,y)\\to(x_0,y_0)}f(x,y)=f(x_0,y_0)$，则称 $f(x,y)$ 在 $(x_0,y_0)$ 处连续。",
+      statement: "设函数 $f(x,y)$ 在点 $P_0(x_0,y_0)$ 的某去心邻域内有定义，若存在常数 $A$，对任意 $\\varepsilon>0$，存在 $\\delta>0$，使得当点 $P(x,y)$ 满足 $0&lt;|PP_0|&lt;\\delta$ 时恒有 $|f(x,y)-A|&lt;\\varepsilon$，则称 $\\lim\\limits_{(x,y)\\to(x_0,y_0)}f(x,y)=A$。若 $\\lim\\limits_{(x,y)\\to(x_0,y_0)}f(x,y)=f(x_0,y_0)$，则称 $f(x,y)$ 在 $(x_0,y_0)$ 处连续。",
       explanation: "二元函数极限要求点 $P$ <strong>以任意方式（任意路径）</strong>趋于 $P_0$ 时函数值都趋于同一个 $A$，比一元函数极限严格得多。判断极限不存在的常用方法：<u>取不同路径（如 $y=kx$、$y=kx^2$）代入若得到不同结果，则极限不存在</u>。",
       tags: ["二元函数", "极限", "连续"]
     },
@@ -867,7 +867,7 @@ registerSubject({
       type: "definition",
       title: "对弧长的曲线积分（第一类曲线积分）的定义",
       statement: "设 $L$ 为平面内一条光滑曲线弧，$f(x,y)$ 在 $L$ 上有界。将 $L$ 任意分成 $n$ 段，第 $i$ 段弧长为 $\\Delta s_i$，在其上任取一点 $(\\xi_i,\\eta_i)$，作和式 $\\displaystyle\\sum_{i=1}^n f(\\xi_i,\\eta_i)\\Delta s_i$。若当各小段长度的最大值 $\\lambda\\to 0$ 时该和式的极限存在且与分法、取点无关，则称此极限为 $f(x,y)$ 沿 $L$ 对弧长的曲线积分，记作 $\\displaystyle\\int_L f(x,y)\\,\\mathrm{d}s$。",
-      explanation: "第一类曲线积分<strong>与路径的方向无关</strong>（$\\int_L=\\int_{L^-}$），可理解为线密度为 $f$ 的曲线形构件的质量。计算时化为定积分：若 $L: x=x(t),y=y(t)\\ (\\alpha\\leqslant t\\leqslant\\beta)$，则 $\\int_L f\\,\\mathrm{d}s=\\int_\\alpha^\\beta f(x(t),y(t))\\sqrt{x'^2(t)+y'^2(t)}\\,\\mathrm{d}t$（下限对应曲线起点，<u>恒有 $\\alpha<\\beta$</u>）。",
+      explanation: "第一类曲线积分<strong>与路径的方向无关</strong>（$\\int_L=\\int_{L^-}$），可理解为线密度为 $f$ 的曲线形构件的质量。计算时化为定积分：若 $L: x=x(t),y=y(t)\\ (\\alpha\\leqslant t\\leqslant\\beta)$，则 $\\int_L f\\,\\mathrm{d}s=\\int_\\alpha^\\beta f(x(t),y(t))\\sqrt{x'^2(t)+y'^2(t)}\\,\\mathrm{d}t$（下限对应曲线起点，<u>恒有 $\\alpha&lt;\\beta$</u>）。",
       tags: ["曲线积分", "第一类曲线积分", "定义"]
     },
     {
@@ -983,7 +983,7 @@ registerSubject({
       chapterId: "series",
       type: "theorem",
       title: "等比级数与 p-级数的敛散性",
-      statement: "<ul><li><strong>等比级数：</strong>$\\displaystyle\\sum_{n=0}^{\\infty}aq^n$（$a\\neq 0$）当 $|q|<1$ 时收敛，和为 $\\dfrac{a}{1-q}$；当 $|q|\\geqslant 1$ 时发散。</li><li><strong>$p$-级数：</strong>$\\displaystyle\\sum_{n=1}^{\\infty}\\dfrac{1}{n^p}$ 当 $p>1$ 时收敛，当 $p\\leqslant 1$ 时发散（$p=1$ 时即调和级数）。</li></ul>",
+      statement: "<ul><li><strong>等比级数：</strong>$\\displaystyle\\sum_{n=0}^{\\infty}aq^n$（$a\\neq 0$）当 $|q|&lt;1$ 时收敛，和为 $\\dfrac{a}{1-q}$；当 $|q|\\geqslant 1$ 时发散。</li><li><strong>$p$-级数：</strong>$\\displaystyle\\sum_{n=1}^{\\infty}\\dfrac{1}{n^p}$ 当 $p>1$ 时收敛，当 $p\\leqslant 1$ 时发散（$p=1$ 时即调和级数）。</li></ul>",
       explanation: "这两类级数是比较判别法中最常用的<strong>\"参照级数\"</strong>，几乎所有正项级数敛散性判断题都要与它们之一作比较，必须牢记结论及<u>临界值（$|q|=1$、$p=1$）</u>。",
       tags: ["级数", "等比级数", "p级数"]
     },
@@ -992,7 +992,7 @@ registerSubject({
       chapterId: "series",
       type: "theorem",
       title: "正项级数的比较判别法",
-      statement: "设 $\\displaystyle\\sum u_n$ 与 $\\displaystyle\\sum v_n$ 都是正项级数，且 $u_n\\leqslant v_n$（$n$ 充分大后成立）。<strong>基本形式：</strong>若 $\\displaystyle\\sum v_n$ 收敛，则 $\\displaystyle\\sum u_n$ 收敛；若 $\\displaystyle\\sum u_n$ 发散，则 $\\displaystyle\\sum v_n$ 发散。<strong>极限形式：</strong>若 $\\lim\\limits_{n\\to\\infty}\\dfrac{u_n}{v_n}=l$（$0<l<+\\infty$），则 $\\displaystyle\\sum u_n$ 与 $\\displaystyle\\sum v_n$ 同敛散。",
+      statement: "设 $\\displaystyle\\sum u_n$ 与 $\\displaystyle\\sum v_n$ 都是正项级数，且 $u_n\\leqslant v_n$（$n$ 充分大后成立）。<strong>基本形式：</strong>若 $\\displaystyle\\sum v_n$ 收敛，则 $\\displaystyle\\sum u_n$ 收敛；若 $\\displaystyle\\sum u_n$ 发散，则 $\\displaystyle\\sum v_n$ 发散。<strong>极限形式：</strong>若 $\\lim\\limits_{n\\to\\infty}\\dfrac{u_n}{v_n}=l$（$0&lt;l&lt;+\\infty$），则 $\\displaystyle\\sum u_n$ 与 $\\displaystyle\\sum v_n$ 同敛散。",
       explanation: "极限形式的比较判别法更常用，做题时常取 $v_n$ 为 $n\\to\\infty$ 时与 $u_n$ 等价的简单级数（如 $p$-级数），只需分析 $u_n$ 的<strong>主部（分子分母最高阶）</strong>即可判断敛散性。",
       tags: ["级数", "比较判别法", "正项级数"]
     },
@@ -1001,7 +1001,7 @@ registerSubject({
       chapterId: "series",
       type: "theorem",
       title: "正项级数的比值判别法与根值判别法",
-      statement: "<ul><li><strong>比值判别法（达朗贝尔判别法）：</strong>设 $\\displaystyle\\sum u_n$ 为正项级数，$\\lim\\limits_{n\\to\\infty}\\dfrac{u_{n+1}}{u_n}=\\rho$，则 $\\rho<1$ 时收敛，$\\rho>1$（含 $+\\infty$）时发散，$\\rho=1$ 时判别法失效。</li><li><strong>根值判别法（柯西判别法）：</strong>$\\lim\\limits_{n\\to\\infty}\\sqrt[n]{u_n}=\\rho$，则 $\\rho<1$ 时收敛，$\\rho>1$ 时发散，$\\rho=1$ 时失效。</li></ul>",
+      statement: "<ul><li><strong>比值判别法（达朗贝尔判别法）：</strong>设 $\\displaystyle\\sum u_n$ 为正项级数，$\\lim\\limits_{n\\to\\infty}\\dfrac{u_{n+1}}{u_n}=\\rho$，则 $\\rho&lt;1$ 时收敛，$\\rho>1$（含 $+\\infty$）时发散，$\\rho=1$ 时判别法失效。</li><li><strong>根值判别法（柯西判别法）：</strong>$\\lim\\limits_{n\\to\\infty}\\sqrt[n]{u_n}=\\rho$，则 $\\rho&lt;1$ 时收敛，$\\rho>1$ 时发散，$\\rho=1$ 时失效。</li></ul>",
       explanation: "比值判别法适合通项含阶乘、指数结构（如 $n!$、$a^n$）的级数；根值判别法适合通项为 $n$ 次幂结构（如 $\\left(\\frac{n}{n+1}\\right)^{n^2}$）的级数。两者 <u>$\\rho=1$ 时都需换用其他方法（如比较判别法）判断</u>。",
       tags: ["级数", "比值判别法", "根值判别法"]
     },
@@ -1028,7 +1028,7 @@ registerSubject({
       chapterId: "series",
       type: "definition",
       title: "幂级数及其收敛半径、收敛区间",
-      statement: "形如 $\\displaystyle\\sum_{n=0}^{\\infty}a_n(x-x_0)^n$ 的级数称为<strong>幂级数</strong>。由阿贝尔定理可知，存在 $R\\geqslant 0$（$R$ 可为 $+\\infty$），使得当 $|x-x_0|<R$ 时幂级数绝对收敛，当 $|x-x_0|>R$ 时发散，$R$ 称为<strong>收敛半径</strong>。$(x_0-R,x_0+R)$ 称为<strong>收敛区间</strong>，端点 $x=x_0\\pm R$ 处需单独代入原级数判断敛散性，收敛区间连同收敛的端点一起构成<strong>收敛域</strong>。",
+      statement: "形如 $\\displaystyle\\sum_{n=0}^{\\infty}a_n(x-x_0)^n$ 的级数称为<strong>幂级数</strong>。由阿贝尔定理可知，存在 $R\\geqslant 0$（$R$ 可为 $+\\infty$），使得当 $|x-x_0|&lt;R$ 时幂级数绝对收敛，当 $|x-x_0|>R$ 时发散，$R$ 称为<strong>收敛半径</strong>。$(x_0-R,x_0+R)$ 称为<strong>收敛区间</strong>，端点 $x=x_0\\pm R$ 处需单独代入原级数判断敛散性，收敛区间连同收敛的端点一起构成<strong>收敛域</strong>。",
       explanation: "求收敛半径常用比值法或根值法：$R=\\lim\\limits_{n\\to\\infty}\\left|\\dfrac{a_n}{a_{n+1}}\\right|$（或 $R=\\lim\\dfrac{1}{\\sqrt[n]{|a_n|}}$）。<u>端点处的敛散性必须单独代入原级数用数项级数判别法逐一判断</u>，不能想当然地认为端点也收敛或发散。",
       tags: ["幂级数", "收敛半径", "收敛域"]
     },
@@ -1037,7 +1037,7 @@ registerSubject({
       chapterId: "series",
       type: "theorem",
       title: "阿贝尔定理",
-      statement: "若幂级数 $\\displaystyle\\sum_{n=0}^{\\infty}a_nx^n$ 在 $x=x_0\\neq 0$ 处收敛，则对满足 $|x|<|x_0|$ 的一切 $x$，该幂级数绝对收敛；若在 $x=x_0$ 处发散，则对满足 $|x|>|x_0|$ 的一切 $x$，该幂级数发散。",
+      statement: "若幂级数 $\\displaystyle\\sum_{n=0}^{\\infty}a_nx^n$ 在 $x=x_0\\neq 0$ 处收敛，则对满足 $|x|&lt;|x_0|$ 的一切 $x$，该幂级数绝对收敛；若在 $x=x_0$ 处发散，则对满足 $|x|>|x_0|$ 的一切 $x$，该幂级数发散。",
       explanation: "阿贝尔定理是幂级数存在唯一收敛半径 $R$、收敛域呈对称区间形状的理论依据。它说明幂级数的敛散性关于原点具有<strong>\"由近及远\"</strong>的传递性：某点收敛则更靠近中心的点必绝对收敛。",
       tags: ["幂级数", "阿贝尔定理", "收敛性"]
     },
@@ -1055,7 +1055,7 @@ registerSubject({
       chapterId: "series",
       type: "property",
       title: "常用函数的麦克劳林级数展开",
-      statement: "$e^x=\\displaystyle\\sum_{n=0}^{\\infty}\\dfrac{x^n}{n!}$（$-\\infty<x<+\\infty$）；$\\sin x=\\displaystyle\\sum_{n=0}^{\\infty}\\dfrac{(-1)^n}{(2n+1)!}x^{2n+1}$，$\\cos x=\\displaystyle\\sum_{n=0}^{\\infty}\\dfrac{(-1)^n}{(2n)!}x^{2n}$（$-\\infty<x<+\\infty$）；$\\dfrac{1}{1-x}=\\displaystyle\\sum_{n=0}^{\\infty}x^n$（$-1<x<1$）；$\\ln(1+x)=\\displaystyle\\sum_{n=1}^{\\infty}\\dfrac{(-1)^{n-1}}{n}x^n$（$-1<x\\leqslant 1$）；$(1+x)^\\alpha=1+\\displaystyle\\sum_{n=1}^{\\infty}\\dfrac{\\alpha(\\alpha-1)\\cdots(\\alpha-n+1)}{n!}x^n$（$-1<x<1$）。",
+      statement: "$e^x=\\displaystyle\\sum_{n=0}^{\\infty}\\dfrac{x^n}{n!}$（$-\\infty&lt;x&lt;+\\infty$）；$\\sin x=\\displaystyle\\sum_{n=0}^{\\infty}\\dfrac{(-1)^n}{(2n+1)!}x^{2n+1}$，$\\cos x=\\displaystyle\\sum_{n=0}^{\\infty}\\dfrac{(-1)^n}{(2n)!}x^{2n}$（$-\\infty&lt;x&lt;+\\infty$）；$\\dfrac{1}{1-x}=\\displaystyle\\sum_{n=0}^{\\infty}x^n$（$-1&lt;x&lt;1$）；$\\ln(1+x)=\\displaystyle\\sum_{n=1}^{\\infty}\\dfrac{(-1)^{n-1}}{n}x^n$（$-1&lt;x\\leqslant 1$）；$(1+x)^\\alpha=1+\\displaystyle\\sum_{n=1}^{\\infty}\\dfrac{\\alpha(\\alpha-1)\\cdots(\\alpha-n+1)}{n!}x^n$（$-1&lt;x&lt;1$）。",
       explanation: "这些是函数展开成幂级数、求特定级数的和最重要的\"母函数\"，<u>必须熟记（含收敛域）</u>。展开其他函数常通过代换（如把 $x$ 换成 $-x^2$）、四则运算、逐项求导积分等方式，转化为这些标准展开式的组合。",
       tags: ["幂级数", "麦克劳林级数", "泰勒展开"]
     },
