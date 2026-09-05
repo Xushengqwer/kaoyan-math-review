@@ -110,6 +110,11 @@ const App = {
       });
     }
 
+    // Esc 退出全屏编辑（保存弹窗自己有一套 Esc，两者不会同时出现）
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && document.body.classList.contains("mynote-zoomed")) this.exitZoom();
+    });
+
     this.refreshNoteCount();
   },
 
@@ -515,6 +520,7 @@ const App = {
 
   // 打印前把页面整理成完整的一章：清掉筛选、展开目录、收起正在编辑的笔记
   printChapter(subjectId, chapterId) {
+    this.exitZoom();
     const needsReset = this.chapterQuery || (this.chapterTypeFilter && this.chapterTypeFilter !== "all");
     if (needsReset) {
       this.chapterQuery = "";
@@ -738,12 +744,20 @@ const App = {
       </article>`;
   },
 
+  // 仓库里有没有这条笔记
+  hasSeed(noteId) {
+    return !!(window.__KAOYAN_SEED_NOTES__[noteId] || "").trim();
+  },
+
   // 一眼看出这条笔记是不是已经跟着仓库走了
   noteFlagHtml(noteId) {
-    if (Notes.isPending(noteId)) {
-      return `<span class="mynote-flag pending" title="只存在这台设备的浏览器里。清缓存、换设备、iOS Safari 七天没打开都可能丢失。下载 .txt 交给我提交进仓库才算安全。">未进仓库</span>`;
+    if (!Notes.isPending(noteId)) {
+      return `<span class="mynote-flag saved" title="已经写进仓库文件，有 Git 历史，换任何设备打开都能看到">已进仓库</span>`;
     }
-    return `<span class="mynote-flag saved" title="已经写进仓库文件，有 Git 历史，换任何设备打开都能看到">已进仓库</span>`;
+    if (this.hasSeed(noteId)) {
+      return `<span class="mynote-flag pending" title="这台设备上的版本和仓库里的那一版不一样（可能是你后来改过，也可能是仓库那版重新排过版）。点「用仓库版」可以丢掉本地这一版。">本地已改</span>`;
+    }
+    return `<span class="mynote-flag pending" title="只存在这台设备的浏览器里。清缓存、换设备、iOS Safari 七天没打开都可能丢失。下载 .txt 交给我提交进仓库才算安全。">未进仓库</span>`;
   },
 
   // 「大白话」区块：有内容就展示，没有就显示一个添加按钮
@@ -757,6 +771,11 @@ const App = {
       <div class="mynote-head">
         <span class="mynote-label">${isCh ? "本章总结" : "大白话"}</span>
         ${this.noteFlagHtml(noteId)}
+        ${
+          Notes.isPending(noteId) && this.hasSeed(noteId)
+            ? `<button class="mynote-restore" data-action="restore" title="丢掉本地这一版，改用仓库里的那一版">用仓库版</button>`
+            : ""
+        }
         <button class="mynote-edit" data-action="edit">编辑</button>
       </div>
       <div class="mynote-body">${escapeHtml(text)}</div>
@@ -773,6 +792,7 @@ const App = {
       <div class="mynote-head">
         <span class="mynote-label">${isCh ? "本章总结" : "大白话"}</span>
         <button class="mynote-preview-btn" data-action="preview">预览公式</button>
+        <button class="mynote-zoom-btn" data-action="zoom" title="全屏编辑（Esc 退出）">放大</button>
       </div>
       <textarea class="mynote-input" rows="${isCh ? 14 : 9}" placeholder="${placeholder}">${escapeHtml(text)}</textarea>
       <div class="mynote-preview" hidden></div>
@@ -799,8 +819,18 @@ const App = {
         if (action === "edit") {
           show(this.editorHtml(id));
           const ta = slot.querySelector(".mynote-input");
+          // 已有内容的话，先把输入框撑到刚好放下（最高 560px），省得一上来就在小窗里翻
+          if (ta.value) ta.style.height = Math.min(ta.scrollHeight + 4, 560) + "px";
           ta.focus();
           ta.setSelectionRange(ta.value.length, ta.value.length);
+        } else if (action === "zoom") {
+          this.toggleZoom(slot, btn);
+        } else if (action === "restore") {
+          if (!confirm("用仓库里的那一版覆盖本地这一版？\n本地这一版会被清掉，无法撤销。")) return;
+          Notes.set(id, "");
+          show(this.myNoteHtml(id));
+          this.refreshNoteCount();
+          this.refreshTocState(id);
         } else if (action === "preview") {
           // 只是换个显示方式，不动 textarea 里的任何字符
           const ta = slot.querySelector(".mynote-input");
@@ -820,14 +850,17 @@ const App = {
             alert("保存失败：浏览器存储空间不足或被禁用。");
             return;
           }
+          this.exitZoom();
           show(this.myNoteHtml(id));
           this.refreshNoteCount();
           this.refreshTocState(id);
           if (val.trim()) this.askDownload(id);
         } else if (action === "cancel") {
+          this.exitZoom();
           show(this.myNoteHtml(id));
         } else if (action === "delete") {
           Notes.set(id, "");
+          this.exitZoom();
           show(this.myNoteHtml(id));
           this.refreshNoteCount();
           this.refreshTocState(id);
@@ -839,6 +872,32 @@ const App = {
   // 章节总结用的笔记 id，和知识点 id 区分开
   chapterNoteId(subjectId, chapterId) {
     return "ch:" + subjectId + "/" + chapterId;
+  },
+
+  // 全屏编辑：只是给编辑框加一个 class，DOM 不搬家，原来的事件绑定照常有效
+  toggleZoom(slot, btn) {
+    const box = slot.querySelector(".mynote-editing");
+    if (!box) return;
+    const on = !box.classList.contains("fullscreen");
+    box.classList.toggle("fullscreen", on);
+    document.body.classList.toggle("mynote-zoomed", on);
+    btn.textContent = on ? "还原" : "放大";
+    const ta = box.querySelector(".mynote-input");
+    if (ta) {
+      if (on) ta.style.height = "";           // 交给 flex 撑满
+      else ta.style.height = Math.min(ta.scrollHeight + 4, 560) + "px";
+      if (!ta.hidden) ta.focus();
+    }
+  },
+
+  exitZoom() {
+    const box = document.querySelector(".mynote-editing.fullscreen");
+    if (box) {
+      box.classList.remove("fullscreen");
+      const b = box.querySelector('[data-action="zoom"]');
+      if (b) b.textContent = "放大";
+    }
+    document.body.classList.remove("mynote-zoomed");
   },
 
   // 定位一条笔记：属于哪个学科、第几章；知识点还要给出在本章同类里排第几
