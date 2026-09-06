@@ -779,7 +779,7 @@ const App = {
     if (!text) {
       return `<button class="mynote-add" data-action="edit">＋ ${isCh ? "写一段本章总结" : "用大白话写一遍"}</button>`;
     }
-    return `<div class="mynote">
+    return `<div class="mynote${Notes.isPending(noteId) ? " is-pending" : ""}">
       <div class="mynote-head">
         <span class="mynote-label">${isCh ? "本章总结" : "大白话"}</span>
         ${this.noteFlagHtml(noteId)}
