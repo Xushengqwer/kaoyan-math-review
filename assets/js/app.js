@@ -746,14 +746,24 @@ const App = {
 
   // 笔记正文的显示：转义之后把 **加粗** 变成 <strong>。
   // 和 $ 公式一样，只发生在「显示的那一刻」——存储和导出的原文一个字不动。
-  // $...$ / $$...$$ 里的内容整段跳过，免得动到公式里的星号。
+  // 做法：先把 $...$ / $$...$$ 换成占位符，再找加粗，最后还原。
+  // 这样公式里的星号动不到，同时加粗又能跨过公式，比如 **严格条件 $|A| \ne 0$**。
   noteBodyHtml(text) {
+    const NUL = String.fromCharCode(0);
     const BOLD = new RegExp("\\*\\*([^*\\n]+?)\\*\\*", "g");
     const MATH = new RegExp("(\\$\\$[\\s\\S]*?\\$\\$|\\$[^$\\n]*\\$)");
-    return escapeHtml(text)
+    const store = [];
+    const masked = escapeHtml(text)
       .split(MATH)
-      .map((part, i) => (i % 2 ? part : part.replace(BOLD, "<strong>$1</strong>")))
+      .map((part, i) => {
+        if (!(i % 2)) return part;
+        store.push(part);
+        return NUL + (store.length - 1) + NUL;
+      })
       .join("");
+    return masked
+      .replace(BOLD, "<strong>$1</strong>")
+      .replace(new RegExp(NUL + "(\\d+)" + NUL, "g"), (m, k) => store[Number(k)]);
   },
 
   // 仓库里有没有这条笔记
