@@ -807,6 +807,14 @@ body.mynote-zoomed { overflow: hidden; }
 .export-hint { flex: 1; min-width: 220px; font-size: 11.5px; line-height: 1.7; color: var(--text-3); }
 .export-hint strong { color: var(--text-2); font-weight: 600; }
 
+/* 窄屏上，个别很长的行内公式（比如二维正态密度）比屏幕还宽，
+   KaTeX 的行内公式又不能折行，会把整页顶得能左右滑。
+   这里让正文块自己变成横向滚动容器：公式在框里滑，页面不动。
+   只在窄屏生效，桌面端排版一点不变。 */
+@media (max-width: 720px) {
+  .entry-statement, .entry-note, .mynote-body, .mynote-preview { overflow-x: auto; }
+}
+
 /* ---- 打印 / 导出 PDF ---- */
 @media print {
   /* 只留正文，界面元素全部收起 */
