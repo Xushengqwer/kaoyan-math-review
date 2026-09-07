@@ -112,7 +112,9 @@ const App = {
 
     // Esc 退出全屏编辑（保存弹窗自己有一套 Esc，两者不会同时出现）
     document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && document.body.classList.contains("mynote-zoomed")) this.exitZoom();
+      if (e.key !== "Escape") return;
+      if (document.body.classList.contains("mynote-zoomed")) this.exitZoom();
+      else this.closeRail();
     });
 
     this.refreshNoteCount();
@@ -269,6 +271,7 @@ const App = {
     const el = document.getElementById("content-pane");
     const r = this.current;
     if (r.type === "search") {
+      this.hideRail();
       el.innerHTML = this.searchViewHtml(this.globalQuery);
       renderMath(el);
       el.querySelectorAll(".result").forEach((a) => {
@@ -289,13 +292,16 @@ const App = {
     }
     if (r.type === "chapter") {
       el.innerHTML = this.chapterViewHtml(r.subjectId, r.chapterId);
+      this.renderRail(r.subjectId, r.chapterId);
       this.bindChapterControls(r.subjectId, r.chapterId);
       this.bindNoteEditors(el); // 章末总结的编辑器（知识点的已在上面绑好）
       const pdfBtn = document.getElementById("chapter-pdf");
       if (pdfBtn) pdfBtn.addEventListener("click", () => this.printChapter(r.subjectId, r.chapterId));
     } else if (r.type === "subject") {
+      this.hideRail();
       el.innerHTML = this.subjectViewHtml(r.subjectId);
     } else {
+      this.hideRail();
       el.innerHTML = this.overviewHtml();
     }
     renderMath(el);
@@ -521,6 +527,7 @@ const App = {
   // 打印前把页面整理成完整的一章：清掉筛选、展开目录、收起正在编辑的笔记
   printChapter(subjectId, chapterId) {
     this.exitZoom();
+    this.closeRail();
     const needsReset = this.chapterQuery || (this.chapterTypeFilter && this.chapterTypeFilter !== "all");
     if (needsReset) {
       this.chapterQuery = "";
@@ -637,6 +644,108 @@ const App = {
     this.bindToc(wrap);
   },
 
+  // ---------- 右侧「本章目录」导轨 ----------
+  // 页面顶部那份目录一往下滚就看不见了，所以在右边缘常驻一条：
+  // 鼠标移上去弹出，移开收起；触屏没有 hover，点一下钉住。
+  renderRail(subjectId, chapterId) {
+    const rail = document.getElementById("chapter-rail");
+    if (!rail) return;
+    const c = KaoyanData.chapter(subjectId, chapterId);
+    const items = KaoyanData.itemsByChapter(subjectId, chapterId);
+    if (!c || !items.length) { this.hideRail(); return; }
+
+    const groups = TYPE_ORDER
+      .map((type) => ({ type, items: items.filter((i) => i.type === type) }))
+      .filter((g) => g.items.length);
+
+    const cols = groups
+      .map(
+        ({ type, items: list }) => `
+        <div class="rail-group ${type}">
+          <div class="rail-group-head">
+            <span class="toc-dot" aria-hidden="true"></span>
+            <span class="rail-group-name">${TYPE_LABEL[type]}</span>
+            <span class="rail-group-count">${list.length}</span>
+          </div>
+          <ol class="rail-list">
+            ${list
+              .map(
+                (it, i) => `<li>
+                  <a href="#item-${it.id}" data-goto="${it.id}">
+                    <span class="toc-no">${String(i + 1).padStart(2, "0")}</span>
+                    <span class="toc-title">${escapeHtml(it.title)}</span>
+                    ${this.noteDotHtml(it.id)}
+                  </a>
+                </li>`
+              )
+              .join("")}
+          </ol>
+        </div>`
+      )
+      .join("");
+
+    const chNote = this.chapterNoteId(subjectId, chapterId);
+    const foot = `
+      <a class="toc-foot" href="#item-${chNote}" data-goto="${chNote}">
+        <span class="toc-foot-name">本章大白话总结</span>
+        <span class="toc-foot-state${Notes.has(chNote) ? " done" : ""}">${
+          Notes.has(chNote) ? (Notes.isPending(chNote) ? "已写 · 未进仓库" : "已写") : "还没写"
+        }</span>
+      </a>`;
+
+    rail.innerHTML = `
+      <button class="rail-tab" id="rail-tab" aria-expanded="false" aria-controls="rail-panel">本章目录</button>
+      <div class="rail-panel" id="rail-panel">
+        <div class="rail-inner">
+          <div class="rail-head">
+            <span class="rail-head-no">${String(c.order).padStart(2, "0")}</span>
+            <span class="rail-head-name">${escapeHtml(c.name)}</span>
+            <span class="rail-head-count">${items.length} 条</span>
+          </div>
+          <div class="rail-body">${cols}${foot}</div>
+        </div>
+      </div>`;
+    rail.hidden = false;
+    rail.classList.remove("open");
+
+    const tab = document.getElementById("rail-tab");
+    tab.addEventListener("click", () => {
+      const on = !rail.classList.contains("open");
+      rail.classList.toggle("open", on);
+      tab.setAttribute("aria-expanded", String(on));
+    });
+    this.bindToc(rail);
+    // 点了条目就收起（触屏钉住的情况下尤其需要）
+    rail.querySelectorAll("[data-goto]").forEach((a) => {
+      a.addEventListener("click", () => this.closeRail());
+    });
+  },
+
+  hideRail() {
+    const rail = document.getElementById("chapter-rail");
+    if (!rail) return;
+    rail.hidden = true;
+    rail.classList.remove("open");
+    rail.innerHTML = "";
+  },
+
+  closeRail() {
+    const rail = document.getElementById("chapter-rail");
+    if (!rail) return;
+    rail.classList.remove("open");
+    const tab = document.getElementById("rail-tab");
+    if (tab) tab.setAttribute("aria-expanded", "false");
+  },
+
+  // 目录条目后面那个小圆点：写过大白话就点亮，还没进仓库的是橙色
+  noteDotHtml(itemId) {
+    if (!Notes.has(itemId)) return "";
+    const pending = Notes.isPending(itemId);
+    return `<span class="toc-noted${pending ? " pending" : ""}" title="${
+      pending ? "已写大白话，但还没进仓库" : "已写大白话"
+    }">●</span>`;
+  },
+
   // 章节开头的目录：按类型分栏，点条目滚到对应位置
   tocHtml(groups, subjectId, chapterId) {
     const total = groups.reduce((n, g) => n + g.items.length, 0);
@@ -657,11 +766,7 @@ const App = {
                   <a href="#item-${it.id}" data-goto="${it.id}">
                     <span class="toc-no">${String(i + 1).padStart(2, "0")}</span>
                     <span class="toc-title">${escapeHtml(it.title)}</span>
-                    ${
-                      Notes.has(it.id)
-                        ? `<span class="toc-noted ${Notes.isPending(it.id) ? "pending" : ""}" title="${Notes.isPending(it.id) ? "已写大白话，但还没进仓库" : "已写大白话"}">●</span>`
-                        : ""
-                    }
+                    ${this.noteDotHtml(it.id)}
                   </a>
                 </li>`
               )
@@ -689,31 +794,31 @@ const App = {
 
   // 存完之后只更新目录里那一行的标记，不整块重渲染（避免页面跳动）
   refreshTocState(noteId) {
-    const link = document.querySelector('.toc a[data-goto="' + noteId.replace(/"/g, '\\"') + '"]');
-    if (!link) return;
     const has = Notes.has(noteId);
     const pending = Notes.isPending(noteId);
-
-    const foot = link.querySelector(".toc-foot-state");
-    if (foot) {
-      foot.textContent = has ? (pending ? "已写 · 未进仓库" : "已写") : "还没写";
-      foot.classList.toggle("done", has);
-      return;
-    }
-    let dot = link.querySelector(".toc-noted");
-    if (!has) { if (dot) dot.remove(); return; }
-    if (!dot) {
-      dot = document.createElement("span");
-      dot.className = "toc-noted";
-      dot.textContent = "●";
-      link.appendChild(dot);
-    }
-    dot.classList.toggle("pending", pending);
-    dot.title = pending ? "已写大白话，但还没进仓库" : "已写大白话";
+    // 页面顶部的目录和右侧导轨里都有同一条，一起更新
+    document.querySelectorAll('[data-goto="' + noteId.replace(/"/g, '\\"') + '"]').forEach((link) => {
+      const foot = link.querySelector(".toc-foot-state");
+      if (foot) {
+        foot.textContent = has ? (pending ? "已写 · 未进仓库" : "已写") : "还没写";
+        foot.classList.toggle("done", has);
+        return;
+      }
+      let dot = link.querySelector(".toc-noted");
+      if (!has) { if (dot) dot.remove(); return; }
+      if (!dot) {
+        dot = document.createElement("span");
+        dot.className = "toc-noted";
+        dot.textContent = "●";
+        link.appendChild(dot);
+      }
+      dot.classList.toggle("pending", pending);
+      dot.title = pending ? "已写大白话，但还没进仓库" : "已写大白话";
+    });
   },
 
   bindToc(scope) {
-    scope.querySelectorAll(".toc a[data-goto]").forEach((a) => {
+    scope.querySelectorAll("[data-goto]").forEach((a) => {
       a.addEventListener("click", (e) => {
         e.preventDefault();
         const node = document.getElementById("item-" + a.dataset.goto);

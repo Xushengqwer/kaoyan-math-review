@@ -789,6 +789,9 @@ body.mynote-zoomed { overflow: hidden; }
   .pager-item.next { text-align: left; }
   .pager-empty { display: none; }
   .to-top { right: 16px; bottom: 16px; }
+  .rail { --rail-w: min(306px, 84vw); }
+  .rail-tab { padding: 14px 7px; font-size: 11.5px; letter-spacing: .16em; }
+  .rail-inner { padding: 14px 4px 12px 14px; }
 }
 
 /* ---- 章末导出条 ---- */
@@ -807,6 +810,89 @@ body.mynote-zoomed { overflow: hidden; }
 .export-hint { flex: 1; min-width: 220px; font-size: 11.5px; line-height: 1.7; color: var(--text-3); }
 .export-hint strong { color: var(--text-2); font-weight: 600; }
 
+/* ---- 右侧「本章目录」导轨：鼠标移上去弹出，移开收起 ---- */
+/* 收起时把整条推到屏幕外，只把左边的把手留在边缘；用 transform 而不是 width，
+   避免「固定定位 + flex 收缩」互相依赖导致面板被压成 0 宽。 */
+.rail {
+  --rail-w: 306px;
+  position: fixed; right: 0; top: 50%;
+  z-index: 36;
+  display: flex; align-items: center;
+  max-height: 76dvh;
+  transform: translate(var(--rail-w), -50%);
+  transition: transform .22s ease;
+}
+.rail[hidden] { display: none; }
+.rail:hover, .rail.open { transform: translate(0, -50%); }
+
+.rail-tab {
+  flex: none; align-self: center;
+  writing-mode: vertical-rl;
+  padding: 18px 8px;
+  border-radius: 12px 0 0 12px;
+  background: var(--surface); box-shadow: var(--lift-hi);
+  font-size: 12px; font-weight: 600; letter-spacing: .22em;
+  color: var(--text-2);
+  transition: color .15s;
+}
+.rail-tab:hover { color: var(--accent); }
+
+.rail-panel {
+  flex: none;
+  width: var(--rail-w);
+  max-height: 76dvh;
+  background: var(--surface);
+  box-shadow: var(--lift-hi);
+}
+.rail-inner {
+  width: 100%; max-height: 76dvh;
+  display: flex; flex-direction: column;
+  padding: 16px 6px 14px 16px;
+}
+.rail-head {
+  flex: none;
+  display: flex; align-items: baseline; gap: 8px;
+  padding: 0 10px 12px 0;
+  border-bottom: 1px solid var(--hairline);
+}
+.rail-head-no { font-size: 12px; font-weight: 700; color: var(--text-3); }
+.rail-head-name {
+  flex: 1; min-width: 0;
+  font-size: 13.5px; font-weight: 600; letter-spacing: -.005em;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.rail-head-count { flex: none; font-size: 11px; color: var(--text-3); }
+
+.rail-body { flex: 1; min-height: 0; overflow-y: auto; padding: 12px 10px 0 0; }
+.rail-group + .rail-group { margin-top: 14px; }
+.rail-group-head { display: flex; align-items: center; gap: 7px; margin-bottom: 6px; }
+.rail-group-name { font-size: 11.5px; font-weight: 600; }
+.rail-group-count { font-size: 10.5px; color: var(--text-3); margin-left: auto; }
+.rail-group.definition .toc-dot { background: var(--def); }
+.rail-group.definition .rail-group-name { color: var(--def); }
+.rail-group.theorem .toc-dot { background: var(--thm); }
+.rail-group.theorem .rail-group-name { color: var(--thm); }
+.rail-group.property .toc-dot { background: var(--prp); }
+.rail-group.property .rail-group-name { color: var(--prp); }
+
+.rail-list { list-style: none; margin: 0; padding: 0; }
+.rail-list a {
+  display: flex; align-items: baseline; gap: 8px;
+  padding: 5px 8px; margin-left: -8px;
+  border-radius: 7px;
+  font-size: 12.5px; line-height: 1.5; color: var(--text-2);
+  transition: background .15s, color .15s;
+}
+.rail-list a:hover { background: var(--accent-soft); color: var(--accent); }
+.rail-list a:hover .toc-no { color: var(--accent); }
+.rail .toc-foot { margin-top: 14px; padding-top: 12px; font-size: 12.5px; }
+
+/* 触屏没有 hover，靠点把手钉住 */
+@media (hover: none) {
+  .rail:hover { transform: translate(var(--rail-w), -50%); }
+  .rail.open { transform: translate(0, -50%); }
+}
+
 /* 窄屏上，个别很长的行内公式（比如二维正态密度）比屏幕还宽，
    KaTeX 的行内公式又不能折行，会把整页顶得能左右滑。
    这里让正文块自己变成横向滚动容器：公式在框里滑，页面不动。
@@ -818,7 +904,7 @@ body.mynote-zoomed { overflow: hidden; }
 /* ---- 打印 / 导出 PDF ---- */
 @media print {
   /* 只留正文，界面元素全部收起 */
-  .mobile-topbar, .sidebar, .sidebar-backdrop, .to-top,
+  .mobile-topbar, .sidebar, .sidebar-backdrop, .to-top, .rail,
   .toolbar, .pager, .export-bar, .breadcrumb,
   .modal-backdrop, .mynote-edit, .mynote-add, .mynote-actions,
   .mynote-preview-btn, .mynote-zoom-btn, .mynote-restore,
