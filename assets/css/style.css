@@ -669,7 +669,7 @@ mark { background: #ffe58a; color: inherit; border-radius: 3px; padding: 0 2px; 
 .mynote-input:focus { border-color: var(--accent); }
 
 .mynote-preview-btn {
-  margin-left: auto; padding: 4px 12px; border-radius: 999px;
+  padding: 4px 12px; border-radius: 999px;
   font-size: 11.5px; color: var(--text-3); background: var(--bg);
   transition: background .15s, color .15s;
 }
@@ -715,6 +715,74 @@ body.mynote-zoomed { overflow: hidden; }
 .mynote-cancel { background: var(--hairline); color: var(--text-2); }
 .mynote-delete { margin-left: auto; color: #d9333f; }
 @media (prefers-color-scheme: dark) { .mynote-delete { color: #ff6b6b; } }
+
+/* ---- Markdown 笔记的排版 ----
+   标题一律压到正文级别，不跟页面标题抢；其余按常规文档排。 */
+.mynote-body.md > *:first-child, .mynote-preview.md > *:first-child { margin-top: 0; }
+.mynote-body.md > *:last-child,  .mynote-preview.md > *:last-child  { margin-bottom: 0; }
+.md h1, .md h2, .md h3, .md h4, .md h5, .md h6 {
+  margin: 22px 0 9px; line-height: 1.4; letter-spacing: -.01em; font-weight: 700;
+}
+.md h1 { font-size: 17px; padding-bottom: 7px; border-bottom: 2px solid var(--accent); }
+.md h2 { font-size: 15.5px; color: var(--accent); }
+.md h3 { font-size: 14.5px; }
+.md h4, .md h5, .md h6 { font-size: 14px; color: var(--text-2); }
+.md p { margin: 9px 0; }
+.md ul, .md ol { margin: 8px 0; padding-left: 22px; }
+.md li { margin: 3px 0; }
+.md li > ul, .md li > ol { margin: 3px 0; }
+.md strong { font-weight: 700; color: var(--text); }
+.md em { font-style: italic; }
+.md hr { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+.md blockquote {
+  margin: 12px 0; padding: 9px 14px;
+  border-left: 3px solid var(--text-3); border-radius: 0 8px 8px 0;
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+  color: var(--text-2);
+}
+.md blockquote p { margin: 0; }
+.md code {
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .9em;
+  background: color-mix(in srgb, var(--text) 8%, transparent); padding: 1px 5px; border-radius: 5px;
+}
+.md pre {
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+  padding: 12px 14px; border-radius: 10px; overflow-x: auto; margin: 10px 0;
+}
+.md pre code { background: none; padding: 0; }
+.md table { border-collapse: collapse; margin: 12px 0; font-size: 13px; display: block; overflow-x: auto; }
+.md th, .md td { border: 1px solid var(--border); padding: 6px 11px; text-align: left; }
+.md th { background: color-mix(in srgb, var(--text) 5%, transparent); font-weight: 700; }
+.md a { color: var(--accent); text-decoration: underline; }
+/* Markdown 模式下由标签控制换行，不要再用 pre-wrap */
+.mynote-body.md, .mynote-preview.md { white-space: normal; }
+
+/* ---- 编辑器顶部的状态条 ---- */
+.mynote-warn {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+  margin-bottom: 9px; font-size: 11.5px; color: var(--text-3);
+}
+.mynote-fmt {
+  padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 700;
+}
+.mynote-fmt.md { background: var(--accent-soft); color: var(--accent); }
+.mynote-fmt.text { background: var(--hairline); color: var(--text-2); }
+.mynote-fmt-why { color: var(--text-3); }
+.mynote-fmt-btn {
+  padding: 2px 10px; border-radius: 999px; font-size: 11px;
+  color: var(--text-2); background: var(--bg); box-shadow: inset 0 0 0 1px var(--border);
+}
+.mynote-fmt-btn:hover { color: var(--accent); }
+.mynote-codewarn {
+  padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 600;
+  background: var(--pend-bg); color: var(--pend);
+}
+.mynote-md-btn {
+  margin-left: auto; padding: 4px 12px; border-radius: 999px;
+  font-size: 11.5px; color: var(--text-3); background: var(--bg);
+  transition: background .15s, color .15s;
+}
+.mynote-md-btn:hover { background: var(--accent-soft); color: var(--accent); }
 
 /* ---- 章末：本章大白话总结 ---- */
 .chapter-summary {

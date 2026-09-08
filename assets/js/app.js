@@ -849,26 +849,79 @@ const App = {
       </article>`;
   },
 
-  // 笔记正文的显示：转义之后把 **加粗** 变成 <strong>。
-  // 和 $ 公式一样，只发生在「显示的那一刻」——存储和导出的原文一个字不动。
-  // 做法：先把 $...$ / $$...$$ 换成占位符，再找加粗，最后还原。
-  // 这样公式里的星号动不到，同时加粗又能跨过公式，比如 **严格条件 $|A| \ne 0$**。
-  noteBodyHtml(text) {
+  // 公式段的正则：$$...$$（可跨行）或 $...$（不跨行）
+  MATH_RE() {
+    return new RegExp("(\\$\\$[\\s\\S]*?\\$\\$|\\$[^$\\n]*\\$)");
+  },
+
+  // 这条笔记按不按 Markdown 显示。
+  // 判定只看内容本身（所以跟着笔记走，换设备一样），并允许手动覆盖。
+  // 现有的纯文本笔记一条都不含下面这些记号，所以不会被影响。
+  looksLikeMarkdown(text) {
+    const body = String(text || "").split(this.MATH_RE()).filter((_, i) => !(i % 2)).join(" ");
+    return body.split(String.fromCharCode(10)).some((l) =>
+      /^#{1,6}\s/.test(l) ||          // # 标题
+      /^\s*```/.test(l) ||            // 代码围栏
+      /^\s*\|.*\|/.test(l) ||          // | 表格 |
+      /^>\s/.test(l) ||               // > 引用
+      /^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(l)   // --- 分隔线
+    );
+  },
+
+  noteFormat(noteId, text) {
+    const forced = NoteFormat.get(noteId);
+    if (forced) return forced;
+    return this.looksLikeMarkdown(text) ? "md" : "text";
+  },
+
+  // 笔记正文的显示。四步流水线，存储和导出的原文一个字不动：
+  //   ① 把 $...$ / $$...$$ 挖出来换成占位符（公式先保护起来）
+  //   ② 剩下的交给 Markdown 渲染（或纯文本模式下只认 **加粗**）
+  //   ③ 占位符换回公式，公式里的 < > & 转成实体，浏览器解码回真字符
+  //   ④ 交给 KaTeX（由调用方的 renderMath 完成）
+  noteBodyHtml(text, noteId) {
     const NUL = String.fromCharCode(0);
-    const BOLD = new RegExp("\\*\\*([^*\\n]+?)\\*\\*", "g");
-    const MATH = new RegExp("(\\$\\$[\\s\\S]*?\\$\\$|\\$[^$\\n]*\\$)");
     const store = [];
-    const masked = escapeHtml(text)
-      .split(MATH)
-      .map((part, i) => {
-        if (!(i % 2)) return part;
-        store.push(part);
-        return NUL + (store.length - 1) + NUL;
-      })
-      .join("");
-    return masked
-      .replace(BOLD, "<strong>$1</strong>")
-      .replace(new RegExp(NUL + "(\\d+)" + NUL, "g"), (m, k) => store[Number(k)]);
+    // ① 一律先从「原文」里挖公式段，先不转义。
+    //    （早先纯文本那条路是先 escapeHtml 再挖，公式会被转义两次，
+    //      $r(A) < n-1$ 就显示成字面的 &lt;。）
+    const masked = String(text == null ? "" : text).split(this.MATH_RE()).map((part, i) => {
+      if (!(i % 2)) return part;
+      store.push(part);
+      return NUL + (store.length - 1) + NUL;
+    }).join("");
+    // ③ 还原时才转义公式：浏览器解码回真的 < > &，KaTeX 照常识别
+    const unmask = (html) => html.replace(new RegExp(NUL + "(\\d+)" + NUL, "g"),
+      (m, k) => escapeHtml(store[Number(k)]));
+
+    const asMd = noteId !== undefined
+      ? this.noteFormat(noteId, text) === "md"
+      : this.looksLikeMarkdown(text);
+
+    // ② 公式之外的部分
+    if (asMd && typeof marked !== "undefined") {
+      // 只把 < 换成 &lt; 挡住原始 HTML 标签；& 一律不动，
+      // 这样 AI 常用的 &emsp; &nbsp; 这类实体还能正常生效。
+      return unmask(marked.parse(masked.split("<").join("&lt;"), { gfm: true, breaks: false }));
+    }
+    // 纯文本模式：维持原样，只认 **加粗**
+    const BOLD = new RegExp("\\*\\*([^*\\n]+?)\\*\\*", "g");
+    return unmask(escapeHtml(masked).replace(BOLD, "<strong>$1</strong>"));
+  },
+
+  // 体检：Markdown 里最容易踩的坑是「缩进被当成代码块」。
+  // 渲染完数一下 <pre>，多于原文的 ``` 围栏就说明有意外代码块。
+  codeBlockCheck(text) {
+    if (!this.looksLikeMarkdown(text) || typeof marked === "undefined") return null;
+    const html = this.noteBodyHtml(text);
+    const got = (html.match(/<pre/g) || []).length;
+    const want = Math.floor((text.match(/^\s*```/gm) || []).length / 2);
+    if (got <= want) return null;
+    const lines = [];
+    text.split(String.fromCharCode(10)).forEach((l, i) => {
+      if (/^ {4,}\S/.test(l) && !/^\s*([-*+]|\d+\.)\s/.test(l)) lines.push(i + 1);
+    });
+    return { got, want, lines };
   },
 
   // 仓库里有没有这条笔记
@@ -905,7 +958,7 @@ const App = {
         }
         <button class="mynote-edit" data-action="edit">编辑</button>
       </div>
-      <div class="mynote-body">${this.noteBodyHtml(text)}</div>
+      <div class="mynote-body${this.noteFormat(noteId, text) === "md" ? " md" : ""}">${this.noteBodyHtml(text, noteId)}</div>
     </div>`;
   },
 
@@ -918,11 +971,14 @@ const App = {
     return `<div class="mynote mynote-editing">
       <div class="mynote-head">
         <span class="mynote-label">${isCh ? "本章总结" : "大白话"}</span>
-        <button class="mynote-preview-btn" data-action="preview">预览公式</button>
+        <button class="mynote-md-btn" data-action="import-md" title="读取一个 .md 文件，原样填进来">导入 .md</button>
+        <button class="mynote-preview-btn" data-action="preview">预览</button>
         <button class="mynote-zoom-btn" data-action="zoom" title="全屏编辑（Esc 退出）">放大</button>
       </div>
       <textarea class="mynote-input" rows="${isCh ? 14 : 9}" placeholder="${placeholder}">${escapeHtml(text)}</textarea>
+      <div class="mynote-warn" hidden></div>
       <div class="mynote-preview" hidden></div>
+      <input type="file" class="mynote-md-file" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden />
       <div class="mynote-actions">
         <button class="mynote-save" data-action="save">保存</button>
         <button class="mynote-cancel" data-action="cancel">取消</button>
@@ -948,6 +1004,12 @@ const App = {
           const ta = slot.querySelector(".mynote-input");
           // 已有内容的话，先把输入框撑到刚好放下（最高 560px），省得一上来就在小窗里翻
           if (ta.value) ta.style.height = Math.min(ta.scrollHeight + 4, 560) + "px";
+          this.bindMdFile(slot, id);
+          this.refreshEditorWarn(slot, id);
+          ta.addEventListener("input", () => {
+            clearTimeout(this._warnTimer);
+            this._warnTimer = setTimeout(() => this.refreshEditorWarn(slot, id), 400);
+          });
           ta.focus();
           ta.setSelectionRange(ta.value.length, ta.value.length);
         } else if (action === "zoom") {
@@ -965,13 +1027,38 @@ const App = {
           const toPreview = ta.hidden === false;
           ta.hidden = toPreview;
           pv.hidden = !toPreview;
-          btn.textContent = toPreview ? "回到编辑" : "预览公式";
+          btn.textContent = toPreview ? "回到编辑" : "预览";
           if (toPreview) {
-            pv.innerHTML = ta.value.trim() ? this.noteBodyHtml(ta.value) : "还没写内容";
+            const fmt = this.noteFormat(id, ta.value);
+            pv.className = "mynote-preview" + (fmt === "md" ? " md" : "");
+            pv.innerHTML = ta.value.trim() ? this.noteBodyHtml(ta.value, id) : "还没写内容";
+            renderMath(pv);
+          }
+          this.refreshEditorWarn(slot, id);
+        } else if (action === "import-md") {
+          slot.querySelector(".mynote-md-file").click();
+        } else if (action === "toggle-fmt") {
+          // 手动切换显示模式（只影响这一条，且只存在本机）
+          const ta = slot.querySelector(".mynote-input");
+          const now = this.noteFormat(id, ta.value);
+          NoteFormat.set(id, now === "md" ? "text" : "md");
+          this.refreshEditorWarn(slot, id);
+          const pv = slot.querySelector(".mynote-preview");
+          if (!pv.hidden) {
+            const fmt = this.noteFormat(id, ta.value);
+            pv.className = "mynote-preview" + (fmt === "md" ? " md" : "");
+            pv.innerHTML = ta.value.trim() ? this.noteBodyHtml(ta.value, id) : "还没写内容";
             renderMath(pv);
           }
         } else if (action === "save") {
           const val = slot.querySelector(".mynote-input").value;
+          const chk = this.noteFormat(id, val) === "md" ? this.codeBlockCheck(val) : null;
+          if (chk && !confirm(
+            "体检发现 " + chk.lines.length + " 行缩进被当成了代码块（第 " +
+            chk.lines.slice(0, 8).join("、") + (chk.lines.length > 8 ? " …" : "") + " 行）。" +
+            String.fromCharCode(10) + String.fromCharCode(10) +
+            "内容不会丢，只是会显示成灰底等宽。要继续保存吗？"
+          )) return;
           const had = Notes.has(id);
           if (!Notes.set(id, val)) {
             alert("保存失败：浏览器存储空间不足或被禁用。");
@@ -999,6 +1086,53 @@ const App = {
   // 章节总结用的笔记 id，和知识点 id 区分开
   chapterNoteId(subjectId, chapterId) {
     return "ch:" + subjectId + "/" + chapterId;
+  },
+
+  // 选一个 .md 文件，把内容原样填进输入框（只读文件，不做任何转换）
+  bindMdFile(slot, noteId) {
+    const input = slot.querySelector(".mynote-md-file");
+    if (!input || input.dataset.bound) return;
+    input.dataset.bound = "1";
+    input.addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      e.target.value = "";
+      if (!file) return;
+      const ta = slot.querySelector(".mynote-input");
+      if (ta.value.trim() && !confirm("输入框里已经有内容，用文件内容覆盖掉？")) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        // 只做一件事：原样放进去。不解析、不转换、不清洗，连换行符都不归一化。
+        ta.value = String(reader.result);
+        ta.style.height = Math.min(ta.scrollHeight + 4, 560) + "px";
+        this.refreshEditorWarn(slot, noteId);
+        ta.focus();
+      };
+      reader.readAsText(file, "utf-8");
+    });
+  },
+
+  // 编辑器顶部的状态条：当前按什么显示、能不能切、有没有意外代码块
+  refreshEditorWarn(slot, noteId) {
+    const box = slot.querySelector(".mynote-warn");
+    const ta = slot.querySelector(".mynote-input");
+    if (!box || !ta) return;
+    const fmt = this.noteFormat(noteId, ta.value);
+    const forced = NoteFormat.get(noteId);
+    const chk = fmt === "md" ? this.codeBlockCheck(ta.value) : null;
+    const bits = [];
+    bits.push('<span class="mynote-fmt ' + fmt + '">' +
+      (fmt === "md" ? "Markdown" : "纯文本") + "</span>");
+    bits.push('<span class="mynote-fmt-why">' +
+      (forced ? "（手动指定）" : "（按内容自动判定）") + "</span>");
+    bits.push('<button class="mynote-fmt-btn" data-action="toggle-fmt">改成' +
+      (fmt === "md" ? "纯文本" : "Markdown") + "</button>");
+    if (chk) {
+      bits.push('<span class="mynote-codewarn">⚠ 第 ' +
+        chk.lines.slice(0, 6).join("、") + (chk.lines.length > 6 ? " …" : "") +
+        " 行会显示成代码块</span>");
+    }
+    box.innerHTML = bits.join("");
+    box.hidden = false;
   },
 
   // 全屏编辑：只是给编辑框加一个 class，DOM 不搬家，原来的事件绑定照常有效

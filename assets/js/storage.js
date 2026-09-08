@@ -1,6 +1,7 @@
 // 本地状态：上次学习到哪一章 + 自己写的大白话笔记，都存在浏览器 localStorage。
 const LAST_VISIT_KEY = "kaoyan_last_visit_v1";
 const NOTES_KEY = "kaoyan_notes_v1";
+const NOTE_FMT_KEY = "kaoyan_note_fmt_v1";
 
 // 仓库里 assets/data/notes.js 提供的"内置笔记"（所有设备共享）
 window.__KAOYAN_SEED_NOTES__ = {};
@@ -66,11 +67,14 @@ const Notes = {
     return Object.keys(this._local()).filter((k) => this.isPending(k));
   },
 
+  // 原样保存：不做 trim、不做任何归一化。
+  // 只有「整段都是空白」才当成删除，其余一个字节都不动，
+  // 保证上传的 .md 与存进来的内容逐字节相同。
   set(itemId, text) {
     const local = this._local();
-    const t = (text || "").trim();
-    if (!t) delete local[itemId];
-    else local[itemId] = t;
+    const raw = text == null ? "" : String(text);
+    if (!raw.trim()) delete local[itemId];
+    else local[itemId] = raw;
     return this._save();
   },
 
@@ -121,5 +125,25 @@ const Progress = {
     } catch (e) {
       return null;
     }
+  },
+};
+
+// 笔记按 Markdown 还是纯文本显示。
+// 默认看内容自动判定（判定规则是内容的函数，所以跟着笔记走）；
+// 这里只存「手动改过」的那几条。笔记正文本身一个字不碰。
+const NoteFormat = {
+  _all() {
+    try { return JSON.parse(localStorage.getItem(NOTE_FMT_KEY) || "{}"); }
+    catch (e) { return {}; }
+  },
+  get(noteId) {
+    const v = this._all()[noteId];
+    return v === "md" || v === "text" ? v : null;
+  },
+  set(noteId, fmt) {
+    const all = this._all();
+    if (fmt === "md" || fmt === "text") all[noteId] = fmt;
+    else delete all[noteId];
+    try { localStorage.setItem(NOTE_FMT_KEY, JSON.stringify(all)); } catch (e) { /* ignore */ }
   },
 };
