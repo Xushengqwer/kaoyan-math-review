@@ -406,15 +406,6 @@ registerSubject({
       tags: ["向量组", "线性相关", "定理"]
     },
     {
-      id: "la-vec-thm-partial-whole",
-      chapterId: "vector-space",
-      type: "theorem",
-      title: "部分相关则整体相关；整体无关则部分无关",
-      statement: "<ul><li><strong>部分相关 ⟹ 整体相关：</strong>若向量组的一个部分组线性相关，则整个向量组线性相关。</li><li><strong>整体无关 ⟹ 部分无关：</strong>若整个向量组线性无关，则它的任何部分组都线性无关。</li><li><strong>无关组增加分量：</strong>若向量组线性无关，把每个向量都增加若干个分量后得到的新向量组仍线性无关。</li><li><strong>相关组减少分量：</strong>若向量组线性相关，去掉某些分量后得到的向量组不一定相关。</li></ul>",
-      explanation: "这组结论常用于证明题中的“化简”：要证明整体线性无关，只需说明其任意部分组线性无关不够，但要证明整体相关，<strong>只需找出其中一个相关的部分组即可</strong>。",
-      tags: ["向量组", "线性相关", "定理"]
-    },
-    {
       id: "la-vec-def-max-independent-set",
       chapterId: "vector-space",
       type: "definition",
@@ -431,15 +422,6 @@ registerSubject({
       statement: "向量组的极大线性无关组所含向量的个数，称为该向量组的<strong>秩</strong>，记作 $r(\\alpha_1,\\alpha_2,\\cdots,\\alpha_m)$。规定：仅含零向量的向量组的秩为 $0$。",
       explanation: "向量组的秩等于以这些向量为行（或列）构成的矩阵的秩，二者数值相等，这是连接“向量组”与“矩阵”两个角度的桥梁：<strong>矩阵的秩既是行向量组的秩，也是列向量组的秩</strong>。",
       tags: ["向量组", "秩", "定义"]
-    },
-    {
-      id: "la-vec-thm-equivalence-rank",
-      chapterId: "vector-space",
-      type: "theorem",
-      title: "等价向量组的秩相等",
-      statement: "若向量组 $B$ 可由向量组 $A$ 线性表示，则 <strong>$r(B)\\le r(A)$</strong>；若向量组 $A$ 与向量组 $B$ <strong>等价</strong>（即可以相互线性表示），则 <strong>$r(A)=r(B)$</strong>。",
-      explanation: "该定理常用来证明维数、秩方面的不等式，例如证明矩阵乘积的秩不超过任一因子的秩：$r(AB)\\le\\min\\{r(A),r(B)\\}$ 的证明就<strong>依赖于这一结论</strong>。",
-      tags: ["向量组", "等价", "秩", "定理"]
     },
     {
       id: "la-vec-def-vector-space",
