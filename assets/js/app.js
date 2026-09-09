@@ -133,29 +133,37 @@ const App = {
     if (num) num.textContent = n;
   },
 
-  // 把所有「还没进仓库」的笔记打包成一个 .txt：每条都带完整出处和 id，
-  // 用分隔线隔开，直接把这个文件交出去就能原样提交进仓库。
+  // 把所有「还没进仓库」的笔记打包成一个 .md：每条都带完整出处和 id，
+  // 正文夹在起止注释之间逐字节原样。文件本身就是 Markdown，
+  // 直接丢进任何预览器（或交给我）都能正常看，也能原样提交进仓库。
   exportPending() {
     const ids = Notes.pendingIds();
     if (ids.length === 0) { alert("所有笔记都已经在仓库里了。"); return; }
+    // 极端情况：正文里如果自己带了结束标记，切分就会错位，先拦下来。
+    const clash = ids.filter((id) => Notes.get(id).indexOf(this.bodyClose(id)) >= 0);
+    if (clash.length) {
+      alert("这几条笔记的正文里出现了导出用的结束标记，导出会切错：\n" + clash.join("\n"));
+      return;
+    }
     const date = new Date().toISOString().slice(0, 10);
     const parts = [
-      "待提交的大白话笔记 · " + date + " · 共 " + ids.length + " 条",
-      "（下面每一段是一条笔记，正文与网页里输入的内容逐字相同）",
+      "# 待提交笔记 · " + date,
+      "",
+      "共 " + ids.length + " 条。每条正文夹在 `正文开始` / `正文结束` 两行注释之间，" +
+        "**与网页里输入的内容逐字节相同**，导出没有做任何转换。",
       "",
     ];
     ids.forEach((id, i) => {
-      parts.push("========================================================");
-      parts.push("【第 " + (i + 1) + " / " + ids.length + " 条】");
+      parts.push("---");
       parts.push("");
-      parts.push(this.buildNoteText(id).replace(/\s+$/, ""));
-      parts.push("");
+      parts.push("<!-- 第 " + (i + 1) + " / " + ids.length + " 条 -->");
+      parts.push(this.buildNoteText(id));
     });
-    const blob = new Blob([parts.join("\n")], { type: "text/plain;charset=utf-8" });
+    const blob = new Blob([parts.join("\n")], { type: "text/markdown;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "待提交笔记-" + date + ".txt";
+    a.download = "待提交笔记-" + date + ".md";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -937,7 +945,7 @@ const App = {
     if (this.hasSeed(noteId)) {
       return `<span class="mynote-flag pending" title="这台设备上的版本和仓库里的那一版不一样（可能是你后来改过，也可能是仓库那版重新排过版）。点「用仓库版」可以丢掉本地这一版。">本地已改</span>`;
     }
-    return `<span class="mynote-flag pending" title="只存在这台设备的浏览器里。清缓存、换设备、iOS Safari 七天没打开都可能丢失。下载 .txt 交给我提交进仓库才算安全。">未进仓库</span>`;
+    return `<span class="mynote-flag pending" title="只存在这台设备的浏览器里。清缓存、换设备、iOS Safari 七天没打开都可能丢失。导出成文件交给我提交进仓库才算安全。">未进仓库</span>`;
   },
 
   // 「大白话」区块：有内容就展示，没有就显示一个添加按钮
@@ -1192,11 +1200,17 @@ const App = {
     return p.isChapter ? "本章总结" : p.typeLabel + String(p.index).padStart(2, "0");
   },
 
-  // 文件名：线性代数-第3章-定义05-向量空间、基、维数的定义.txt
+  // 后缀跟着内容走：Markdown 的笔记导出 .md，纯文本的仍是 .txt。
+  // 文件名：线性代数-第3章-定义05-向量空间、基、维数的定义.md
   //         线性代数-第5章-本章总结-特征值与特征向量.txt
+  noteFileExt(noteId) {
+    return this.noteFormat(noteId, Notes.get(noteId)) === "md" ? ".md" : ".txt";
+  },
+
   noteFileName(noteId) {
     const p = this.locate(noteId);
-    if (!p) return "大白话笔记.txt";
+    const ext = this.noteFileExt(noteId);
+    if (!p) return "大白话笔记" + ext;
     const raw = [
       p.subject.name.replace(/（.*?）/g, ""),
       "第" + p.chapter.order + "章",
@@ -1204,23 +1218,35 @@ const App = {
       p.title,
     ].join("-");
     // 去掉文件名里不能用的字符
-    return raw.replace(/[\\/:*?"<>|]/g, "_") + ".txt";
+    return raw.replace(/[\\/:*?"<>|]/g, "_") + ext;
   },
 
-  // 文件内容：头部写清出处和 id，正文是原样纯文本
+  // 正文的起止标记。用 HTML 注释：Markdown 预览时它是隐形的，
+  // 但边界又绝对明确 —— 拿到文件就能一个字符不差地切出正文。
+  BODY_OPEN: "<!-- ↓ 正文开始 · 到「正文结束」为止逐字节原样，请勿改动 -->",
+  bodyClose(noteId) {
+    return "<!-- ↑ 正文结束 · " + noteId + " -->";
+  },
+
+  // 文件内容：头部写清出处和 id，正文夹在起止标记之间，逐字节原样（不 trim）。
+  // 标记与正文之间各垫一个空行，保证任何 Markdown 渲染器都把注释和正文当成两个块；
+  // 反过来切正文时，去掉这一前一后各一个空行即可还原。
   buildNoteText(noteId) {
     const p = this.locate(noteId);
-    const body = Notes.get(noteId).trim();
+    const body = Notes.get(noteId);
     if (!p) return body;
+    const where = p.subject.name + " · 第" + p.chapter.order + "章 " + p.chapter.name +
+      " · " + (p.isChapter ? "本章总结" : p.typeLabel + " " + String(p.index).padStart(2, "0"));
+    const fmt = this.noteFormat(noteId, body) === "md" ? "Markdown" : "纯文本";
     return [
-      p.subject.name + " / 第" + p.chapter.order + "章 " + p.chapter.name +
-        " / " + (p.isChapter ? "本章总结" : p.typeLabel + " " + String(p.index).padStart(2, "0")),
-      p.title,
-      "id: " + noteId,
+      "> **" + where + "**",
+      "> " + p.title + "　·　`" + noteId + "`　·　" + fmt,
       "",
-      "----------------------------------------",
+      this.BODY_OPEN,
       "",
       body,
+      "",
+      this.bodyClose(noteId),
       "",
     ].join("\n");
   },
@@ -1236,11 +1262,14 @@ const App = {
         (p.isChapter ? "本章总结" : p.typeLabel + " " + String(p.index).padStart(2, "0"))
       : "";
     document.getElementById("save-modal-file").textContent = this.noteFileName(itemId);
+    const dl = document.getElementById("save-download");
+    if (dl) dl.textContent = "下载 " + this.noteFileExt(itemId);
     modal.hidden = false;
   },
 
   downloadNote(itemId) {
-    const blob = new Blob([this.buildNoteText(itemId)], { type: "text/plain;charset=utf-8" });
+    const mime = this.noteFileExt(itemId) === ".md" ? "text/markdown" : "text/plain";
+    const blob = new Blob([this.buildNoteText(itemId)], { type: mime + ";charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
