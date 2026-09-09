@@ -397,15 +397,6 @@ registerSubject({
       tags: ["向量组", "线性相关", "秩", "定理"]
     },
     {
-      id: "la-vec-thm-more-vectors-dependent",
-      chapterId: "vector-space",
-      type: "theorem",
-      title: "向量个数超过维数必相关",
-      statement: "若向量组 $\\alpha_1,\\alpha_2,\\cdots,\\alpha_m$ 中每个向量都是 $n$ 维向量，且 $m>n$，则该向量组<strong>必线性相关</strong>。特别地，$n+1$ 个 $n$ 维向量一定线性相关。",
-      explanation: "这是因为 $r(A)\\le n&lt;m$，秩必小于向量个数。此结论常用于快速判断“<strong>个数大于维数</strong>”的向量组一定相关，无需具体计算。",
-      tags: ["向量组", "线性相关", "定理"]
-    },
-    {
       id: "la-vec-def-max-independent-set",
       chapterId: "vector-space",
       type: "definition",
