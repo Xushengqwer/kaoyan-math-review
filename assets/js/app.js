@@ -609,6 +609,48 @@ const App = {
     this.renderChapterGroups(subjectId, chapterId);
   },
 
+  // 章节内怎么分组。定义了 modules 的章节按「模块」排，其余章节仍按定义/定理/性质排。
+  // 正文、顶部目录、右侧导轨三处共用这一个结果，保证三者永远一致。
+  // 返回 [{ cls, label, brief, note, items }]。
+  chapterGroups(subjectId, chapterId, items) {
+    const byType = (list, extra) =>
+      TYPE_ORDER.map((type) => ({
+        cls: type + (extra ? " " + extra : ""),
+        label: TYPE_LABEL[type],
+        items: list.filter((it) => it.type === type),
+      })).filter((g) => g.items.length);
+
+    const c = KaoyanData.chapter(subjectId, chapterId);
+    if (!c || !c.modules || !c.modules.length) return byType(items, "");
+
+    const groups = c.modules
+      .map((m, k) => ({
+        cls: "module",
+        label: "模块" + m.no + "　" + m.name,
+        brief: m.brief || "",
+        items: items.filter((it) => it.module === k + 1),
+      }))
+      .filter((g) => g.items.length);
+
+    // 还没归入模块的条目照旧按类型排，并明确标出来，免得看着以为漏了
+    const rest = byType(items.filter((it) => !it.module), "unsorted");
+    if (rest.length) rest[0].note = "以下条目尚未并入模块，仍按定义 / 定理 / 性质排列";
+    return groups.concat(rest);
+  },
+
+  // 每条知识点的显示编号：并入模块的用卡号（①②…），其余用「该类型在本章里的第几条」。
+  // 按整章算，不受搜索和类型筛选影响 —— 筛选后编号还会跳的话就没法当索引用了。
+  chapterNos(subjectId, chapterId) {
+    const all = KaoyanData.itemsByChapter(subjectId, chapterId);
+    const seen = {};
+    const map = {};
+    all.forEach((it) => {
+      seen[it.type] = (seen[it.type] || 0) + 1;
+      map[it.id] = it.card || String(seen[it.type]).padStart(2, "0");
+    });
+    return map;
+  },
+
   renderChapterGroups(subjectId, chapterId) {
     const items = KaoyanData.itemsByChapter(subjectId, chapterId);
     const q = (this.chapterQuery || "").toLowerCase();
@@ -628,22 +670,21 @@ const App = {
       return;
     }
 
-    // 按类型分组，同一类型内从 01 开始编号
-    const groups = TYPE_ORDER.map((type) => ({
-      type,
-      items: filtered.filter((it) => it.type === type),
-    })).filter((g) => g.items.length);
+    const groups = this.chapterGroups(subjectId, chapterId, filtered);
+    const nos = this.chapterNos(subjectId, chapterId);
 
-    let html = this.tocHtml(groups, subjectId, chapterId);
-    groups.forEach(({ type, items: groupItems }) => {
+    let html = this.tocHtml(groups, nos, subjectId, chapterId);
+    groups.forEach((g) => {
       html += `
-        <section class="type-group ${type}">
+        <section class="type-group ${g.cls}">
+          ${g.note ? `<p class="group-note">${escapeHtml(g.note)}</p>` : ""}
           <h3 class="type-group-title">
             <span class="type-group-dot" aria-hidden="true"></span>
-            <span class="type-group-name">${TYPE_LABEL[type]}</span>
-            <span class="type-group-count">${groupItems.length}</span>
+            <span class="type-group-name">${escapeHtml(g.label)}</span>
+            <span class="type-group-count">${g.items.length}</span>
+            ${g.brief ? `<span class="type-group-brief">${escapeHtml(g.brief)}</span>` : ""}
           </h3>
-          ${groupItems.map((it, i) => this.entryHtml(it, i + 1)).join("")}
+          ${g.items.map((it) => this.entryHtml(it, nos[it.id])).join("")}
         </section>`;
     });
     wrap.innerHTML = html;
@@ -662,25 +703,24 @@ const App = {
     const items = KaoyanData.itemsByChapter(subjectId, chapterId);
     if (!c || !items.length) { this.hideRail(); return; }
 
-    const groups = TYPE_ORDER
-      .map((type) => ({ type, items: items.filter((i) => i.type === type) }))
-      .filter((g) => g.items.length);
+    const groups = this.chapterGroups(subjectId, chapterId, items);
+    const nos = this.chapterNos(subjectId, chapterId);
 
     const cols = groups
       .map(
-        ({ type, items: list }) => `
-        <div class="rail-group ${type}">
+        ({ cls, label, items: list }) => `
+        <div class="rail-group ${cls}">
           <div class="rail-group-head">
             <span class="toc-dot" aria-hidden="true"></span>
-            <span class="rail-group-name">${TYPE_LABEL[type]}</span>
+            <span class="rail-group-name">${escapeHtml(label)}</span>
             <span class="rail-group-count">${list.length}</span>
           </div>
           <ol class="rail-list">
             ${list
               .map(
-                (it, i) => `<li>
+                (it) => `<li>
                   <a href="#item-${it.id}" data-goto="${it.id}">
-                    <span class="toc-no">${String(i + 1).padStart(2, "0")}</span>
+                    <span class="toc-no">${nos[it.id]}</span>
                     <span class="toc-title">${escapeHtml(it.title)}</span>
                     ${this.noteDotHtml(it.id)}
                   </a>
@@ -755,24 +795,24 @@ const App = {
   },
 
   // 章节开头的目录：按类型分栏，点条目滚到对应位置
-  tocHtml(groups, subjectId, chapterId) {
+  tocHtml(groups, nos, subjectId, chapterId) {
     const total = groups.reduce((n, g) => n + g.items.length, 0);
     if (!total) return "";
     const cols = groups
       .map(
-        ({ type, items }) => `
-        <div class="toc-col ${type}">
+        ({ cls, label, items }) => `
+        <div class="toc-col ${cls}">
           <div class="toc-col-head">
             <span class="toc-dot" aria-hidden="true"></span>
-            <span class="toc-col-name">${TYPE_LABEL[type]}</span>
+            <span class="toc-col-name">${escapeHtml(label)}</span>
             <span class="toc-col-count">${items.length}</span>
           </div>
           <ol class="toc-list">
             ${items
               .map(
-                (it, i) => `<li>
+                (it) => `<li>
                   <a href="#item-${it.id}" data-goto="${it.id}">
-                    <span class="toc-no">${String(i + 1).padStart(2, "0")}</span>
+                    <span class="toc-no">${nos[it.id]}</span>
                     <span class="toc-title">${escapeHtml(it.title)}</span>
                     ${this.noteDotHtml(it.id)}
                   </a>
@@ -841,7 +881,7 @@ const App = {
   entryHtml(item, index) {
     return `
       <article class="entry" id="item-${item.id}">
-        <div class="entry-no" aria-hidden="true">${String(index).padStart(2, "0")}</div>
+        <div class="entry-no" aria-hidden="true">${index}</div>
         <div class="entry-main">
           <h4 class="entry-title">${escapeHtml(item.title)}</h4>
           <div class="entry-statement">${item.statement}</div>
@@ -1197,7 +1237,9 @@ const App = {
 
   // 一条笔记在章内的位置标签：定义05 / 本章总结
   noteSlotLabel(p) {
-    return p.isChapter ? "本章总结" : p.typeLabel + String(p.index).padStart(2, "0");
+    if (p.isChapter) return "本章总结";
+    if (p.item && p.item.card) return "卡" + p.item.card;
+    return p.typeLabel + String(p.index).padStart(2, "0");
   },
 
   // 后缀跟着内容走：Markdown 的笔记导出 .md，纯文本的仍是 .txt。
@@ -1236,7 +1278,7 @@ const App = {
     const body = Notes.get(noteId);
     if (!p) return body;
     const where = p.subject.name + " · 第" + p.chapter.order + "章 " + p.chapter.name +
-      " · " + (p.isChapter ? "本章总结" : p.typeLabel + " " + String(p.index).padStart(2, "0"));
+      " · " + this.noteSlotLabel(p);
     const fmt = this.noteFormat(noteId, body) === "md" ? "Markdown" : "纯文本";
     return [
       "> **" + where + "**",
@@ -1259,7 +1301,7 @@ const App = {
     const p = this.locate(itemId);
     document.getElementById("save-modal-where").textContent = p
       ? p.subject.name + " · 第" + p.chapter.order + "章 · " +
-        (p.isChapter ? "本章总结" : p.typeLabel + " " + String(p.index).padStart(2, "0"))
+        this.noteSlotLabel(p)
       : "";
     document.getElementById("save-modal-file").textContent = this.noteFileName(itemId);
     const dl = document.getElementById("save-download");

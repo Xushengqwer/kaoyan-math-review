@@ -3,7 +3,10 @@ registerSubject({
   name: "线性代数",
   color: "#7c4a6e",
   chapters: [
-    { id: "determinant", name: "行列式", order: 1 },
+    // 第1章正在按「模块」重构：先做模块一，其余条目暂时仍按定义/定理/性质排列。
+    { id: "determinant", name: "行列式", order: 1, modules: [
+      { no: "一", name: "是什么", brief: "行列式是什么、那个和式怎么来的" }
+    ] },
     { id: "matrix", name: "矩阵及其运算", order: 2 },
     { id: "vector-space", name: "向量组的线性相关性与秩", order: 3 },
     { id: "linear-equations", name: "线性方程组", order: 4 },
@@ -15,10 +18,12 @@ registerSubject({
       id: "la-det-def-n-order",
       chapterId: "determinant",
       type: "definition",
+      module: 1,
+      card: "①",
       title: "n 阶行列式的定义",
-      statement: "$n$ 阶行列式 $D=\\begin{vmatrix}a_{11}&a_{12}&\\cdots&a_{1n}\\\\a_{21}&a_{22}&\\cdots&a_{2n}\\\\\\vdots&\\vdots&&\\vdots\\\\a_{n1}&a_{n2}&\\cdots&a_{nn}\\end{vmatrix}=\\sum_{}(-1)^{\\tau(p_1p_2\\cdots p_n)}a_{1p_1}a_{2p_2}\\cdots a_{np_n}$，其中求和遍历 $1,2,\\cdots,n$ 的所有排列 $p_1p_2\\cdots p_n$，$\\tau(p_1p_2\\cdots p_n)$ 为该排列的<strong>逆序数</strong>。",
-      explanation: "共有 $n!$ 项，每项是取自不同行不同列的 $n$ 个元素之积，符号由排列的逆序数奇偶性决定：<strong>逆序数为偶数取正号，奇数取负号</strong>。二、三阶行列式的对角线法则是此定义在 $n=2,3$ 时的特例。",
-      tags: ["行列式", "定义", "逆序数"]
+      statement: "<p><strong>〔定义〕排列与逆序数</strong>　把 $1,2,\\cdots,n$ 排成一行，得到一个<strong>排列</strong> $p_1p_2\\cdots p_n$。若排在前面的数大于排在后面的数，即 $p_i&gt;p_j$ 而 $i&lt;j$，则这两个数构成一个<strong>逆序</strong>；一个排列中逆序的总数称为它的<strong>逆序数</strong>，记作 $\\tau(p_1p_2\\cdots p_n)$。逆序数为偶数的排列称为<strong>偶排列</strong>，为奇数的称为<strong>奇排列</strong>。</p><p><strong>〔定义〕$n$ 阶行列式</strong>　$D=\\begin{vmatrix}a_{11}&a_{12}&\\cdots&a_{1n}\\\\a_{21}&a_{22}&\\cdots&a_{2n}\\\\\\vdots&\\vdots&&\\vdots\\\\a_{n1}&a_{n2}&\\cdots&a_{nn}\\end{vmatrix}=\\sum(-1)^{\\tau(p_1p_2\\cdots p_n)}a_{1p_1}a_{2p_2}\\cdots a_{np_n}$，其中求和遍历 $1,2,\\cdots,n$ 的<strong>所有</strong>排列 $p_1p_2\\cdots p_n$。</p>",
+      explanation: "共有 $n!$ 项，每项是取自<strong>不同行不同列</strong>的 $n$ 个元素之积；符号由该项<strong>列标排列</strong>的奇偶性决定：<strong>偶排列取正号，奇排列取负号</strong>。二、三阶行列式的对角线法则，正是本定义在 $n=2,3$ 时的特例。",
+      tags: ["行列式", "定义", "逆序数", "排列"]
     },
     {
       id: "la-det-prop-transpose",
@@ -172,15 +177,6 @@ registerSubject({
       statement: "设 $A$ 为 $m$ 阶方阵，$B$ 为 $n$ 阶方阵，则 <strong>$\\begin{vmatrix}O&A\\\\B&O\\end{vmatrix}=(-1)^{mn}|A||B|$</strong>。",
       explanation: "可以通过反复交换行（每次交换相邻两行使正负号变化，共需交换 $mn$ 次相邻对换）严格证明该公式，是分块行列式计算中的常考公式，需要结合具体的 $m,n$ <strong>判断符号</strong>。",
       tags: ["行列式", "分块矩阵", "性质"]
-    },
-    {
-      id: "la-det-def-inversion-number",
-      chapterId: "determinant",
-      type: "definition",
-      title: "排列的逆序数",
-      statement: "对 $1,2,\\cdots,n$ 的一个排列 $p_1p_2\\cdots p_n$，若前面某数大于后面某数，即 $p_i>p_j$ 但 $i&lt;j$，则称这两个数构成一个<strong>逆序</strong>。一个排列中逆序的总数称为该排列的<strong>逆序数</strong>，记作 $\\tau(p_1p_2\\cdots p_n)$。",
-      explanation: "逆序数为偶数的排列称为<strong>偶排列</strong>，为奇数的称为<strong>奇排列</strong>。行列式展开式中每一项的符号由对应排列的奇偶性决定，这是理解 $n$ 阶行列式定义的基础概念。",
-      tags: ["行列式", "排列", "逆序数"]
     },
     {
       id: "la-det-prop-diag-multiply",

@@ -498,6 +498,36 @@ button { font: inherit; border: none; background: none; color: inherit; cursor: 
 .type-group.property .type-group-dot { background: var(--prp); }
 .type-group.property .type-group-name { color: var(--prp); }
 
+/* ---------- 按「模块」分组（第1章在试点） ---------- */
+/* 模块是比「定义/定理/性质」更高一层的标题：线更粗、字更大、带一句说明 */
+.type-group.module { margin-top: 60px; }
+.type-group.module .type-group-title {
+  flex-wrap: wrap;
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--accent);
+  font-size: 17px; letter-spacing: -.012em;
+}
+.type-group.module .type-group-dot { width: 9px; height: 9px; background: var(--accent); }
+.type-group.module .type-group-name { color: var(--accent); }
+.type-group.module .type-group-brief {
+  flex-basis: 100%; margin-top: 7px;
+  font-size: 12.5px; font-weight: 400; color: var(--text-3); letter-spacing: 0;
+}
+/* 模块里的条目用卡号 ①②…，比类型内的 01 更醒目 */
+.type-group.module .entry-no { font-size: 19px; color: var(--accent); padding-top: 0; }
+
+/* 还没并入模块的那一批：标题压暗，和已重构的部分区分开 */
+.group-note {
+  margin: 0 0 16px; padding: 10px 13px;
+  border-radius: var(--r-sm); background: var(--accent-soft);
+  font-size: 12.5px; line-height: 1.6; color: var(--text-2);
+}
+.type-group.unsorted .type-group-title { opacity: .72; }
+
+.toc-col.module .toc-dot, .rail-group.module .toc-dot { background: var(--accent); }
+.toc-col.module .toc-col-name, .rail-group.module .rail-group-name { color: var(--accent); }
+.toc-col.module .toc-no, .rail-group.module .toc-no { color: var(--accent); font-weight: 600; }
+
 /* ---- entry ---- */
 .entry {
   display: grid; grid-template-columns: 46px 1fr;
