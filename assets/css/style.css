@@ -406,6 +406,17 @@ button { font: inherit; border: none; background: none; color: inherit; cursor: 
 .search-bar input:focus { box-shadow: 0 0 0 3.5px var(--accent-soft), var(--lift); }
 
 .chip-row { display: flex; gap: 7px; flex-wrap: wrap; }
+
+/* 章内搜索的战果行：命中几条、几处，跟着搜索框走 */
+.chapter-hits {
+  margin: 2px 0 18px;
+  padding: 9px 14px;
+  border-radius: var(--r-sm);
+  background: var(--accent-soft);
+  color: var(--text-2);
+  font-size: 12.5px; line-height: 1.6;
+}
+.chapter-hits b { color: var(--accent); font-weight: 700; }
 .chip {
   padding: 7px 15px; border-radius: 999px;
   font-size: 12.5px; font-weight: 500; color: var(--text-2);

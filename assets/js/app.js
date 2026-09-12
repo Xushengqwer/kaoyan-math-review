@@ -580,6 +580,7 @@ const App = {
         </div>
       </div>
 
+      <p class="chapter-hits" id="chapter-hits" hidden></p>
       <div id="chapter-item-groups"></div>
       ${this.chapterSummaryHtml(subjectId, chapterId)}
       ${this.exportBarHtml()}
@@ -742,8 +743,17 @@ const App = {
     if (filtered.length === 0) {
       wrap.innerHTML = `<div class="empty-state">本章的知识点和笔记里都没有这个词</div>`;
       renderMath(wrap);
+      this.applyChapterSearch(subjectId, chapterId, 0, 0);
       return;
     }
+
+    // 命中只落在笔记里的有几条（课本正文里一个字都没有的那种）
+    const noteOnly = !q ? 0 : filtered.filter((it) => {
+      const book = searchText(
+        it.title + " " + it.statement + " " + (it.explanation || "") + " " + (it.tags || []).join(" ")
+      );
+      return !book.includes(q) && searchText(Notes.get(it.id)).includes(q);
+    }).length;
 
     const groups = this.chapterGroups(subjectId, chapterId, filtered);
     const nos = this.chapterNos(subjectId, chapterId);
@@ -766,6 +776,114 @@ const App = {
     renderMath(wrap);
     this.bindNoteEditors(wrap);
     this.bindToc(wrap);
+    this.applyChapterSearch(subjectId, chapterId, filtered.length, noteOnly);
+  },
+
+  // 章内搜索的收尾：本章总结一起参与筛选，命中的词在页面上标黄，
+  // 再把「命中几条、几处」写到搜索框下面那行。
+  applyChapterSearch(subjectId, chapterId, cardHits, noteOnly) {
+    const bar = document.getElementById("chapter-hits");
+    const summary = document.querySelector(".chapter-summary");
+    const raw = (this.chapterQuery || "").trim();
+    // 卡片区每次都整块重渲染，标记自然没了；本章总结不重渲染，得手动还原，
+    // 否则换个关键词搜，上一轮的黄块还留在那儿。
+    this.unmark(summary);
+    if (!raw) {
+      if (bar) bar.hidden = true;
+      if (summary) summary.hidden = false;
+      return;
+    }
+
+    // 本章总结不在筛选容器里，单独判一次：命中才留在页面上
+    const noteId = this.chapterNoteId(subjectId, chapterId);
+    const c = KaoyanData.chapter(subjectId, chapterId);
+    const q = searchText(raw);
+    const summaryHit =
+      Notes.has(noteId) && searchText(c.name + " 本章总结 " + Notes.get(noteId)).includes(q);
+    if (summary) summary.hidden = !summaryHit;
+
+    let spots = this.markInDom(document.getElementById("chapter-item-groups"), raw);
+    if (summaryHit && summary) spots += this.markInDom(summary, raw);
+
+    if (!bar) return;
+    const total = KaoyanData.itemsByChapter(subjectId, chapterId).length;
+    const parts = [];
+    parts.push(`本章 ${total} 条里命中 <b>${cardHits}</b> 条`);
+    if (noteOnly) parts.push(`其中 <b>${noteOnly}</b> 条只写在笔记里`);
+    if (summaryHit) parts.push("本章总结也命中");
+    if (spots) parts.push(`标出 <b>${spots}</b> 处`);
+    if (!cardHits && !summaryHit) parts.length = 0;
+    bar.hidden = false;
+    bar.innerHTML = parts.length
+      ? `「${escapeHtml(raw)}」　${parts.join("　·　")}`
+      : `「${escapeHtml(raw)}」在本章没有出现`;
+  },
+
+  // 把上一轮的高亮拆掉，文本节点合并回去，反复搜同一段也不会越切越碎。
+  unmark(scope) {
+    if (!scope) return;
+    scope.querySelectorAll("mark").forEach((m) => {
+      const parent = m.parentNode;
+      while (m.firstChild) parent.insertBefore(m.firstChild, m);
+      parent.removeChild(m);
+      parent.normalize();
+    });
+  },
+
+  // 在已经渲染好的页面里把关键词标黄。只动文本节点，绕开 KaTeX 公式和编辑中的输入框；
+  // 先把一张卡里的文本节点拼成一整串再找，所以「**零因子**陷阱」这种被 <strong> 断开的
+  // 写法也能整词命中。笔记原文存在 Notes 里，编辑框只从那儿读，这里改的 DOM 永远回不去。
+  markInDom(scope, query) {
+    const q = (query || "").trim().toLowerCase();
+    if (!scope || !q) return 0;
+
+    const nodes = [];
+    const walk = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT, null);
+    while (walk.nextNode()) {
+      const n = walk.currentNode;
+      if (!n.nodeValue) continue;
+      let skip = false;
+      for (let p = n.parentNode; p && p !== scope; p = p.parentNode) {
+        const tag = p.nodeName;
+        if (tag === "TEXTAREA" || tag === "SCRIPT" || tag === "STYLE" || tag === "MARK") { skip = true; break; }
+        if (p.classList && (p.classList.contains("katex") || p.classList.contains("mynote-editing"))) { skip = true; break; }
+      }
+      if (!skip) nodes.push(n);
+    }
+
+    let text = "";
+    const map = [];
+    nodes.forEach((n) => { map.push({ n, s: text.length }); text += n.nodeValue; });
+
+    // 先把所有命中区间算出来，再动 DOM —— 一边切一边算的话偏移就全乱了
+    const ranges = new Map();
+    const hay = text.toLowerCase();
+    let i = hay.indexOf(q);
+    let count = 0;
+    while (i >= 0) {
+      const j = i + q.length;
+      count++;
+      map.forEach(({ n, s }) => {
+        const e = s + n.nodeValue.length;
+        if (e <= i || s >= j) return;
+        const list = ranges.get(n) || [];
+        list.push([Math.max(i, s) - s, Math.min(j, e) - s]);
+        ranges.set(n, list);
+      });
+      i = hay.indexOf(q, j);
+    }
+
+    ranges.forEach((list, n) => {
+      list.sort((x, y) => y[0] - x[0]); // 从后往前切，前面那些偏移才还作数
+      list.forEach(([from, to]) => {
+        const hit = n.splitText(from);
+        hit.splitText(to - from);
+        const m = document.createElement("mark");
+        n.parentNode.insertBefore(m, hit);
+        m.appendChild(hit);
+      });
+    });
+    return count;
   },
 
   // ---------- 右侧「本章目录」导轨 ----------
