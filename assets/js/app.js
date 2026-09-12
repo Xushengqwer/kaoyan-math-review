@@ -612,12 +612,18 @@ const App = {
   // 章节内怎么分组。定义了 modules 的章节按「模块」排，其余章节仍按定义/定理/性质排。
   // 正文、顶部目录、右侧导轨三处共用这一个结果，保证三者永远一致。
   // 返回 [{ cls, label, brief, note, items }]。
+  // 一张卡可以同时挂几个类型（伴随矩阵那张定义、定理、性质都占），
+  // 按类型筛选时三栏里都应该出现它。没写 types 的就是单类型。
+  itemTypes(it) {
+    return it.types && it.types.length ? it.types : [it.type];
+  },
+
   chapterGroups(subjectId, chapterId, items) {
     const byType = (list, extra) =>
       TYPE_ORDER.map((type) => ({
         cls: type + (extra ? " " + extra : ""),
         label: TYPE_LABEL[type],
-        items: list.filter((it) => it.type === type),
+        items: list.filter((it) => this.itemTypes(it).includes(type)),
       })).filter((g) => g.items.length);
 
     const c = KaoyanData.chapter(subjectId, chapterId);
@@ -657,7 +663,7 @@ const App = {
     const typeFilter = this.chapterTypeFilter || "all";
 
     const filtered = items.filter((it) => {
-      if (typeFilter !== "all" && it.type !== typeFilter) return false;
+      if (typeFilter !== "all" && !App.itemTypes(it).includes(typeFilter)) return false;
       if (!q) return true;
       const hay = (it.title + " " + it.statement + " " + (it.tags || []).join(" ")).toLowerCase();
       return hay.includes(q);
