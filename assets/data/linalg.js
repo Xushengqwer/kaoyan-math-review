@@ -26,7 +26,7 @@ registerSubject({
       module: 1,
       card: "①",
       title: "n 阶行列式的定义",
-      statement: "<p><strong>〔定义〕排列与逆序数</strong>　把 $1,2,\\cdots,n$ 排成一行，得到一个<strong>排列</strong> $p_1p_2\\cdots p_n$。若排在前面的数大于排在后面的数，即 $p_i&gt;p_j$ 而 $i&lt;j$，则这两个数构成一个<strong>逆序</strong>；一个排列中逆序的总数称为它的<strong>逆序数</strong>，记作 $\\tau(p_1p_2\\cdots p_n)$。逆序数为偶数的排列称为<strong>偶排列</strong>，为奇数的称为<strong>奇排列</strong>。</p><p><strong>〔定义〕$n$ 阶行列式</strong>　$D=\\begin{vmatrix}a_{11}&a_{12}&\\cdots&a_{1n}\\\\a_{21}&a_{22}&\\cdots&a_{2n}\\\\\\vdots&\\vdots&&\\vdots\\\\a_{n1}&a_{n2}&\\cdots&a_{nn}\\end{vmatrix}=\\sum(-1)^{\\tau(p_1p_2\\cdots p_n)}a_{1p_1}a_{2p_2}\\cdots a_{np_n}$，其中求和遍历 $1,2,\\cdots,n$ 的<strong>所有</strong>排列 $p_1p_2\\cdots p_n$。</p>",
+      statement: "<div class=\"term\"><div class=\"term-label def\">〔定义〕排列与逆序数</div><div class=\"term-body\">把 $1,2,\\cdots,n$ 排成一行，得到一个<strong>排列</strong> $p_1p_2\\cdots p_n$。若排在前面的数大于排在后面的数，即 $p_i&gt;p_j$ 而 $i&lt;j$，则这两个数构成一个<strong>逆序</strong>；一个排列中逆序的总数称为它的<strong>逆序数</strong>，记作 $\\tau(p_1p_2\\cdots p_n)$。逆序数为偶数的排列称为<strong>偶排列</strong>，为奇数的称为<strong>奇排列</strong>。</div></div><div class=\"term\"><div class=\"term-label def\">〔定义〕$n$ 阶行列式</div><div class=\"term-math\">$$D=\\begin{vmatrix}a_{11}&a_{12}&\\cdots&a_{1n}\\\\a_{21}&a_{22}&\\cdots&a_{2n}\\\\\\vdots&\\vdots&&\\vdots\\\\a_{n1}&a_{n2}&\\cdots&a_{nn}\\end{vmatrix}=\\sum(-1)^{\\tau(p_1p_2\\cdots p_n)}a_{1p_1}a_{2p_2}\\cdots a_{np_n}$$</div><div class=\"term-body\">，其中求和遍历 $1,2,\\cdots,n$ 的<strong>所有</strong>排列 $p_1p_2\\cdots p_n$。</div></div>",
       explanation: "共有 $n!$ 项，每项是取自<strong>不同行不同列</strong>的 $n$ 个元素之积；符号由该项<strong>列标排列</strong>的奇偶性决定：<strong>偶排列取正号，奇排列取负号</strong>。二、三阶行列式的对角线法则，正是本定义在 $n=2,3$ 时的特例。",
       tags: ["行列式", "定义", "逆序数", "排列"]
     },
@@ -37,7 +37,7 @@ registerSubject({
       module: 2,
       card: "②",
       title: "三角行列式",
-      statement: "<p><strong>〔性质〕主对角三角形</strong>　上三角、下三角以及对角行列式的值，都等于<strong>主对角线上各元素的乘积</strong>：$\\begin{vmatrix}a_{11}&&&\\\\a_{21}&a_{22}&&\\\\\\vdots&\\vdots&\\ddots&\\\\a_{n1}&a_{n2}&\\cdots&a_{nn}\\end{vmatrix}=a_{11}a_{22}\\cdots a_{nn}$。</p><p><strong>〔性质〕副对角三角形</strong>　若<strong>副对角线</strong>一侧全为零，则值等于副对角线元素之积再带上符号：$\\begin{vmatrix}0&\\cdots&0&a_{1n}\\\\0&\\cdots&a_{2,n-1}&0\\\\\\vdots&&\\vdots&\\vdots\\\\a_{n1}&\\cdots&0&0\\end{vmatrix}=(-1)^{\\frac{n(n-1)}{2}}a_{1n}a_{2,n-1}\\cdots a_{n1}$。</p>",
+      statement: "<div class=\"term\"><div class=\"term-label prp\">〔性质〕主对角三角形</div><div class=\"term-body\">上三角、下三角以及对角行列式的值，都等于<strong>主对角线上各元素的乘积</strong>：</div><div class=\"term-math\">$$\\begin{vmatrix}a_{11}&&&\\\\a_{21}&a_{22}&&\\\\\\vdots&\\vdots&\\ddots&\\\\a_{n1}&a_{n2}&\\cdots&a_{nn}\\end{vmatrix}=a_{11}a_{22}\\cdots a_{nn}$$</div></div><div class=\"term\"><div class=\"term-label prp\">〔性质〕副对角三角形</div><div class=\"term-body\">若<strong>副对角线</strong>一侧全为零，则值等于副对角线元素之积再带上符号：</div><div class=\"term-math\">$$\\begin{vmatrix}0&\\cdots&0&a_{1n}\\\\0&\\cdots&a_{2,n-1}&0\\\\\\vdots&&\\vdots&\\vdots\\\\a_{n1}&\\cdots&0&0\\end{vmatrix}=(-1)^{\\frac{n(n-1)}{2}}a_{1n}a_{2,n-1}\\cdots a_{n1}$$</div></div>",
       explanation: "符号来自把副对角线整理成主对角线所需的对换次数：列标排列 $n,n-1,\\cdots,1$ 的逆序数恰为 $\\frac{n(n-1)}{2}$。$n=2,3$ 时为负号，$n=4,5$ 时为正号，<strong>不是一律取负</strong>。",
       tags: ["行列式", "三角形", "性质"]
     },
@@ -48,7 +48,7 @@ registerSubject({
       module: 2,
       card: "③",
       title: "转置不变与按行（列）可加",
-      statement: "<p><strong>〔性质〕转置不变</strong>　行列式与它的转置行列式相等：$|A^{T}|=|A|$（也写作 $D^{T}=D$）。</p><p><strong>〔性质〕按行（列）可加</strong>　若行列式某一行（列）的元素都是<strong>两数之和</strong>，例如第 $i$ 行为 $a_{i1}+a_{i1}',\\ a_{i2}+a_{i2}',\\ \\cdots$，则该行列式等于<strong>两个行列式之和</strong>：这两个行列式分别以 $a_{i1},a_{i2},\\cdots$ 和 $a_{i1}',a_{i2}',\\cdots$ 为第 $i$ 行，其余各行与原行列式相同。</p>",
+      statement: "<div class=\"term\"><div class=\"term-label prp\">〔性质〕转置不变</div><div class=\"term-body\">行列式与它的转置行列式相等：$|A^{T}|=|A|$（也写作 $D^{T}=D$）。</div></div><div class=\"term\"><div class=\"term-label prp\">〔性质〕按行（列）可加</div><div class=\"term-body\">若行列式某一行（列）的元素都是<strong>两数之和</strong>，例如第 $i$ 行为 $a_{i1}+a_{i1}',\\ a_{i2}+a_{i2}',\\ \\cdots$，则该行列式等于<strong>两个行列式之和</strong>：这两个行列式分别以 $a_{i1},a_{i2},\\cdots$ 和 $a_{i1}',a_{i2}',\\cdots$ 为第 $i$ 行，其余各行与原行列式相同。</div></div>",
       explanation: "转置不变说明<strong>行与列的地位完全对称</strong>：凡是对行成立的性质，对列一律同样成立，后面所有性质因此都只按行叙述一遍。可加性是<strong>逐行（列）可加</strong>，不是整体可加，一般 $|A+B|\\neq|A|+|B|$；它同时也是下一张卡里「倍加不变」的证明依据。",
       tags: ["行列式", "转置", "可加性", "性质"]
     },
@@ -59,7 +59,7 @@ registerSubject({
       module: 2,
       card: "④",
       title: "行列式的初等变换性质",
-      statement: "<p><strong>〔性质〕换行变号</strong>　互换两行（列），行列式变号。<strong>推论</strong>：两行（列）完全相同时，行列式等于零。</p><p><strong>〔性质〕提公因子</strong>　用数 $k$ 乘某一行（列）的所有元素，等于用 $k$ 乘此行列式，即公因子可以提到行列式符号外面。<strong>推论一</strong>：两行（列）成比例时，行列式为零。<strong>推论二</strong>：每一行都乘 $k$（即数乘矩阵 $kA$），要提 $n$ 次，$|kA|=k^{n}|A|$。</p><p><strong>〔性质〕倍加不变</strong>　把某一行（列）的各元素乘同一数 $k$ 加到另一行（列）对应元素上，<strong>行列式的值不变</strong>。</p><p><strong>〔方法〕凑零化三角</strong>　手算行列式的标准路线：反复用倍加变换把某一侧凑成零，化为上（下）三角形，再由卡 ② 直接取主对角线乘积。</p>",
+      statement: "<div class=\"term\"><div class=\"term-label prp\">〔性质〕换行变号</div><div class=\"term-body\">互换两行（列），行列式变号。<strong>推论</strong>：两行（列）完全相同时，行列式等于零。</div></div><div class=\"term\"><div class=\"term-label prp\">〔性质〕提公因子</div><div class=\"term-body\">用数 $k$ 乘某一行（列）的所有元素，等于用 $k$ 乘此行列式，即公因子可以提到行列式符号外面。<strong>推论一</strong>：两行（列）成比例时，行列式为零。<strong>推论二</strong>：每一行都乘 $k$（即数乘矩阵 $kA$），要提 $n$ 次，$|kA|=k^{n}|A|$。</div></div><div class=\"term\"><div class=\"term-label prp\">〔性质〕倍加不变</div><div class=\"term-body\">把某一行（列）的各元素乘同一数 $k$ 加到另一行（列）对应元素上，<strong>行列式的值不变</strong>。</div></div><div class=\"term\"><div class=\"term-label method\">〔方法〕凑零化三角</div><div class=\"term-body\">手算行列式的标准路线：反复用倍加变换把某一侧凑成零，化为上（下）三角形，再由卡 ② 直接取主对角线乘积。</div></div>",
       explanation: "三条与矩阵的三种初等变换一一对应，但<strong>只有倍加是等值变换</strong>：换行要补负号，提公因子要把 $k$ 提到外面。<strong>最易错</strong>：$|kA|=k^{n}|A|$ 而不是 $k|A|$。倍加不变可由上一张卡的可加性直接证出，见大白话。",
       tags: ["行列式", "初等变换", "凑零", "性质"]
     },
@@ -70,7 +70,7 @@ registerSubject({
       module: 3,
       card: "⑤",
       title: "余子式与代数余子式",
-      statement: "<p><strong>〔定义〕余子式与代数余子式</strong>　在 $n$ 阶行列式中，划去元素 $a_{ij}$ 所在的第 $i$ 行和第 $j$ 列后，余下的 $n-1$ 阶行列式称为 $a_{ij}$ 的<strong>余子式</strong>，记作 $M_{ij}$；称 $A_{ij}=(-1)^{i+j}M_{ij}$ 为 $a_{ij}$ 的<strong>代数余子式</strong>。</p>",
+      statement: "<div class=\"term\"><div class=\"term-label def\">〔定义〕余子式与代数余子式</div><div class=\"term-body\">在 $n$ 阶行列式中，划去元素 $a_{ij}$ 所在的第 $i$ 行和第 $j$ 列后，余下的 $n-1$ 阶行列式称为 $a_{ij}$ 的<strong>余子式</strong>，记作 $M_{ij}$；称 $A_{ij}=(-1)^{i+j}M_{ij}$ 为 $a_{ij}$ 的<strong>代数余子式</strong>。</div></div>",
       explanation: "代数余子式只比余子式多一个符号因子 $(-1)^{i+j}$，符号取决于 <strong>$i+j$ 的奇偶性</strong>。关键性质：<strong>第 $i$ 行的代数余子式 $A_{i1},\\cdots,A_{in}$ 里一个第 $i$ 行的元素都不含</strong>——卡 ⑦ 的「换一行填数字」全靠这一条。",
       tags: ["行列式", "余子式", "代数余子式", "定义"]
     },
@@ -81,7 +81,7 @@ registerSubject({
       module: 3,
       card: "⑥",
       title: "行列式按行（列）展开定理",
-      statement: "<p><strong>〔定理〕按行（列）展开</strong>　行列式等于它的任一行（列）的各元素与其对应的<strong>代数余子式乘积之和</strong>：$D=a_{i1}A_{i1}+a_{i2}A_{i2}+\\cdots+a_{in}A_{in}$（按第 $i$ 行展开），或 $D=a_{1j}A_{1j}+a_{2j}A_{2j}+\\cdots+a_{nj}A_{nj}$（按第 $j$ 列展开）。</p><p><strong>〔方法〕凑零后降阶</strong>　先用倍加变换把某一行（列）化到只剩 1 个非零元素，再按该行（列）展开，一次把 $n$ 阶降成 1 个 $n-1$ 阶。</p>",
+      statement: "<div class=\"term\"><div class=\"term-label thm\">〔定理〕按行（列）展开</div><div class=\"term-body\">行列式等于它的任一行（列）的各元素与其对应的<strong>代数余子式乘积之和</strong>：$D=a_{i1}A_{i1}+a_{i2}A_{i2}+\\cdots+a_{in}A_{in}$（按第 $i$ 行展开），或 $D=a_{1j}A_{1j}+a_{2j}A_{2j}+\\cdots+a_{nj}A_{nj}$（按第 $j$ 列展开）。</div></div><div class=\"term\"><div class=\"term-label method\">〔方法〕凑零后降阶</div><div class=\"term-body\">先用倍加变换把某一行（列）化到只剩 1 个非零元素，再按该行（列）展开，一次把 $n$ 阶降成 1 个 $n-1$ 阶。</div></div>",
       explanation: "把 $n!$ 项按「第 $i$ 行取了哪个元素」分成 $n$ 堆，每堆提走该元素后剩下的正是一个 $n-1$ 阶行列式，这就是降阶的全部原理；符号因子 $(-1)^{i+j}$ 来自把 $a_{ij}$ 搬到左上角所需的对换次数。实战中应选<strong>零元素最多的行（列）</strong>展开。",
       tags: ["行列式", "展开定理", "降阶", "定理"]
     },
@@ -92,7 +92,7 @@ registerSubject({
       module: 3,
       card: "⑦",
       title: "代数余子式的加权和（换行母公式）",
-      statement: "<p><strong>〔性质〕换行母公式</strong>　把 $n$ 阶行列式 $D$ 的第 $i$ 行整行换成任意一组数 $c_1,c_2,\\cdots,c_n$（其余各行不动），所得行列式的值等于 $c_1A_{i1}+c_2A_{i2}+\\cdots+c_nA_{in}$。列的情形完全同理。</p><p><strong>〔性质〕三个特例</strong>　<ul><li>填回本行 $c_k=a_{ik}$：$\\sum_{k}a_{ik}A_{ik}=D$，即按行展开定理（卡 ⑥）。</li><li>填入别行 $c_k=a_{jk}\\ (j\\neq i)$：新行列式有两行完全相同，故 $\\sum_{k}a_{ik}A_{jk}=0$。</li><li>合起来写成 $\\sum_{k=1}^{n}a_{ik}A_{jk}=D\\,\\delta_{ij}$（$\\delta_{ij}$ 为克罗内克记号）。</li></ul></p>",
+      statement: "<div class=\"term\"><div class=\"term-label prp\">〔性质〕换行母公式</div><div class=\"term-body\">把 $n$ 阶行列式 $D$ 的第 $i$ 行整行换成任意一组数 $c_1,c_2,\\cdots,c_n$（其余各行不动），所得行列式的值等于 $c_1A_{i1}+c_2A_{i2}+\\cdots+c_nA_{in}$。列的情形完全同理。</div></div><div class=\"term\"><div class=\"term-label prp\">〔性质〕三个特例</div><div class=\"term-body\"><ul><li>填回本行 $c_k=a_{ik}$：$\\sum_{k}a_{ik}A_{ik}=D$，即按行展开定理（卡 ⑥）。</li><li>填入别行 $c_k=a_{jk}\\ (j\\neq i)$：新行列式有两行完全相同，故 $\\sum_{k}a_{ik}A_{jk}=0$。</li><li>合起来写成 $\\sum_{k=1}^{n}a_{ik}A_{jk}=D\\,\\delta_{ij}$（$\\delta_{ij}$ 为克罗内克记号）。</li></ul></div></div>",
       explanation: "母公式成立的唯一理由：<strong>$A_{i1},\\cdots,A_{in}$ 全都不含第 $i$ 行的元素</strong>（卡 ⑤），所以第 $i$ 行随便换，这一排代数余子式纹丝不动。求「代数余子式之和」就把该行全填 $1$；求「余子式之和」要填交错的 $\\pm1$。这条统一式也是卡 ⑪ 中 $AA^{*}=|A|E$ 的直接依据。",
       tags: ["行列式", "代数余子式", "加权和", "性质"]
     },
@@ -103,7 +103,7 @@ registerSubject({
       module: 4,
       card: "⑧",
       title: "分块行列式（主对角与副对角）",
-      statement: "<p><strong>〔性质〕主对角分块</strong>　设 $A,B$ 分别为 $m$ 阶、$n$ 阶方阵，则 $\\begin{vmatrix}A&O\\\\O&B\\end{vmatrix}=\\begin{vmatrix}A&C\\\\O&B\\end{vmatrix}=\\begin{vmatrix}A&O\\\\C&B\\end{vmatrix}=|A|\\cdot|B|$，非零块 $C$ 对结果没有影响。</p><p><strong>〔性质〕副对角换块</strong>　$\\begin{vmatrix}O&A\\\\B&O\\end{vmatrix}=\\begin{vmatrix}C&A\\\\B&O\\end{vmatrix}=\\begin{vmatrix}O&A\\\\B&C\\end{vmatrix}=(-1)^{mn}|A|\\cdot|B|$，同样只要有一个角是零块即可。</p>",
+      statement: "<div class=\"term\"><div class=\"term-label prp\">〔性质〕主对角分块</div><div class=\"term-body\">设 $A,B$ 分别为 $m$ 阶、$n$ 阶方阵，则 </div><div class=\"term-math\">$$\\begin{vmatrix}A&O\\\\O&B\\end{vmatrix}=\\begin{vmatrix}A&C\\\\O&B\\end{vmatrix}=\\begin{vmatrix}A&O\\\\C&B\\end{vmatrix}=|A|\\cdot|B|$$</div><div class=\"term-body\">，非零块 $C$ 对结果没有影响。</div></div><div class=\"term\"><div class=\"term-label prp\">〔性质〕副对角换块</div><div class=\"term-body\">$\\begin{vmatrix}O&A\\\\B&O\\end{vmatrix}=\\begin{vmatrix}C&A\\\\B&O\\end{vmatrix}=\\begin{vmatrix}O&A\\\\B&C\\end{vmatrix}=(-1)^{mn}|A|\\cdot|B|$，同样只要有一个角是零块即可。</div></div>",
       explanation: "这是卡 ② 三角行列式的分块版：主对角分块对应上（下）三角，副对角分块对应副对角三角形。符号 $(-1)^{mn}$ 来自把 $B$ 所在的 $n$ 行整体搬到上面所需的 $m\\times n$ 次相邻对换，<strong>不是一律取负</strong>：$m,n$ 同为奇数才是负号。",
       tags: ["行列式", "分块矩阵", "降阶", "性质"]
     },
@@ -114,7 +114,7 @@ registerSubject({
       module: 4,
       card: "⑨",
       title: "范德蒙德行列式",
-      statement: "<p><strong>〔性质〕范德蒙德公式</strong>　$V_n=\\begin{vmatrix}1&1&\\cdots&1\\\\x_1&x_2&\\cdots&x_n\\\\x_1^2&x_2^2&\\cdots&x_n^2\\\\\\vdots&\\vdots&&\\vdots\\\\x_1^{n-1}&x_2^{n-1}&\\cdots&x_n^{n-1}\\end{vmatrix}=\\prod_{1\\le j&lt;i\\le n}(x_i-x_j)$。</p>",
+      statement: "<div class=\"term\"><div class=\"term-label prp\">〔性质〕范德蒙德公式</div><div class=\"term-math\">$$V_n=\\begin{vmatrix}1&1&\\cdots&1\\\\x_1&x_2&\\cdots&x_n\\\\x_1^2&x_2^2&\\cdots&x_n^2\\\\\\vdots&\\vdots&&\\vdots\\\\x_1^{n-1}&x_2^{n-1}&\\cdots&x_n^{n-1}\\end{vmatrix}=\\prod_{1\\le j&lt;i\\le n}(x_i-x_j)$$</div></div>",
       explanation: "等于所有下标差 $(x_i-x_j)$（$i&gt;j$）的连乘积，口诀「<strong>后减前，连乘积</strong>」。它<strong>为零当且仅当 $x_1,\\cdots,x_n$ 中至少有两个相等</strong>，是判断特征值互异、矩阵可对角化等问题的常用工具。",
       tags: ["行列式", "范德蒙德", "性质"]
     },
@@ -125,7 +125,7 @@ registerSubject({
       module: 5,
       card: "⑩",
       title: "乘法定理与抽象型行列式",
-      statement: "<p><strong>〔性质〕乘法定理</strong>　设 $A,B$ 都是 $n$ 阶方阵，则 $|AB|=|A|\\cdot|B|$。由此 $|A^{k}|=|A|^{k}$。</p><p><strong>〔方法〕抽象型行列式</strong>　题目不给具体数字、只给 $A$ 与 $A^{T}$、$kA$、$A^{k}$、$A^{*}$ 之间的等式，求 $|A|$。套路是<strong>两边同时取行列式</strong>，再用本卡的 $|AB|=|A||B|$、卡 ③ 的 $|A^{T}|=|A|$、卡 ④ 的 $|kA|=k^{n}|A|$ 把式子化成关于 $|A|$ 的一元方程。</p>",
+      statement: "<div class=\"term\"><div class=\"term-label prp\">〔性质〕乘法定理</div><div class=\"term-body\">设 $A,B$ 都是 $n$ 阶方阵，则 $|AB|=|A|\\cdot|B|$。由此 $|A^{k}|=|A|^{k}$。</div></div><div class=\"term\"><div class=\"term-label method\">〔方法〕抽象型行列式</div><div class=\"term-body\">题目不给具体数字、只给 $A$ 与 $A^{T}$、$kA$、$A^{k}$、$A^{*}$ 之间的等式，求 $|A|$。套路是<strong>两边同时取行列式</strong>，再用本卡的 $|AB|=|A||B|$、卡 ③ 的 $|A^{T}|=|A|$、卡 ④ 的 $|kA|=k^{n}|A|$ 把式子化成关于 $|A|$ 的一元方程。</div></div>",
       explanation: "行列式是体积的缩放倍数，矩阵相乘是连续做两次变换，总倍数自然等于两个倍数相乘——这就是乘法定理（几何意义见卡 ①）。注意乘法有公式而<strong>加法没有</strong>，$|A+B|\\neq|A|+|B|$ 的说明见卡 ③。$|A^{-1}|=\\frac{1}{|A|}$ 属于逆矩阵的性质，见<strong>第 2 章 · 性质「逆矩阵的运算性质」</strong>。",
       tags: ["行列式", "乘法定理", "抽象型", "性质"]
     },
@@ -137,7 +137,7 @@ registerSubject({
       module: 5,
       card: "⑪",
       title: "伴随矩阵",
-      statement: "<p><strong>〔定义〕伴随矩阵</strong>　设 $A=(a_{ij})$ 为 $n$ 阶方阵，$A_{ij}$ 为 $a_{ij}$ 的代数余子式，则 $A^{*}=\\begin{pmatrix}A_{11}&A_{21}&\\cdots&A_{n1}\\\\A_{12}&A_{22}&\\cdots&A_{n2}\\\\\\vdots&\\vdots&&\\vdots\\\\A_{1n}&A_{2n}&\\cdots&A_{nn}\\end{pmatrix}$ 称为 $A$ 的<strong>伴随矩阵</strong>。注意它是代数余子式按行算出后<strong>转置</strong>排列的，即 $(A^{*})_{ij}=A_{ji}$，下标是对换的。</p><p><strong>〔定理〕基本关系式</strong>　对任意 $n$ 阶方阵 $A$，恒有 <u>$AA^{*}=A^{*}A=|A|E$</u>。这是卡 ⑦ 那条 $\\sum_k a_{ik}A_{jk}=|A|\\delta_{ij}$ 的矩阵写法，<strong>不要求 $A$ 可逆</strong>。</p><p><strong>〔性质〕伴随的行列式</strong>　$|A^{*}|=|A|^{n-1}\\ (n\\ge2)$。</p>",
+      statement: "<div class=\"term\"><div class=\"term-label def\">〔定义〕伴随矩阵</div><div class=\"term-body\">设 $A=(a_{ij})$ 为 $n$ 阶方阵，$A_{ij}$ 为 $a_{ij}$ 的代数余子式，则 </div><div class=\"term-math\">$$A^{*}=\\begin{pmatrix}A_{11}&A_{21}&\\cdots&A_{n1}\\\\A_{12}&A_{22}&\\cdots&A_{n2}\\\\\\vdots&\\vdots&&\\vdots\\\\A_{1n}&A_{2n}&\\cdots&A_{nn}\\end{pmatrix}$$</div><div class=\"term-body\"> 称为 $A$ 的<strong>伴随矩阵</strong>。注意它是代数余子式按行算出后<strong>转置</strong>排列的，即 $(A^{*})_{ij}=A_{ji}$，下标是对换的。</div></div><div class=\"term\"><div class=\"term-label thm\">〔定理〕基本关系式</div><div class=\"term-body\">对任意 $n$ 阶方阵 $A$，恒有 <u>$AA^{*}=A^{*}A=|A|E$</u>。这是卡 ⑦ 那条 $\\sum_k a_{ik}A_{jk}=|A|\\delta_{ij}$ 的矩阵写法，<strong>不要求 $A$ 可逆</strong>。</div></div><div class=\"term\"><div class=\"term-label prp\">〔性质〕伴随的行列式</div><div class=\"term-body\">$|A^{*}|=|A|^{n-1}\\ (n\\ge2)$。</div></div>",
       explanation: "$AA^{*}=|A|E$ 是<strong>无条件</strong>成立的，$|A|=0$ 时它退化为 $AA^{*}=O$。由它出发：$|A|\\neq0$ 时可得求逆公式 $A^{-1}=\\frac{1}{|A|}A^{*}$（见<strong>第 2 章 · 定理「矩阵可逆的充要条件与求逆公式」</strong>，那里还有完整的求逆方法选择）；$r(A^{*})$ 的三段式见<strong>第 2 章 · 性质「伴随矩阵的秩」</strong>。",
       tags: ["行列式", "伴随矩阵", "定义", "定理", "性质"]
     },
@@ -148,7 +148,7 @@ registerSubject({
       module: 5,
       card: "⑫",
       title: "克拉默法则",
-      statement: "<p><strong>〔定理〕克拉默法则</strong>　若线性方程组 $Ax=b$ 的<strong>方程个数等于未知量个数</strong>且系数行列式 $D=|A|\\neq0$，则方程组有<strong>唯一解</strong>，且 $x_j=\\dfrac{D_j}{D}\\ (j=1,2,\\cdots,n)$，其中 $D_j$ 是把 $D$ 的第 $j$ 列换成常数项 $b$ 所得的行列式。</p><p><strong>〔推论〕</strong>　齐次方程组 $Ax=0$ 只有零解 $\\iff D\\neq0$；$D=0$ 时方程组无解或有无穷多解，克拉默法则失效。</p>",
+      statement: "<div class=\"term\"><div class=\"term-label thm\">〔定理〕克拉默法则</div><div class=\"term-body\">若线性方程组 $Ax=b$ 的<strong>方程个数等于未知量个数</strong>且系数行列式 $D=|A|\\neq0$，则方程组有<strong>唯一解</strong>，且 $x_j=\\dfrac{D_j}{D}\\ (j=1,2,\\cdots,n)$，其中 $D_j$ 是把 $D$ 的第 $j$ 列换成常数项 $b$ 所得的行列式。</div></div><div class=\"term\"><div class=\"term-label prp\">〔推论〕</div><div class=\"term-body\">齐次方程组 $Ax=0$ 只有零解 $\\iff D\\neq0$；$D=0$ 时方程组无解或有无穷多解，克拉默法则失效。</div></div>",
       explanation: "$D\\neq0$ 是唯一的启动条件（$D$ 在分母上）。推导只用本章工具：由卡 ⑪ 的 $AA^{*}=|A|E$ 得 $x=A^{-1}b=\\frac{1}{D}A^{*}b$，其第 $j$ 个分量 $\\frac{1}{D}\\sum_k A_{kj}b_k$ 正是卡 ⑦ 母公式的<strong>列版本</strong>，即把第 $j$ 列换成 $b$ 后的 $D_j$。$D=0$ 时究竟是无解还是无穷多解，要靠秩来判断，见<strong>第 4 章 · 线性方程组</strong>。",
       tags: ["行列式", "克拉默法则", "线性方程组", "定理"]
     },
@@ -283,7 +283,7 @@ registerSubject({
       chapterId: "matrix",
       type: "property",
       title: "伴随矩阵的秩",
-      statement: "设 $A$ 为 $n$ 阶方阵，则 $r(A^{*})=\\begin{cases}n, & r(A)=n\\\\1, & r(A)=n-1\\\\0, & r(A)&lt;n-1\\end{cases}$。",
+      statement: "<p>设 $A$ 为 $n$ 阶方阵，则</p><div class=\"term-math\">$$r(A^{*})=\\begin{cases}n, & r(A)=n\\\\1, & r(A)=n-1\\\\0, & r(A)&lt;n-1\\end{cases}$$</div>",
       explanation: "记忆要点：<ul><li><strong>$r(A)=n$（满秩）：</strong>伴随矩阵也满秩。</li><li><strong>$r(A)=n-1$：</strong>即 $|A|=0$ 但存在非零的 $n-1$ 阶子式，此时伴随矩阵秩为 1。</li><li><strong>$r(A)&lt;n-1$：</strong>所有 $n-1$ 阶子式都为零，伴随矩阵为零矩阵。</li></ul>这是考研高频考点。",
       tags: ["行列式", "伴随矩阵", "秩"]
     },

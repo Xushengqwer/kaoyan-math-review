@@ -9,6 +9,7 @@
   --hairline: #f0f0f3;
   --accent: #0071e3;
   --accent-soft: #eaf3fd;
+  --note-border: #cfe3f9;
 
   --def: #0068d6;
   --def-bg: #eaf2fc;
@@ -50,6 +51,7 @@
     --hairline: #232325;
     --accent: #2997ff;
     --accent-soft: #15263c;
+    --note-border: #24405f;
 
     --def: #63aaff;
     --def-bg: #15263c;
@@ -547,7 +549,7 @@ button { font: inherit; border: none; background: none; color: inherit; cursor: 
   text-wrap: balance;
 }
 
-.entry-statement { font-size: 16px; line-height: 1.85; color: var(--text); }
+.entry-statement { font-size: 15.5px; line-height: 2.05; color: var(--text); }
 .entry-statement strong { font-weight: 600; }
 .entry-statement u {
   text-decoration: underline;
@@ -555,11 +557,29 @@ button { font: inherit; border: none; background: none; color: inherit; cursor: 
   text-decoration-thickness: 2px;
   text-underline-offset: 4px;
 }
-.entry-statement ul, .entry-statement ol { margin: 14px 0 4px; padding-left: 22px; }
-.entry-statement li { margin: 10px 0; padding-left: 3px; }
+.entry-statement ul, .entry-statement ol { margin: 12px 0 4px; padding-left: 22px; }
+.entry-statement li { margin: 12px 0; padding-left: 3px; }
 .entry-statement li::marker { color: var(--text-3); }
-.entry-statement p { margin: 0 0 12px; }
+.entry-statement p { margin: 0 0 16px; }
 .entry-statement p:last-child { margin-bottom: 0; }
+
+/* ---- 课本卡里的小块：〔定义〕〔定理〕〔性质〕〔方法〕各占一块 ---- */
+/* 原来是「粗体标签 + 正文」连成一整段，读起来是一堵墙。
+   拆成「小标题一行、正文一段」，再按类型给标题上色，一眼看出这张卡里有什么。 */
+.term + .term { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--hairline); }
+.term-label {
+  margin-bottom: 9px;
+  font-size: 12.5px; font-weight: 700; letter-spacing: .02em;
+}
+.term-label.def { color: var(--def); }
+.term-label.thm { color: var(--thm); }
+.term-label.prp { color: var(--prp); }
+.term-label.method { color: var(--text-3); }
+.term-body { margin: 0; }
+.term-body + .term-body { margin-top: 10px; }
+/* 句子中间的大矩阵挪出来独占一行，正文的行高就不会被撑得忽高忽低 */
+.term-math { margin: 14px 0 2px; overflow-x: auto; overflow-y: hidden; }
+.term-math .katex-display { margin: 0; }
 
 .entry-figure {
   margin: 26px 0 8px; padding: 22px 18px;
@@ -569,12 +589,12 @@ button { font: inherit; border: none; background: none; color: inherit; cursor: 
 .entry-figure svg { max-width: 100%; height: auto; }
 .entry-figure figcaption { margin-top: 12px; font-size: 12px; color: var(--text-3); }
 
-/* 提示是正文的小注，不是独立卡片：去掉底色，只留一道细线挂在正文下面。
-   这样一条知识点里只有「我的笔记」一个色块，层级才清楚。 */
+/* 提示属于课本这一侧，放在课本卡内部：跟正文之间拉一条细线，底色比卡片再深一点点 */
 .entry-note {
-  margin-top: 16px; padding: 2px 0 2px 15px;
-  border-left: 2px solid var(--border);
-  font-size: 13.5px; line-height: 1.8; color: var(--text-2);
+  margin: 22px -26px -24px; padding: 16px 26px 18px;
+  background: var(--bg); border-top: 1px solid var(--hairline);
+  border-radius: 0 0 var(--r-md) var(--r-md);
+  font-size: 13.5px; line-height: 1.85; color: var(--text-2);
 }
 .entry-note .note-label {
   display: inline-block; margin-right: 9px;
@@ -623,8 +643,14 @@ mark { background: #ffe58a; color: inherit; border-radius: 3px; padding: 0 2px; 
 @media (prefers-color-scheme: dark) { mark { background: #6b5410; color: #ffeaa0; } }
 
 /* ---- 我的笔记 ---- */
-/* 上面是教材（正文 + 提示），下面是我自己写的。中间明确断开。 */
-.mynote-slot { margin-top: 30px; padding-top: 26px; border-top: 1px solid var(--hairline); }
+/* ---- 两种卡片：上面课本，下面笔记。形状一致，靠底色和左边那道线区分 ---- */
+.card-book {
+  padding: 24px 26px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+.mynote-slot { margin-top: 14px; }
 .mynote-add {
   padding: 8px 14px; border-radius: 999px;
   font-size: 12.5px; color: var(--text-3);
@@ -637,8 +663,9 @@ mark { background: #ffe58a; color: inherit; border-radius: 3px; padding: 0 2px; 
    整篇铺蓝底太压人，改成「只留一道竖线 + 不加底色」，当成页面的一个小节来读。
    编辑态才给底色，把「正在改」和「在看」区分开。 */
 .mynote {
-  padding: 2px 0 2px 18px; border-radius: 0;
-  background: none;
+  padding: 18px 22px 20px; border-radius: var(--r-md);
+  background: var(--accent-soft);
+  border: 1px solid var(--note-border);
   border-left: 3px solid var(--accent);
 }
 .mynote-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; margin-bottom: 11px; }
@@ -694,10 +721,7 @@ mark { background: #ffe58a; color: inherit; border-radius: 3px; padding: 0 2px; 
 }
 
 /* 编辑器 */
-.mynote-editing {
-  padding: 15px 18px; border-radius: var(--r-md);
-  background: var(--surface); box-shadow: var(--lift); border-left-color: var(--accent);
-}
+.mynote-editing { background: var(--surface); box-shadow: var(--lift); border-left-color: var(--accent); }
 .mynote-input {
   width: 100%; padding: 12px 14px;
   border: 1px solid var(--border); border-radius: var(--r-sm);
@@ -1006,6 +1030,11 @@ body.mynote-zoomed { overflow: hidden; }
    只在窄屏生效，桌面端排版一点不变。 */
 @media (max-width: 720px) {
   .entry-statement, .entry-note, .mynote-body, .mynote-preview { overflow-x: auto; }
+  /* 手机上卡片内边距收窄，正文才有地方站。
+     提示是贴着课本卡底部的一条，负边距必须跟着卡片的内边距一起改。 */
+  .card-book { padding: 18px 16px; }
+  .entry-note { margin: 18px -16px -18px; padding: 14px 16px 16px; }
+  .mynote { padding: 16px 15px 18px; }
 }
 
 /* ---- 打印 / 导出 PDF ---- */

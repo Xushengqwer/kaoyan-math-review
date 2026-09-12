@@ -890,9 +890,12 @@ const App = {
         <div class="entry-no" aria-hidden="true">${index}</div>
         <div class="entry-main">
           <h4 class="entry-title">${escapeHtml(item.title)}</h4>
-          <div class="entry-statement">${item.statement}</div>
-          ${item.diagram ? `<figure class="entry-figure">${item.diagram}${item.diagramCaption ? `<figcaption>${escapeHtml(item.diagramCaption)}</figcaption>` : ""}</figure>` : ""}
-          <div class="entry-note"><span class="note-label">提示</span>${item.explanation}</div>
+          <!-- 两张卡：上面这张是课本（正文 + 提示），下面那张是自己写的笔记 -->
+          <section class="card card-book">
+            <div class="entry-statement">${item.statement}</div>
+            ${item.diagram ? `<figure class="entry-figure">${item.diagram}${item.diagramCaption ? `<figcaption>${escapeHtml(item.diagramCaption)}</figcaption>` : ""}</figure>` : ""}
+            <div class="entry-note"><span class="note-label">提示</span>${item.explanation}</div>
+          </section>
           <div class="mynote-slot" data-note="${item.id}">${this.myNoteHtml(item.id)}</div>
           ${
             item.tags && item.tags.length
