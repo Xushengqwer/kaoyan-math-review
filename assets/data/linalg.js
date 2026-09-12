@@ -11,7 +11,13 @@ registerSubject({
       { no: "三", name: "怎么算", brief: "把它变成一个具体数字的四条路" },
       { no: "四", name: "怎么用", brief: "行列式向外连接矩阵与方程组" }
     ] },
-    { id: "matrix", name: "矩阵及其运算", order: 2 },
+    // 第2章按「模块」组织：4 个模块 12 张卡，卡号 ①～⑫。
+    { id: "matrix", name: "矩阵及其运算", order: 2, modules: [
+      { no: "一", name: "概念与运算", brief: "矩阵是什么，怎么加、怎么乘、怎么转置" },
+      { no: "二", name: "可逆与分块", brief: "什么样的矩阵能「除」，以及分块这把工具" },
+      { no: "三", name: "初等变换", brief: "全章的通用手段：三种变换，和它的三大应用" },
+      { no: "四", name: "矩阵的秩", brief: "全书主线：定义、求法、不等式，以及可逆的等价链" }
+    ] },
     { id: "vector-space", name: "向量组的线性相关性与秩", order: 3 },
     { id: "linear-equations", name: "线性方程组", order: 4 },
     { id: "eigen", name: "特征值、特征向量与相似对角化", order: 5 },
@@ -155,172 +161,138 @@ registerSubject({
       id: "la-mat-def-matrix",
       chapterId: "matrix",
       type: "definition",
-      title: "矩阵的定义",
-      statement: "由 $m\\times n$ 个数 $a_{ij}\\ (i=1,\\cdots,m;\\ j=1,\\cdots,n)$ 排成的 $m$ 行 $n$ 列的数表 $A=\\begin{pmatrix}a_{11}&a_{12}&\\cdots&a_{1n}\\\\a_{21}&a_{22}&\\cdots&a_{2n}\\\\\\vdots&\\vdots&&\\vdots\\\\a_{m1}&a_{m2}&\\cdots&a_{mn}\\end{pmatrix}$ 称为 <strong>$m\\times n$ 矩阵</strong>，简记为 $A=(a_{ij})_{m\\times n}$。",
-      explanation: "当 $m=n$ 时称为 $n$ 阶方阵。矩阵与行列式的本质区别：<strong>矩阵是数表，行列式是一个数（值）</strong>，只有方阵才能取行列式。",
-      tags: ["矩阵", "定义", "基本概念"]
-    },
-    {
-      id: "la-mat-def-special",
-      chapterId: "matrix",
-      type: "definition",
-      title: "几类特殊矩阵",
-      statement: "<ul><li><strong>零矩阵：</strong>元素全为零的矩阵，记作 $O$。</li><li><strong>单位矩阵：</strong>主对角线元素为 $1$、其余元素为 $0$ 的 $n$ 阶方阵，记作 $E$（或 $I$）。</li><li><strong>对角矩阵：</strong>主对角线以外元素全为零的方阵，记作 $\\mathrm{diag}(\\lambda_1,\\lambda_2,\\cdots,\\lambda_n)$。</li><li><strong>对称矩阵与反对称矩阵：</strong>满足 $A^{T}=A$ 的方阵称为对称矩阵，满足 $A^{T}=-A$ 的方阵称为反对称矩阵。</li></ul>",
-      explanation: "单位矩阵在矩阵乘法中的作用类似数 $1$：$AE=EA=A$。<strong>反对称矩阵主对角线元素必为 $0$</strong>（因为 $a_{ii}=-a_{ii}$）。这些特殊矩阵在考研题目条件设置中出现频率极高。",
-      tags: ["矩阵", "特殊矩阵", "定义"]
+      module: 1,
+      card: "①",
+      title: "矩阵的定义与特殊矩阵",
+      statement: "<div class=\"term\"><div class=\"term-label def\">〔定义〕矩阵</div><div class=\"term-body\">由 $m\\times n$ 个数 $a_{ij}$ 排成的 $m$ 行 $n$ 列的数表，称为 $m\\times n$ <strong>矩阵</strong>，简记为 $A=(a_{ij})_{m\\times n}$。$m=n$ 时称为 <strong>$n$ 阶方阵</strong>。</div><div class=\"term-math\">$$A=\\begin{pmatrix}a_{11}&a_{12}&\\cdots&a_{1n}\\\\a_{21}&a_{22}&\\cdots&a_{2n}\\\\\\vdots&\\vdots&&\\vdots\\\\a_{m1}&a_{m2}&\\cdots&a_{mn}\\end{pmatrix}$$</div></div><div class=\"term\"><div class=\"term-label def\">〔定义〕几类特殊矩阵</div><div class=\"term-body\"><ul><li><strong>零矩阵</strong> $O$：元素全为零，是唯一可以为长方形的特殊矩阵。</li><li><strong>单位矩阵</strong> $E$（或 $I$）：主对角线元素为 $1$、其余为 $0$ 的方阵。</li><li><strong>对角矩阵</strong> $\\mathrm{diag}(\\lambda_1,\\cdots,\\lambda_n)$：主对角线以外元素全为零的方阵。</li><li><strong>对称矩阵</strong>：$A^{T}=A$；<strong>反对称矩阵</strong>：$A^{T}=-A$。</li></ul></div></div>",
+      explanation: "矩阵与行列式的本质区别：<strong>矩阵是数表（变换规则），行列式是一个数（体积倍率）</strong>，只有方阵才能取行列式。单位矩阵在乘法中的作用类似数 $1$：$AE=EA=A$。反对称矩阵<strong>主对角线元素必为 $0$</strong>（因为 $a_{ii}=-a_{ii}$）。除零矩阵外，上面几类都必须是方阵。",
+      tags: ["矩阵", "定义", "特殊矩阵"]
     },
     {
       id: "la-mat-prop-operations",
       chapterId: "matrix",
       type: "property",
-      title: "矩阵加法与数乘的运算律",
-      statement: "矩阵加法满足<strong>交换律</strong> $A+B=B+A$ 和<strong>结合律</strong> $(A+B)+C=A+(B+C)$；数乘满足 $k(A+B)=kA+kB$，$(k+l)A=kA+lA$，$(kl)A=k(lA)$，$1\\cdot A=A$（$A,B,C$ 为同型矩阵，$k,l$ 为数）。",
-      explanation: "矩阵加法、数乘的运算律与向量的线性运算完全类似，这也是全体 $m\\times n$ 矩阵构成一个<strong>线性空间</strong>的代数基础。",
+      module: 1,
+      card: "②",
+      title: "矩阵的加法与数乘",
+      statement: "<div class=\"term\"><div class=\"term-label prp\">〔性质〕线性运算律</div><div class=\"term-body\">矩阵加法满足<strong>交换律</strong> $A+B=B+A$ 与<strong>结合律</strong> $(A+B)+C=A+(B+C)$；数乘满足 $k(A+B)=kA+kB$，$(k+l)A=kA+lA$，$(kl)A=k(lA)$，$1\\cdot A=A$。前提是 $A,B,C$ <strong>同型</strong>。</div></div>",
+      explanation: "本质是「每个格子里的实数运算」，所以实数的运算律全部继承下来，可以像初中代数一样合并同类项、移项、去括号。<strong>易混</strong>：矩阵数乘 $kA$ 是每个元素都乘 $k$；行列式提公因子只能一行提一次，因此 $|kA|=k^{n}|A|$（见<strong>第 1 章 · 卡③</strong>）。",
       tags: ["矩阵", "加法", "数乘", "性质"]
     },
     {
       id: "la-mat-prop-multiply-noncommute",
       chapterId: "matrix",
       type: "property",
-      title: "矩阵乘法的运算律与不可交换性",
-      statement: "矩阵乘法满足<strong>结合律</strong> $(AB)C=A(BC)$ 和<strong>分配律</strong> $A(B+C)=AB+AC$，$(B+C)A=BA+CA$，但要特别注意几条“不成立”：<ul><li><strong>不满足交换律：</strong>通常 $AB\\neq BA$。</li><li><strong>没有零因子律：</strong>由 $AB=O$ 一般不能推出 $A=O$ 或 $B=O$。</li><li><strong>没有消去律：</strong>由 $AB=AC$ 且 $A\\neq O$ 一般也不能推出 $B=C$（除非 $A$ 可逆）。</li></ul>",
-      explanation: "这是考研中最容易踩坑的一组结论：矩阵乘法没有交换律、没有消去律，零因子存在（可能 $AB=O$ 但 $A,B$ 均非零）。做题时凡涉及矩阵方程化简，<strong>必须先判断矩阵是否可逆再决定能否两边消去</strong>。",
-      tags: ["矩阵", "乘法", "性质", "易错点"]
+      module: 1,
+      card: "③",
+      title: "矩阵乘法与方幂",
+      statement: "<div class=\"term\"><div class=\"term-label prp\">〔性质〕成立的两条</div><div class=\"term-body\"><strong>结合律</strong> $(AB)C=A(BC)$；<strong>分配律</strong> $A(B+C)=AB+AC$，$(B+C)A=BA+CA$。</div></div><div class=\"term\"><div class=\"term-label prp\">〔性质〕失效的三条</div><div class=\"term-body\"><ul><li><strong>不满足交换律</strong>：通常 $AB\\neq BA$。</li><li><strong>没有零因子律</strong>：由 $AB=O$ 一般<strong>不能</strong>推出 $A=O$ 或 $B=O$。</li><li><strong>没有消去律</strong>：由 $AB=AC$ 且 $A\\neq O$ 一般<strong>不能</strong>推出 $B=C$，除非 $A$ 可逆（见卡⑤）。</li></ul></div></div><div class=\"term\"><div class=\"term-label prp\">〔性质〕特殊矩阵的方幂</div><div class=\"term-body\">$E^{k}=E$；对角矩阵的方幂等于各对角元分别取方幂：$[\\mathrm{diag}(\\lambda_1,\\cdots,\\lambda_n)]^{k}=\\mathrm{diag}(\\lambda_1^{k},\\cdots,\\lambda_n^{k})$。</div></div>",
+      explanation: "这是最容易踩坑的一组结论。根源是矩阵乘法代表<strong>连续做两次空间变换</strong>——顺序不能换，而且两个非零矩阵的行列正交时乘积就会变成零矩阵。由此 $(A+B)^{2}=A^{2}+AB+BA+B^{2}$，完全平方与平方差公式都<strong>不能直接用</strong>。凡涉及矩阵方程化简，<strong>必须先判断是否可逆再决定能否消去，且两边必须同侧乘</strong>。",
+      tags: ["矩阵", "乘法", "方幂", "性质"]
     },
     {
       id: "la-mat-prop-transpose",
       chapterId: "matrix",
       type: "property",
-      title: "矩阵转置的运算律",
-      statement: "<ul><li>$(A^{T})^{T}=A$</li><li>$(A+B)^{T}=A^{T}+B^{T}$</li><li>$(kA)^{T}=kA^{T}$</li><li><strong>$(AB)^{T}=B^{T}A^{T}$</strong>（乘积转置要反序）</li></ul>",
-      explanation: "重点记忆乘积转置要“<strong>反序</strong>”：$(AB)^{T}=B^{T}A^{T}$，多个矩阵相乘时同理，如 $(ABC)^{T}=C^{T}B^{T}A^{T}$。这一反序规律与逆矩阵、伴随矩阵的乘积公式规律一致，便于统一记忆。",
-      tags: ["矩阵", "转置", "性质"]
+      module: 1,
+      card: "④",
+      title: "转置与对称矩阵",
+      statement: "<div class=\"term\"><div class=\"term-label prp\">〔性质〕转置运算律</div><div class=\"term-body\">$(A^{T})^{T}=A$；　$(A+B)^{T}=A^{T}+B^{T}$；　$(kA)^{T}=kA^{T}$；　<strong>乘积反序</strong> $(AB)^{T}=B^{T}A^{T}$。</div></div><div class=\"term\"><div class=\"term-label prp\">〔性质〕对称矩阵的构造</div><div class=\"term-body\">对<strong>任意</strong>矩阵 $A$（含长方阵），$AA^{T}$ 与 $A^{T}A$ 恒为对称方阵，阶数分别为 $m$、$n$。</div></div><div class=\"term\"><div class=\"term-label prp\">〔性质〕两对称阵之积何时对称</div><div class=\"term-body\">若 $A,B$ 为同阶对称矩阵，则 $AB$ 对称 $\\iff AB=BA$。</div></div><div class=\"term\"><div class=\"term-label prp\">〔性质〕反对称矩阵的行列式</div><div class=\"term-body\">由 $|A|=|A^{T}|=|-A|=(-1)^{n}|A|$：$n$ 为<strong>奇数</strong>时必有 $|A|=0$；$n$ 为<strong>偶数</strong>时推不出任何结论。</div></div>",
+      explanation: "乘积转置要<strong>反序</strong>，多个相乘同理：$(ABC)^{T}=C^{T}B^{T}A^{T}$。这一反序规律与求逆、伴随完全一致，可统一记忆：<strong>转置、求逆、伴随对乘积都要反序</strong>。证「某式是对称矩阵」的唯一动作：<strong>整式打转置，用反序展开，比对原式</strong>。",
+      tags: ["矩阵", "转置", "对称矩阵", "性质"]
     },
     {
       id: "la-mat-def-invertible",
       chapterId: "matrix",
       type: "definition",
-      title: "可逆矩阵的定义",
-      statement: "设 $A$ 为 $n$ 阶方阵，若存在 $n$ 阶方阵 $B$，使得 $AB=BA=E$，则称 $A$ 是<strong>可逆矩阵</strong>（非奇异矩阵），并称 $B$ 为 $A$ 的<strong>逆矩阵</strong>，记作 $A^{-1}$。",
-      explanation: "逆矩阵若存在则<strong>唯一</strong>。只有方阵才可能可逆，非方阵不存在逆矩阵的概念。判断可逆性最常用的等价条件是 <strong>$|A|\\neq0$</strong>。",
-      tags: ["矩阵", "逆矩阵", "定义"]
-    },
-    {
-      id: "la-mat-thm-invertible-iff",
-      chapterId: "matrix",
-      type: "theorem",
-      title: "矩阵可逆的充要条件与求逆公式",
-      statement: "$n$ 阶方阵 $A$ 可逆的<strong>充要条件</strong>是 $|A|\\neq0$（此时也称 $A$ 为满秩矩阵），且 $A^{-1}=\\dfrac{1}{|A|}A^{*}$，其中 $A^{*}$ 为 $A$ 的伴随矩阵。",
-      explanation: "该充要条件是判断可逆性最基本、最直接的方法。与之等价的条件还包括：<ul><li>$r(A)=n$（满秩）</li><li>$A$ 的行（列）向量组线性无关</li><li>齐次方程组 $Ax=0$ 只有零解</li><li>$0$ 不是 $A$ 的特征值</li></ul>这些等价条件贯穿线代各章，是考研的高频考点串联点。",
-      tags: ["矩阵", "逆矩阵", "定理", "可逆"]
+      types: ["definition", "theorem"],
+      module: 2,
+      card: "⑤",
+      title: "可逆矩阵的定义与充要条件",
+      statement: "<div class=\"term\"><div class=\"term-label def\">〔定义〕可逆矩阵</div><div class=\"term-body\">设 $A$ 为 $n$ 阶方阵，若存在同阶方阵 $B$ 使 $AB=BA=E$，则称 $A$ <strong>可逆</strong>（非奇异），$B$ 称为 $A$ 的<strong>逆矩阵</strong>，记作 $A^{-1}$。逆矩阵<strong>若存在则唯一</strong>；只有方阵才可能可逆。</div></div><div class=\"term\"><div class=\"term-label prp\">〔性质〕单侧即双侧</div><div class=\"term-body\">同阶方阵只要验证 $AB=E$ 或 $BA=E$ <strong>之一</strong>，即可断定 $A$ 可逆且 $B=A^{-1}$，不必再验另一侧。</div></div><div class=\"term\"><div class=\"term-label thm\">〔定理〕可逆的充要条件与求逆公式</div><div class=\"term-body\">$n$ 阶方阵 $A$ 可逆 $\\iff |A|\\neq0$，且 $A^{-1}=\\dfrac{1}{|A|}A^{*}$，其中 $A^{*}$ 为伴随矩阵（见<strong>第 1 章 · 卡⑪</strong>）。</div></div>",
+      explanation: "几何上 $|A|$ 是空间的体积缩放比：$|A|\\neq0$ 说明体积没被压扁、点与点一一对应，因而能无损还原；$|A|=0$ 说明至少塌掉一个维度，信息丢失，绝不可逆。求逆公式由 $AA^{*}=|A|E$ 两边同除 $|A|$ 得到。更多等价说法（$r(A)=n$ 等）见<strong>卡⑪</strong>，那里有完整的等价链。",
+      tags: ["矩阵", "可逆", "定义", "定理"]
     },
     {
       id: "la-mat-prop-inverse-ops",
       chapterId: "matrix",
       type: "property",
+      module: 2,
+      card: "⑥",
       title: "逆矩阵的运算性质",
-      statement: "设 $A,B$ 为同阶可逆矩阵，$k\\neq0$，则：<ul><li>$A^{-1}$ 可逆，且 $(A^{-1})^{-1}=A$</li><li>$AB$ 可逆，且 <strong>$(AB)^{-1}=B^{-1}A^{-1}$</strong></li><li>$kA$ 可逆，且 $(kA)^{-1}=\\dfrac1k A^{-1}$</li><li>$A^{T}$ 可逆，且 $(A^{T})^{-1}=(A^{-1})^{T}$</li><li>$|A^{-1}|=|A|^{-1}$</li></ul>",
-      explanation: "同样注意“<strong>反序</strong>”规律：$(AB)^{-1}=B^{-1}A^{-1}$，与转置、伴随的乘积公式保持一致的记忆方式：转置、求逆、伴随对乘积都要反序。",
+      statement: "<div class=\"term\"><div class=\"term-label prp\">〔性质〕五条运算律</div><div class=\"term-body\">设 $A,B$ 为同阶可逆矩阵，$k\\neq0$，则<ul><li>$(A^{-1})^{-1}=A$</li><li><strong>乘积反序</strong> $(AB)^{-1}=B^{-1}A^{-1}$</li><li>$(kA)^{-1}=\\dfrac{1}{k}A^{-1}$</li><li>$(A^{T})^{-1}=(A^{-1})^{T}$</li><li>$|A^{-1}|=|A|^{-1}$</li></ul></div></div><div class=\"term\"><div class=\"term-label method\">〔方法〕抽象多项式凑定义求逆</div><div class=\"term-body\">已知形如 $A^{2}+2A-3E=O$ 的关系式时，把常数项移到右边、左边提公因式，整理成 $A(\\cdots)=E$，括号内即为 $A^{-1}$。</div></div>",
+      explanation: "反序的道理：先穿袜子再穿鞋，脱的时候要先脱鞋——<strong>后做的先撤销</strong>。<strong>两个易错</strong>：求逆提常数只是倒数 $\\frac{1}{k}$，只有取行列式才带 $n$ 次方（$|kA|=k^{n}|A|$）；另外 $(A+B)^{-1}\\neq A^{-1}+B^{-1}$，加法绝对不能拆。",
       tags: ["矩阵", "逆矩阵", "性质"]
-    },
-    {
-      id: "la-mat-def-elementary-transform",
-      chapterId: "matrix",
-      type: "definition",
-      title: "矩阵的初等变换",
-      statement: "下列三种变换称为矩阵的<strong>初等行（列）变换</strong>：<ul><li>对调两行（列）</li><li>以非零常数 $k$ 乘某一行（列）的所有元素</li><li>把某一行（列）的所有元素乘以数 $k$ 加到另一行（列）对应元素上去</li></ul>",
-      explanation: "初等变换是求矩阵的秩、判断线性相关性、解线性方程组、求逆矩阵的通用底层工具。对矩阵作初等行变换<strong>不改变方程组的解，也不改变矩阵的秩</strong>。",
-      tags: ["矩阵", "初等变换", "定义"]
-    },
-    {
-      id: "la-mat-def-elementary-matrix",
-      chapterId: "matrix",
-      type: "definition",
-      title: "初等矩阵",
-      statement: "由单位矩阵 $E$ 经过一次初等变换得到的矩阵称为<strong>初等矩阵</strong>。三种初等变换对应三种初等矩阵：<strong>倍乘初等矩阵</strong>、<strong>对换初等矩阵</strong>、<strong>倍加初等矩阵</strong>。",
-      explanation: "<ul><li><strong>初等行变换：</strong>相当于在 $A$ 的左边乘以相应的初等矩阵。</li><li><strong>初等列变换：</strong>相当于在 $A$ 的右边乘以相应的初等矩阵。</li></ul>初等矩阵都可逆，且其逆仍是同类型的初等矩阵。",
-      tags: ["矩阵", "初等矩阵", "定义"]
-    },
-    {
-      id: "la-mat-thm-inverse-by-elementary",
-      chapterId: "matrix",
-      type: "theorem",
-      title: "用初等行变换求逆矩阵",
-      statement: "若 $A$ 可逆，则存在有限个初等矩阵 $P_1,P_2,\\cdots,P_s$，使 $P_s\\cdots P_2P_1A=E$；对分块矩阵 $(A\\ \\vdots\\ E)$ 施以一系列初等行变换，当左半部分化为 $E$ 时，右半部分就化为 $A^{-1}$，即 <strong>$(A\\ \\vdots\\ E)\\to(E\\ \\vdots\\ A^{-1})$</strong>。",
-      explanation: "这是求数值矩阵逆矩阵<strong>最常用、最高效的方法</strong>，尤其适合阶数较高（$\\ge3$ 阶）的矩阵，比伴随矩阵法计算量小得多。",
-      tags: ["矩阵", "初等变换", "逆矩阵", "定理"]
-    },
-    {
-      id: "la-mat-def-rank",
-      chapterId: "matrix",
-      type: "definition",
-      title: "矩阵秩的定义",
-      statement: "在 $m\\times n$ 矩阵 $A$ 中，若存在某个 $r$ 阶子式不为零，而所有 $r+1$ 阶子式（如果存在）全为零，则称 $r$ 为矩阵 $A$ 的<strong>秩</strong>，记作 $r(A)$。规定零矩阵的秩为 $0$。",
-      explanation: "矩阵的秩是刻画矩阵“有效行/列数”的核心不变量，$0\\le r(A)\\le\\min(m,n)$。矩阵的秩<strong>在初等变换下保持不变</strong>，这是通过化阶梯形求秩的理论依据。",
-      tags: ["矩阵", "秩", "定义"]
-    },
-    {
-      id: "la-mat-thm-rank-elementary-invariant",
-      chapterId: "matrix",
-      type: "theorem",
-      title: "矩阵的秩在初等变换下不变",
-      statement: "初等变换不改变矩阵的秩；任意矩阵 $A$ 都可经过有限次初等行变换化为行阶梯形矩阵，<strong>非零行的行数就等于 $r(A)$</strong>。",
-      explanation: "这是求矩阵秩的标准方法：<strong>把矩阵化为行阶梯形，数一数非零行的个数即为秩</strong>。同时也是求向量组秩、极大无关组、判定线性方程组解的存在性的通用计算手段。",
-      tags: ["矩阵", "秩", "初等变换", "定理"]
-    },
-    {
-      id: "la-mat-prop-rank-inequalities",
-      chapterId: "matrix",
-      type: "property",
-      title: "矩阵秩的常用不等式",
-      statement: "<ul><li>$0\\le r(A)\\le\\min(m,n)$</li><li>$r(A^{T})=r(A)$</li><li>$r(A+B)\\le r(A)+r(B)$</li><li><strong>$r(AB)\\le\\min\\{r(A),r(B)\\}$</strong></li><li>若 $A$ 为 $m\\times n$ 矩阵，$P,Q$ 分别为 $m,n$ 阶可逆矩阵，则 $r(PAQ)=r(A)$</li></ul>",
-      explanation: "此外还有<strong>西尔维斯特（Sylvester）不等式</strong>：若 $AB=O$（$A$ 为 $m\\times n$，$B$ 为 $n\\times s$），则 $r(A)+r(B)\\le n$。这些不等式是证明题中估计秩的取值范围的核心工具，考研中常结合具体矩阵方程综合考查。",
-      tags: ["矩阵", "秩", "不等式", "性质"]
-    },
-    {
-      id: "la-det-prop-adjoint-rank",
-      chapterId: "matrix",
-      type: "property",
-      title: "伴随矩阵的秩",
-      statement: "<p>设 $A$ 为 $n$ 阶方阵，则</p><div class=\"term-math\">$$r(A^{*})=\\begin{cases}n, & r(A)=n\\\\1, & r(A)=n-1\\\\0, & r(A)&lt;n-1\\end{cases}$$</div>",
-      explanation: "记忆要点：<ul><li><strong>$r(A)=n$（满秩）：</strong>伴随矩阵也满秩。</li><li><strong>$r(A)=n-1$：</strong>即 $|A|=0$ 但存在非零的 $n-1$ 阶子式，此时伴随矩阵秩为 1。</li><li><strong>$r(A)&lt;n-1$：</strong>所有 $n-1$ 阶子式都为零，伴随矩阵为零矩阵。</li></ul>这是考研高频考点。",
-      tags: ["行列式", "伴随矩阵", "秩"]
     },
     {
       id: "la-mat-def-block-matrix",
       chapterId: "matrix",
       type: "definition",
-      title: "分块矩阵及其运算",
-      statement: "用若干条纵线和横线把一个矩阵分成若干个小矩阵，每个小矩阵称为该矩阵的<strong>子块</strong>，以子块为元素的形式上的矩阵称为<strong>分块矩阵</strong>。分块矩阵的加法、数乘、乘法在分块方式相容的前提下，与普通矩阵运算规则完全一致（把子块当作元素运算）。",
-      explanation: "分块矩阵乘法要求前一个矩阵的列分块方式与后一个矩阵的行分块方式<strong>一致（“对齐”）</strong>，否则子块无法相乘。分块技巧是处理高阶矩阵、抽象矩阵证明题的重要工具。",
-      tags: ["矩阵", "分块矩阵", "定义"]
+      types: ["definition", "property"],
+      module: 2,
+      card: "⑦",
+      title: "分块矩阵与分块求逆",
+      statement: "<div class=\"term\"><div class=\"term-label def\">〔定义〕分块矩阵</div><div class=\"term-body\">用纵线和横线把矩阵分成若干小矩阵，每个小矩阵称为<strong>子块</strong>，以子块为元素的矩阵称为<strong>分块矩阵</strong>。在分块方式相容的前提下，加法、数乘、乘法的规则与普通矩阵完全一致（把子块当元素）。</div></div><div class=\"term\"><div class=\"term-label prp\">〔性质〕相乘的相容条件</div><div class=\"term-body\"><strong>前一个矩阵的列分块方式，必须等于后一个矩阵的行分块方式</strong>，否则子块无法相乘。子块本身是矩阵，<strong>前后顺序锁死，不可交换</strong>。</div></div><div class=\"term\"><div class=\"term-label prp\">〔性质〕主对角分块求逆</div><div class=\"term-body\">各子块 $A_i$ 均为可逆方阵时，整体可逆，<strong>原位各自求逆</strong>：</div><div class=\"term-math\">$$\\begin{pmatrix}A_1&&\\\\&\\ddots&\\\\&&A_s\\end{pmatrix}^{-1}=\\begin{pmatrix}A_1^{-1}&&\\\\&\\ddots&\\\\&&A_s^{-1}\\end{pmatrix}$$</div></div><div class=\"term\"><div class=\"term-label prp\">〔性质〕副对角分块求逆</div><div class=\"term-body\"><strong>位置对调</strong>后各自求逆，最易漏：</div><div class=\"term-math\">$$\\begin{pmatrix}O&A\\\\B&O\\end{pmatrix}^{-1}=\\begin{pmatrix}O&B^{-1}\\\\A^{-1}&O\\end{pmatrix}$$</div></div><div class=\"term\"><div class=\"term-label prp\">〔性质〕分块对角的行列式与秩</div><div class=\"term-body\">$|\\mathrm{diag}(A_1,\\cdots,A_s)|=|A_1|\\cdots|A_s|$；　$r\\begin{pmatrix}A&O\\\\O&B\\end{pmatrix}=r(A)+r(B)$。</div></div>",
+      explanation: "前提是<strong>各子块必须是方阵</strong>——子块不是方阵时，哪怕拼成的大矩阵是方阵也不能用这些公式。主对角与副对角的行列式版本见<strong>第 1 章 · 卡⑧</strong>，那里有 $(-1)^{mn}$ 的符号讨论。",
+      tags: ["矩阵", "分块矩阵", "求逆", "定义", "性质"]
     },
     {
-      id: "la-mat-prop-block-diag-inverse",
+      id: "la-mat-def-elementary-transform",
       chapterId: "matrix",
-      type: "property",
-      title: "分块对角矩阵的逆矩阵",
-      statement: "设 $A=\\begin{pmatrix}A_1&&\\\\&A_2&\\\\&&\\ddots\\\\&&&A_s\\end{pmatrix}$ 为分块对角矩阵，其中各 $A_i$ 均为可逆方阵，则 <strong>$A$ 可逆</strong>，且 $A^{-1}=\\begin{pmatrix}A_1^{-1}&&\\\\&A_2^{-1}&\\\\&&\\ddots\\\\&&&A_s^{-1}\\end{pmatrix}$。",
-      explanation: "分块对角矩阵的行列式等于各子块行列式之积：$|A|=|A_1||A_2|\\cdots|A_s|$；求逆时<strong>只需对每个子块分别求逆</strong>，再按原位置排列，极大简化了高阶“分块对角型”矩阵的求逆计算。",
-      tags: ["矩阵", "分块矩阵", "逆矩阵", "性质"]
+      type: "definition",
+      types: ["definition", "property"],
+      module: 3,
+      card: "⑧",
+      title: "初等变换与初等矩阵",
+      statement: "<div class=\"term\"><div class=\"term-label def\">〔定义〕三种初等行（列）变换</div><div class=\"term-body\"><ul><li><strong>对调</strong> $r_i\\leftrightarrow r_j$</li><li><strong>倍乘</strong> $kr_i$（强制 $k\\neq0$）</li><li><strong>倍加</strong> $r_i+kr_j$</li></ul></div></div><div class=\"term\"><div class=\"term-label def\">〔定义〕初等矩阵</div><div class=\"term-body\">由单位矩阵 $E$ 经过<strong>一次</strong>初等变换得到的矩阵，称为<strong>初等矩阵</strong>，对应三种变换共三类：倍乘、对换、倍加。</div></div><div class=\"term\"><div class=\"term-label prp\">〔性质〕左行右列</div><div class=\"term-body\">对 $A$ 作一次初等<strong>行</strong>变换 $=$ 在左边乘一个初等矩阵；作一次初等<strong>列</strong>变换 $=$ 在右边乘一个初等矩阵。$A_{m\\times n}$ 作行变换左乘 $m$ 阶、作列变换右乘 $n$ 阶。</div></div><div class=\"term\"><div class=\"term-label prp\">〔性质〕初等矩阵恒可逆</div><div class=\"term-body\">初等矩阵全部可逆，其逆就是它的<strong>反向操作</strong>，仍是同类型的初等矩阵：对换的逆是它自己；乘 $k$ 的逆是乘 $\\frac{1}{k}$；加 $k$ 倍的逆是加 $-k$ 倍。</div></div>",
+      explanation: "初等变换是求秩、判线性相关、解方程组、求逆的<strong>通用底层工具</strong>，本质是初中「加减消元法」的矩阵化。两条红线：变换后只能写 $\\sim$ 或箭头，<strong>严禁写等号</strong>；先做变换 1 再做变换 2，写作 $P_2P_1A$（左乘从右往左追加，极易写反）。",
+      tags: ["矩阵", "初等变换", "初等矩阵", "定义", "性质"]
     },
     {
-      id: "la-mat-prop-power-symmetric",
+      id: "la-mat-thm-inverse-by-elementary",
       chapterId: "matrix",
-      type: "property",
-      title: "对称矩阵与矩阵方幂的性质",
-      statement: "<ul><li><strong>两对称矩阵之积：</strong>若 $A,B$ 均为 $n$ 阶对称矩阵，则 $AB$ 是对称矩阵的充要条件是 $AB=BA$。</li><li><strong>$AA^{T}$ 与 $A^{T}A$：</strong>对任意矩阵 $A$，$AA^{T}$ 与 $A^{T}A$ 都是对称矩阵。</li><li><strong>方幂：</strong>单位矩阵满足 $E^k=E$，对角矩阵的方幂等于各对角元分别取方幂。</li></ul>",
-      explanation: "$AA^T$、$A^TA$ 恒为对称矩阵这一结论在二次型、正交对角化等章节中被频繁使用（如实对称化、协方差矩阵构造）。判断两个对称矩阵乘积是否对称，<strong>只需检验是否可交换</strong>。",
-      tags: ["矩阵", "对称矩阵", "性质"]
+      type: "theorem",
+      types: ["theorem", "property", "definition"],
+      module: 3,
+      card: "⑨",
+      title: "初等行变换的三大应用",
+      statement: "<div class=\"term\"><div class=\"term-label thm\">〔定理〕求逆：$(A\\mid E)\\to(E\\mid A^{-1})$</div><div class=\"term-body\">若 $A$ 可逆，则存在有限个初等矩阵使 $P_s\\cdots P_1A=E$。对 $(A\\mid E)$ 施以一系列<strong>初等行变换</strong>，左半化为 $E$ 时，右半就化为 $A^{-1}$。</div></div><div class=\"term\"><div class=\"term-label thm\">〔定理〕同解：左乘可逆矩阵解集不变</div><div class=\"term-body\">$P$ 可逆时，$Ax=b$ 与 $PAx=Pb$ <strong>同解</strong>。这是高斯消元法解方程组的合法性根基。</div></div><div class=\"term\"><div class=\"term-label method\">〔方法〕求逆的五种情形怎么选</div><div class=\"term-body\"><ul><li>$2$ 阶数值：公式法，主对调、副变号、除 $|A|$。</li><li>$n\\ge3$ 数值：$(A\\mid E)\\to(E\\mid A^{-1})$。<strong>禁</strong>手算 $A^{*}$（要算 $n^{2}$ 个行列式）。</li><li>只求单个元素：$(A^{-1})_{ij}=\\dfrac{A_{ji}}{|A|}$，<strong>下标颠倒</strong>。</li><li>抽象多项式：凑定义（见卡⑥）。</li><li>已知 $A^{*}$ 与 $|A|$：直接代公式。</li></ul></div></div><div class=\"term\"><div class=\"term-label method\">〔方法〕行变换与列变换的使用边界</div><div class=\"term-body\">解方程组、求逆、求极大无关组 $\\to$ <strong>只能用行变换</strong>（左乘才作用于方程两端）；只求秩 $\\to$ 行列可以混用。</div></div>",
+      explanation: "求逆之所以成立：行变换等于左乘算子 $P$，左半化成 $E$ 就是 $PA=E$，即 $P=A^{-1}$，而同一个 $P$ 同步作用在右半的 $E$ 上，$PE=P=A^{-1}$。<strong>不可逆的特征</strong>：化简中左半一旦出现全零行，说明 $r(A)&lt;n$，直接停笔。右乘 $Q$ 会把 $Ax=b$ 变成 $(AQ)(Q^{-1}x)=b$，扭曲未知数的对应关系，所以解方程组不能用列变换。",
+      tags: ["矩阵", "初等行变换", "求逆", "同解", "定理", "方法"]
     },
     {
-      id: "la-mat-prop-elementary-not-change-rank",
+      id: "la-mat-def-rank",
+      chapterId: "matrix",
+      type: "definition",
+      types: ["definition", "theorem"],
+      module: 4,
+      card: "⑩",
+      title: "矩阵的秩：定义与求法",
+      statement: "<div class=\"term\"><div class=\"term-label def\">〔定义〕矩阵的秩</div><div class=\"term-body\">在 $m\\times n$ 矩阵 $A$ 中，若存在某个 $r$ 阶子式不为零，而所有 $r+1$ 阶子式全为零，则称 $r$ 为 $A$ 的<strong>秩</strong>，记作 $r(A)$。规定零矩阵的秩为 $0$。</div></div><div class=\"term\"><div class=\"term-label thm\">〔定理〕初等变换不改变秩</div><div class=\"term-body\">初等变换（行、列）都不改变矩阵的秩；任意矩阵都可经有限次初等行变换化为<strong>行阶梯形</strong>，<strong>非零行的行数就等于 $r(A)$</strong>。</div></div><div class=\"term\"><div class=\"term-label method\">〔方法〕求秩的标准动作</div><div class=\"term-body\">化行阶梯形，数非零行。行阶梯形的标准：下一行的第一个非零元，必须<strong>严格</strong>在上一行第一个非零元的右边。</div></div><div class=\"term\"><div class=\"term-label prp\">〔性质〕取值范围</div><div class=\"term-body\">$0\\le r(A_{m\\times n})\\le\\min(m,n)$；　$r(A)=0\\iff A=O$。</div></div>",
+      explanation: "秩的本质是矩阵承载的<strong>真实独立信息维数</strong>。子式判据是定义与证明工具，实战中算组合子式会算力爆炸，所以永远走初等行变换化阶梯形这条路。秩为什么不变：初等变换每一步都能反向算回去，没有丢失任何有效行，行空间维数守恒。",
+      tags: ["矩阵", "秩", "行阶梯形", "定义", "定理"]
+    },
+    {
+      id: "la-mat-prop-rank-inequalities",
       chapterId: "matrix",
       type: "property",
-      title: "可逆矩阵与秩、线性方程组同解的关系",
-      statement: "设 $A$ 为 $m\\times n$ 矩阵，$P$ 为 $m$ 阶可逆矩阵，$Q$ 为 $n$ 阶可逆矩阵，则：<strong>$r(PA)=r(A)$，$r(AQ)=r(A)$</strong>；方程组 $Ax=b$ 与 $PAx=Pb$ <strong>同解</strong>。",
-      explanation: "这说明用初等行变换（左乘可逆矩阵）解方程组、化简矩阵<strong>不会改变解集</strong>，是高斯消元法求解线性方程组合法性的理论基础。",
-      tags: ["矩阵", "秩", "可逆矩阵", "性质"]
+      module: 4,
+      card: "⑪",
+      title: "秩的不等式与可逆的等价链",
+      statement: "<div class=\"term\"><div class=\"term-label prp\">〔性质〕常用不等式</div><div class=\"term-body\"><ul><li>$0\\le r(A)\\le\\min(m,n)$，　$r(A^{T})=r(A)$</li><li>$r(A+B)\\le r(A)+r(B)$</li><li>$r(AB)\\le\\min\\{r(A),r(B)\\}$</li><li><strong>西尔维斯特</strong>：$AB=O\\Rightarrow r(A)+r(B)\\le n$（$n$ 为 $A$ 的列数）</li></ul></div></div><div class=\"term\"><div class=\"term-label prp\">〔性质〕乘可逆矩阵，秩不变</div><div class=\"term-body\">$P,Q$ 可逆时 $r(PA)=r(AQ)=r(PAQ)=r(A)$。证法是双向夹逼：$r(PA)\\le r(A)$，又 $A=P^{-1}(PA)$ 给出 $r(A)\\le r(PA)$。</div></div><div class=\"term\"><div class=\"term-label prp\">〔性质〕可逆的等价链</div><div class=\"term-body\">对 $n$ 阶方阵 $A$：$A$ 可逆 $\\iff |A|\\neq0\\iff r(A)=n\\iff$ 行（列）向量组线性无关 $\\iff Ax=0$ 只有零解 $\\iff 0$ 不是 $A$ 的特征值。</div></div>",
+      explanation: "乘法只会「降秩或保秩」，绝不凭空生出新维度，所以取短板；乘可逆阵只是换坐标系，信息全守恒。<strong>见到 $AB=O$ 就想两件事</strong>：$r(A)+r(B)\\le n$，以及 $B$ 的列全是 $Ax=0$ 的解。等价链的后两条分别属于<strong>第 3 章</strong>与<strong>第 5 章</strong>，这里只作串联。",
+      tags: ["矩阵", "秩", "不等式", "等价链", "性质"]
+    },
+    {
+      id: "la-det-prop-adjoint-rank",
+      chapterId: "matrix",
+      type: "property",
+      module: 4,
+      card: "⑫",
+      title: "伴随矩阵的秩",
+      statement: "<div class=\"term\"><div class=\"term-label prp\">〔性质〕三段式跃迁</div><div class=\"term-body\">设 $A$ 为 $n$ 阶方阵，则</div><div class=\"term-math\">$$r(A^{*})=\\begin{cases}n, & r(A)=n\\\\1, & r(A)=n-1\\\\0, & r(A)&lt;n-1\\end{cases}$$</div></div>",
+      explanation: "<ul><li><strong>$r(A)=n$</strong>：$A$ 满秩，由 $AA^{*}=|A|E$ 知 $A^{*}$ 也满秩。</li><li><strong>$r(A)=n-1$</strong>：$|A|=0$ 但存在非零的 $n-1$ 阶子式，此时 $r(A^{*})=1$。</li><li><strong>$r(A)&lt;n-1$</strong>：所有 $n-1$ 阶子式全为零，$A^{*}$ 是零矩阵。</li></ul>伴随矩阵本身的定义与 $|A^{*}|=|A|^{n-1}$ 见<strong>第 1 章 · 卡⑪</strong>。",
+      tags: ["矩阵", "伴随矩阵", "秩", "性质"]
     },
     {
       id: "la-vec-def-linear-combination",
