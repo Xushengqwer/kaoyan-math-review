@@ -1,4 +1,4 @@
-// 本地状态：上次学习到哪一章 + 自己写的大白话笔记，都存在浏览器 localStorage。
+// 本地状态：上次学习到哪一章 + 自己写的笔记，都存在浏览器 localStorage。
 const LAST_VISIT_KEY = "kaoyan_last_visit_v1";
 const NOTES_KEY = "kaoyan_notes_v1";
 const NOTE_FMT_KEY = "kaoyan_note_fmt_v1";

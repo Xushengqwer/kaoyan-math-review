@@ -371,7 +371,7 @@ const App = {
           <span class="result-title">${this.mark(item.title, query)}</span>
           <span class="result-where">${where}</span>
           <span class="result-snippet">${this.snippet(item, query)}</span>
-          ${Notes.has(item.id) ? `<span class="result-hasnote">有大白话笔记</span>` : ""}
+          ${Notes.has(item.id) ? `<span class="result-hasnote">有笔记</span>` : ""}
         </span>
       </a>`;
     }).join("");
@@ -558,7 +558,7 @@ const App = {
     setTimeout(() => window.print(), 60);
   },
 
-  // 章末的「本章大白话总结」：整章读完之后自己串一遍
+  // 章末的「本章笔记总结」：整章读完之后自己串一遍
   // 放在筛选容器外面，所以搜索/类型筛选不会把它藏起来
   chapterSummaryHtml(subjectId, chapterId) {
     const noteId = this.chapterNoteId(subjectId, chapterId);
@@ -566,7 +566,7 @@ const App = {
     return `
       <section class="chapter-summary" id="item-${noteId}">
         <header class="chapter-summary-head">
-          <h3>本章大白话总结</h3>
+          <h3>本章笔记总结</h3>
           <span class="chapter-summary-sub">第${c.order}章 ${escapeHtml(c.name)} · 用自己的话把整章串一遍</span>
         </header>
         <div class="mynote-slot" data-note="${noteId}">${this.myNoteHtml(noteId)}</div>
@@ -741,7 +741,7 @@ const App = {
     const chNote = this.chapterNoteId(subjectId, chapterId);
     const foot = `
       <a class="toc-foot" href="#item-${chNote}" data-goto="${chNote}">
-        <span class="toc-foot-name">本章大白话总结</span>
+        <span class="toc-foot-name">本章笔记总结</span>
         <span class="toc-foot-state${Notes.has(chNote) ? " done" : ""}">${
           Notes.has(chNote) ? (Notes.isPending(chNote) ? "已写 · 未进仓库" : "已写") : "还没写"
         }</span>
@@ -791,12 +791,12 @@ const App = {
     if (tab) tab.setAttribute("aria-expanded", "false");
   },
 
-  // 目录条目后面那个小圆点：写过大白话就点亮，还没进仓库的是橙色
+  // 目录条目后面那个小圆点：写过笔记就点亮，还没进仓库的是橙色
   noteDotHtml(itemId) {
     if (!Notes.has(itemId)) return "";
     const pending = Notes.isPending(itemId);
     return `<span class="toc-noted${pending ? " pending" : ""}" title="${
-      pending ? "已写大白话，但还没进仓库" : "已写大白话"
+      pending ? "已写笔记，但还没进仓库" : "已写笔记"
     }">●</span>`;
   },
 
@@ -832,7 +832,7 @@ const App = {
     const chNote = this.chapterNoteId(subjectId, chapterId);
     const foot = `
       <a class="toc-foot" href="#item-${chNote}" data-goto="${chNote}">
-        <span class="toc-foot-name">本章大白话总结</span>
+        <span class="toc-foot-name">本章笔记总结</span>
         <span class="toc-foot-state${Notes.has(chNote) ? " done" : ""}">${
           Notes.has(chNote) ? (Notes.isPending(chNote) ? "已写 · 未进仓库" : "已写") : "还没写"
         }</span>
@@ -867,7 +867,7 @@ const App = {
         link.appendChild(dot);
       }
       dot.classList.toggle("pending", pending);
-      dot.title = pending ? "已写大白话，但还没进仓库" : "已写大白话";
+      dot.title = pending ? "已写笔记，但还没进仓库" : "已写笔记";
     });
   },
 
@@ -994,16 +994,16 @@ const App = {
     return `<span class="mynote-flag pending" title="只存在这台设备的浏览器里。清缓存、换设备、iOS Safari 七天没打开都可能丢失。导出成文件交给我提交进仓库才算安全。">未进仓库</span>`;
   },
 
-  // 「大白话」区块：有内容就展示，没有就显示一个添加按钮
+  // 「笔记」区块：有内容就展示，没有就显示一个添加按钮
   myNoteHtml(noteId) {
     const text = Notes.get(noteId);
     const isCh = noteId.indexOf("ch:") === 0;
     if (!text) {
-      return `<button class="mynote-add" data-action="edit">＋ ${isCh ? "写一段本章总结" : "用大白话写一遍"}</button>`;
+      return `<button class="mynote-add" data-action="edit">＋ ${isCh ? "写一段本章总结" : "写一段笔记"}</button>`;
     }
     return `<div class="mynote${Notes.isPending(noteId) ? " is-pending" : ""}">
       <div class="mynote-head">
-        <span class="mynote-label">${isCh ? "本章总结" : "大白话"}</span>
+        <span class="mynote-label">${isCh ? "本章总结" : "笔记"}</span>
         ${this.noteFlagHtml(noteId)}
         ${
           Notes.isPending(noteId) && this.hasSeed(noteId)
@@ -1024,7 +1024,7 @@ const App = {
       : "用你自己的话写一遍，比如：&#10;&#10;对象：…&#10;规则：…&#10;意义：…&#10;&#10;公式用 $ 包起来会渲染，例如 $A\\vec{v}=\\lambda\\vec{v}$";
     return `<div class="mynote mynote-editing">
       <div class="mynote-head">
-        <span class="mynote-label">${isCh ? "本章总结" : "大白话"}</span>
+        <span class="mynote-label">${isCh ? "本章总结" : "笔记"}</span>
         <button class="mynote-md-btn" data-action="import-md" title="读取一个 .md 文件，原样填进来">导入 .md</button>
         <button class="mynote-preview-btn" data-action="preview">预览</button>
         <button class="mynote-zoom-btn" data-action="zoom" title="全屏编辑（Esc 退出）">放大</button>
@@ -1258,7 +1258,7 @@ const App = {
   noteFileName(noteId) {
     const p = this.locate(noteId);
     const ext = this.noteFileExt(noteId);
-    if (!p) return "大白话笔记" + ext;
+    if (!p) return "笔记" + ext;
     const raw = [
       p.subject.name.replace(/（.*?）/g, ""),
       "第" + p.chapter.order + "章",

@@ -569,9 +569,11 @@ button { font: inherit; border: none; background: none; color: inherit; cursor: 
 .entry-figure svg { max-width: 100%; height: auto; }
 .entry-figure figcaption { margin-top: 12px; font-size: 12px; color: var(--text-3); }
 
+/* 提示是正文的小注，不是独立卡片：去掉底色，只留一道细线挂在正文下面。
+   这样一条知识点里只有「我的笔记」一个色块，层级才清楚。 */
 .entry-note {
-  margin-top: 22px; padding: 15px 18px;
-  background: var(--surface); border-radius: var(--r-md);
+  margin-top: 16px; padding: 2px 0 2px 15px;
+  border-left: 2px solid var(--border);
   font-size: 13.5px; line-height: 1.8; color: var(--text-2);
 }
 .entry-note .note-label {
@@ -620,8 +622,9 @@ button { font: inherit; border: none; background: none; color: inherit; cursor: 
 mark { background: #ffe58a; color: inherit; border-radius: 3px; padding: 0 2px; }
 @media (prefers-color-scheme: dark) { mark { background: #6b5410; color: #ffeaa0; } }
 
-/* ---- 我的大白话 ---- */
-.mynote-slot { margin-top: 14px; }
+/* ---- 我的笔记 ---- */
+/* 上面是教材（正文 + 提示），下面是我自己写的。中间明确断开。 */
+.mynote-slot { margin-top: 30px; padding-top: 26px; border-top: 1px solid var(--hairline); }
 .mynote-add {
   padding: 8px 14px; border-radius: 999px;
   font-size: 12.5px; color: var(--text-3);
@@ -630,9 +633,12 @@ mark { background: #ffe58a; color: inherit; border-radius: 3px; padding: 0 2px; 
 }
 .mynote-add:hover { color: var(--accent); }
 
+/* 笔记现在是成篇的 Markdown（有标题、表格、公式），不再是当初那几行小字。
+   整篇铺蓝底太压人，改成「只留一道竖线 + 不加底色」，当成页面的一个小节来读。
+   编辑态才给底色，把「正在改」和「在看」区分开。 */
 .mynote {
-  padding: 15px 18px; border-radius: var(--r-md);
-  background: var(--accent-soft);
+  padding: 2px 0 2px 18px; border-radius: 0;
+  background: none;
   border-left: 3px solid var(--accent);
 }
 .mynote-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; margin-bottom: 11px; }
@@ -688,7 +694,10 @@ mark { background: #ffe58a; color: inherit; border-radius: 3px; padding: 0 2px; 
 }
 
 /* 编辑器 */
-.mynote-editing { background: var(--surface); box-shadow: var(--lift); border-left-color: var(--accent); }
+.mynote-editing {
+  padding: 15px 18px; border-radius: var(--r-md);
+  background: var(--surface); box-shadow: var(--lift); border-left-color: var(--accent);
+}
 .mynote-input {
   width: 100%; padding: 12px 14px;
   border: 1px solid var(--border); border-radius: var(--r-sm);
@@ -814,7 +823,7 @@ body.mynote-zoomed { overflow: hidden; }
 }
 .mynote-md-btn:hover { background: var(--accent-soft); color: var(--accent); }
 
-/* ---- 章末：本章大白话总结 ---- */
+/* ---- 章末：本章笔记总结 ---- */
 .chapter-summary {
   margin-top: 56px; padding: 26px 28px;
   background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--lift);
@@ -827,7 +836,7 @@ body.mynote-zoomed { overflow: hidden; }
   display: block; margin-top: 5px;
   font-size: 12.5px; color: var(--text-3);
 }
-.chapter-summary .mynote-slot { margin-top: 0; }
+.chapter-summary .mynote-slot { margin-top: 0; padding-top: 0; border-top: none; }
 .chapter-summary .mynote-editing { box-shadow: none; background: var(--bg); }
 .chapter-summary .mynote-input { background: var(--surface); }
 
