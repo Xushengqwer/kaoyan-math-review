@@ -2,6 +2,35 @@ const TYPE_LABEL = { definition: "定义", theorem: "定理", property: "性质"
 const TYPE_ORDER = ["definition", "theorem", "property"];
 const SUBJECT_SEAL = { calculus: "微", linalg: "代", probability: "概" };
 
+// 去 HTML 标签。必须认准「<」后面紧跟字母才算标签 —— 数学里 r(A) < n … > 0 这种
+// 写法会被 /<[^>]+>/ 当成一个大标签整段吃掉，中间的字就再也搜不到了。
+const HTML_TAG = /<\/?[a-zA-Z][a-zA-Z0-9-]*(?:\s[^<>]*)?>/g;
+
+// 搜索用的纯文本。笔记是 Markdown，「**零因子**陷阱」按原文是搜不到「零因子陷阱」的，
+// 所以匹配之前把会夹在词中间的那三个记号（* ` ~）去掉，只去这三个：
+// # > | 只出现在行首或表格分隔处，从不夹断词，去了白去；
+// $ _ 是公式写法的一部分，去掉会让「$A$」「|A|」都退化成搜「a」，满页都是。
+function searchText(raw) {
+  return String(raw || "")
+    .replace(HTML_TAG, " ")
+    .replace(/[*`~]/g, "")
+    .toLowerCase();
+}
+
+// 摘要用的纯文本：公式整个折成 ▫，免得搜索结果里塞满 LaTeX；
+// Markdown 记号一并去掉，高亮才能落在词上。
+function plainText(raw) {
+  return String(raw || "")
+    .replace(HTML_TAG, " ")
+    .replace(/\$\$?[^$]*\$\$?/g, " ▫ ")
+    .replace(/^[ \t]*(?:[-*+]|\d+\.)\s+/gm, " ")
+    .replace(/^[ \t]*#{1,6}\s*/gm, " ")
+    .replace(/[*`~]/g, "")
+    .replace(/\|/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function subjectSeal(s) {
   const ch = SUBJECT_SEAL[s.id] || s.name.charAt(0);
   return `<span class="seal">${ch}</span>`;
@@ -316,85 +345,121 @@ const App = {
   },
 
   // ---------------- 全局搜索 ----------------
-  searchViewHtml(query) {
-    const q = (query || "").toLowerCase();
-    const hits = [];
+  // 搜索范围：知识点标题 / 课本正文 / 标签 / 我自己写的笔记 / 章末总结。
+  // 题库在运行期不变，只有自己改笔记时会变，所以按 Notes.stamp 缓存索引，
+  // 每次敲键盘不必把三十万字重新归一化一遍。
+  _index: null,
+  _indexStamp: -1,
+
+  searchIndex() {
+    if (this._index && this._indexStamp === Notes.stamp) return this._index;
+    const rows = [];
     this.subjects.forEach((s) => {
       KaoyanData.items(s.id).forEach((it) => {
-        const note = Notes.get(it.id);
-        const hay = (
-          it.title + " " + it.statement + " " + it.explanation + " " +
-          (it.tags || []).join(" ") + " " + note
-        ).toLowerCase();
-        if (!hay.includes(q)) return;
-        const chapter = KaoyanData.chapter(s.id, it.chapterId);
-        // 标题命中排在前面
-        const score = it.title.toLowerCase().includes(q) ? 0 : (note.toLowerCase().includes(q) ? 1 : 2);
-        hits.push({ item: it, subject: s, chapter, score });
+        rows.push({
+          item: it,
+          subject: s,
+          chapter: KaoyanData.chapter(s.id, it.chapterId),
+          noteId: it.id,
+          title: searchText(it.title),
+          body: searchText(
+            it.statement + " " + (it.explanation || "") + " " + (it.tags || []).join(" ")
+          ),
+          note: searchText(Notes.get(it.id)),
+        });
       });
-      // 章末的本章总结也一起搜
+      // 章末的本章总结只有笔记，没有课本正文
       KaoyanData.chapters(s.id).forEach((c) => {
         const nid = this.chapterNoteId(s.id, c.id);
-        const note = Notes.get(nid);
-        if (!note) return;
-        if (!(c.name + " 本章总结 " + note).toLowerCase().includes(q)) return;
-        hits.push({ summary: true, noteId: nid, subject: s, chapter: c, score: 1 });
+        if (!Notes.has(nid)) return;
+        rows.push({
+          summary: true,
+          subject: s,
+          chapter: c,
+          noteId: nid,
+          title: searchText("本章总结 " + c.name),
+          body: "",
+          note: searchText(Notes.get(nid)),
+        });
       });
     });
+    this._index = rows;
+    this._indexStamp = Notes.stamp;
+    return rows;
+  },
+
+  searchViewHtml(query) {
+    const q = searchText(query);
+    const hits = [];
+    if (q) {
+      this.searchIndex().forEach((r) => {
+        const inTitle = r.title.includes(q);
+        const inBody = r.body.includes(q);
+        const inNote = r.note.includes(q);
+        if (!inTitle && !inBody && !inNote) return;
+        // 命中在课本正文还是在笔记里，决定下面那段摘要从哪儿取
+        hits.push({ row: r, score: inTitle ? 0 : inBody ? 1 : 2, fromNote: !inBody && inNote });
+      });
+    }
     hits.sort((a, b) => a.score - b.score);
+    const noteHits = hits.filter((h) => h.fromNote).length;
 
     if (hits.length === 0) {
       return `
         <h1 class="page-title">搜索「${escapeHtml(query)}」</h1>
-        <p class="page-sub">在全部 ${KaoyanData.allItems().length} 条知识点中没有找到匹配内容</p>
+        <p class="page-sub">在 ${KaoyanData.allItems().length} 条知识点和 ${Notes.count()} 篇笔记里都没有找到</p>
         <div class="empty-state">换个关键词试试，比如「施密特」「中值定理」「置信区间」</div>`;
     }
 
     const rows = hits.slice(0, 60).map((h) => {
-      const where = `${escapeHtml(h.subject.name)} · ${h.chapter.order}. ${escapeHtml(h.chapter.name)}`;
-      if (h.summary) {
+      const r = h.row;
+      const where = `${escapeHtml(r.subject.name)} · ${r.chapter.order}. ${escapeHtml(r.chapter.name)}`;
+      const fromNote = h.fromNote || r.summary;
+      const snippet = fromNote
+        ? `<span class="result-snippet"><span class="snippet-from">笔记</span>${this.textSnippet(Notes.get(r.noteId), query)}</span>`
+        : `<span class="result-snippet">${this.snippet(r.item, query)}</span>`;
+
+      if (r.summary) {
         return `
-      <a class="result" href="#${h.subject.id}/${h.chapter.id}" data-item="${h.noteId}">
+      <a class="result" href="#${r.subject.id}/${r.chapter.id}" data-item="${r.noteId}">
         <span class="result-type summary">总结</span>
         <span class="result-body">
-          <span class="result-title">${this.mark("本章总结：" + h.chapter.name, query)}</span>
+          <span class="result-title">${this.mark("本章总结：" + r.chapter.name, query)}</span>
           <span class="result-where">${where}</span>
-          <span class="result-snippet">${this.textSnippet(Notes.get(h.noteId), query)}</span>
+          ${snippet}
         </span>
       </a>`;
       }
-      const item = h.item;
+      const item = r.item;
       return `
-      <a class="result" href="#${h.subject.id}/${h.chapter.id}" data-item="${item.id}">
+      <a class="result" href="#${r.subject.id}/${r.chapter.id}" data-item="${item.id}">
         <span class="result-type ${item.type}">${TYPE_LABEL[item.type]}</span>
         <span class="result-body">
           <span class="result-title">${this.mark(item.title, query)}</span>
           <span class="result-where">${where}</span>
-          <span class="result-snippet">${this.snippet(item, query)}</span>
-          ${Notes.has(item.id) ? `<span class="result-hasnote">有笔记</span>` : ""}
+          ${snippet}
+          ${!fromNote && Notes.has(item.id) ? `<span class="result-hasnote">有笔记</span>` : ""}
         </span>
       </a>`;
     }).join("");
 
     return `
       <h1 class="page-title">搜索「${escapeHtml(query)}」</h1>
-      <p class="page-sub">找到 ${hits.length} 条${hits.length > 60 ? "，显示前 60 条" : ""}</p>
+      <p class="page-sub">找到 ${hits.length} 条${noteHits ? `，其中 ${noteHits} 条命中在笔记里` : ""}${hits.length > 60 ? "，显示前 60 条" : ""}</p>
       <div class="result-list">${rows}</div>`;
   },
 
   // 取一段包含关键词的纯文本摘要（去掉 HTML 和公式，避免搜索结果里塞满 LaTeX）
   snippet(item, query) {
-    return this.textSnippet(item.statement + " " + item.explanation, query);
+    return this.textSnippet(item.statement + " " + (item.explanation || ""), query);
   },
 
   textSnippet(raw, query) {
-    const plain = String(raw || "")
-      .replace(/<[^>]+>/g, "")
-      .replace(/\$\$?[^$]*\$\$?/g, " ▫ ")
-      .replace(/\s+/g, " ")
-      .trim();
-    const q = (query || "").toLowerCase();
-    const i = plain.toLowerCase().indexOf(q);
+    const plain = plainText(raw);
+    const q = (query || "").trim().toLowerCase();
+    // 先按原样找；找不到再按去掉记号的版本找（位置只差几个被删掉的符号，够定位这 110 字的窗口）
+    let i = plain.toLowerCase().indexOf(q);
+    if (i < 0 && q) i = searchText(plain).indexOf(searchText(query));
     const start = i < 0 ? 0 : Math.max(0, i - 24);
     const text = (start > 0 ? "…" : "") + plain.slice(start, start + 110) + (plain.length > start + 110 ? "…" : "");
     return this.mark(text, query);
@@ -504,7 +569,7 @@ const App = {
       <div class="toolbar">
         <div class="search-bar">
           <span class="search-icon" aria-hidden="true">⌕</span>
-          <input type="text" id="chapter-search" placeholder="在本章内搜索…" aria-label="在本章内搜索" />
+          <input type="text" id="chapter-search" placeholder="在本章内搜索（含笔记）…" aria-label="在本章内搜索，包含笔记" />
         </div>
         <div class="chip-row" id="chapter-type-filter">
           <button class="chip active" data-type="all">全部</button>
@@ -659,19 +724,23 @@ const App = {
 
   renderChapterGroups(subjectId, chapterId) {
     const items = KaoyanData.itemsByChapter(subjectId, chapterId);
-    const q = (this.chapterQuery || "").toLowerCase();
+    const q = searchText(this.chapterQuery);
     const typeFilter = this.chapterTypeFilter || "all";
 
     const filtered = items.filter((it) => {
       if (typeFilter !== "all" && !App.itemTypes(it).includes(typeFilter)) return false;
       if (!q) return true;
-      const hay = (it.title + " " + it.statement + " " + (it.tags || []).join(" ")).toLowerCase();
+      // 章内搜索和全局搜索一样，把自己写的笔记也算进去
+      const hay = searchText(
+        it.title + " " + it.statement + " " + (it.explanation || "") + " " +
+        (it.tags || []).join(" ") + " " + Notes.get(it.id)
+      );
       return hay.includes(q);
     });
 
     const wrap = document.getElementById("chapter-item-groups");
     if (filtered.length === 0) {
-      wrap.innerHTML = `<div class="empty-state">没有匹配的知识点，换个关键词试试</div>`;
+      wrap.innerHTML = `<div class="empty-state">本章的知识点和笔记里都没有这个词</div>`;
       renderMath(wrap);
       return;
     }

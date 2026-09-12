@@ -12,6 +12,9 @@ function registerNotes(map) {
 const Notes = {
   _cache: null,
 
+  // 笔记的版本号：自己改一次笔记就 +1。搜索索引靠它判断要不要重建。
+  stamp: 0,
+
   _local() {
     if (this._cache) return this._cache;
     try {
@@ -75,6 +78,7 @@ const Notes = {
     const raw = text == null ? "" : String(text);
     if (!raw.trim()) delete local[itemId];
     else local[itemId] = raw;
+    this.stamp++;
     return this._save();
   },
 
@@ -104,6 +108,7 @@ const Notes = {
         n++;
       }
     });
+    this.stamp++;
     this._save();
     return n;
   },
