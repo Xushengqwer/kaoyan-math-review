@@ -725,35 +725,25 @@ const App = {
 
   renderChapterGroups(subjectId, chapterId) {
     const items = KaoyanData.itemsByChapter(subjectId, chapterId);
-    const q = searchText(this.chapterQuery);
     const typeFilter = this.chapterTypeFilter || "all";
-
-    const filtered = items.filter((it) => {
-      if (typeFilter !== "all" && !App.itemTypes(it).includes(typeFilter)) return false;
-      if (!q) return true;
-      // 章内搜索和全局搜索一样，把自己写的笔记也算进去
-      const hay = searchText(
-        it.title + " " + it.statement + " " + (it.explanation || "") + " " +
-        (it.tags || []).join(" ") + " " + Notes.get(it.id)
-      );
-      return hay.includes(q);
-    });
-
+    const filtered = items.filter(
+      (it) => typeFilter === "all" || App.itemTypes(it).includes(typeFilter)
+    );
     const wrap = document.getElementById("chapter-item-groups");
-    if (filtered.length === 0) {
-      wrap.innerHTML = `<div class="empty-state">本章的知识点和笔记里都没有这个词</div>`;
-      renderMath(wrap);
-      this.applyChapterSearch(subjectId, chapterId, 0, 0);
+
+    // 一开始搜索就换成结果列表：先给预览，看清楚命中在哪几张卡、正文里还是笔记里，
+    // 点了再跳回正文。原来那种「就地筛选 + 标黄」看不出分布。
+    if (searchText(this.chapterQuery)) {
+      this.renderChapterResults(subjectId, chapterId, filtered, wrap);
       return;
     }
+    this.chapterSearchMode(false);
 
-    // 命中只落在笔记里的有几条（课本正文里一个字都没有的那种）
-    const noteOnly = !q ? 0 : filtered.filter((it) => {
-      const book = searchText(
-        it.title + " " + it.statement + " " + (it.explanation || "") + " " + (it.tags || []).join(" ")
-      );
-      return !book.includes(q) && searchText(Notes.get(it.id)).includes(q);
-    }).length;
+    if (filtered.length === 0) {
+      wrap.innerHTML = `<div class="empty-state">本章没有这一类知识点</div>`;
+      renderMath(wrap);
+      return;
+    }
 
     const groups = this.chapterGroups(subjectId, chapterId, filtered);
     const nos = this.chapterNos(subjectId, chapterId);
@@ -776,114 +766,128 @@ const App = {
     renderMath(wrap);
     this.bindNoteEditors(wrap);
     this.bindToc(wrap);
-    this.applyChapterSearch(subjectId, chapterId, filtered.length, noteOnly);
   },
 
-  // 章内搜索的收尾：本章总结一起参与筛选，命中的词在页面上标黄，
-  // 再把「命中几条、几处」写到搜索框下面那行。
-  applyChapterSearch(subjectId, chapterId, cardHits, noteOnly) {
+  // 搜索时把正文以外的东西收起来：本章总结会作为一条结果出现在列表里，
+  // 导出条和上下章翻页跟结果列表摆在一起没有意义。
+  chapterSearchMode(on) {
+    [".chapter-summary", ".export-bar", ".pager"].forEach((sel) => {
+      const el = document.querySelector(sel);
+      if (el) el.hidden = on;
+    });
+    // 退出搜索时把战果行也收起来；进入搜索时由 renderChapterHits 填内容再显示
     const bar = document.getElementById("chapter-hits");
-    const summary = document.querySelector(".chapter-summary");
+    if (bar && !on) bar.hidden = true;
+  },
+
+  // 章内搜索结果：和全局搜索同一套结果卡，只是范围缩到本章，
+  // 「在哪儿」显示的是模块和卡号，好一眼看出关键词散落在哪几个模块。
+  // 按本章顺序排（不按相关度），这样读出来就是一张分布图。
+  renderChapterResults(subjectId, chapterId, items, wrap) {
     const raw = (this.chapterQuery || "").trim();
-    // 卡片区每次都整块重渲染，标记自然没了；本章总结不重渲染，得手动还原，
-    // 否则换个关键词搜，上一轮的黄块还留在那儿。
-    this.unmark(summary);
-    if (!raw) {
-      if (bar) bar.hidden = true;
-      if (summary) summary.hidden = false;
+    const q = searchText(raw);
+    const c = KaoyanData.chapter(subjectId, chapterId);
+    const nos = this.chapterNos(subjectId, chapterId);
+
+    // 每张卡属于哪个模块（没分模块的章节这里就是「定义 / 定理 / 性质」）
+    const whereOf = {};
+    this.chapterGroups(subjectId, chapterId, KaoyanData.itemsByChapter(subjectId, chapterId))
+      .forEach((g) => g.items.forEach((it) => { whereOf[it.id] = g.label; }));
+
+    const hits = items
+      .map((it) => {
+        const inTitle = searchText(it.title).includes(q);
+        const inBook = searchText(
+          it.statement + " " + (it.explanation || "") + " " + (it.tags || []).join(" ")
+        ).includes(q);
+        const inNote = searchText(Notes.get(it.id)).includes(q);
+        return inTitle || inBook || inNote ? { it, inTitle, inBook, inNote } : null;
+      })
+      .filter(Boolean);
+
+    // 本章总结也是本章的一部分，一起搜，排在最后
+    const chNote = this.chapterNoteId(subjectId, chapterId);
+    const summaryHit =
+      Notes.has(chNote) && searchText(c.name + " 本章总结 " + Notes.get(chNote)).includes(q);
+
+    this.chapterSearchMode(true);
+    this.renderChapterHits(hits, summaryHit, KaoyanData.itemsByChapter(subjectId, chapterId).length, raw);
+
+    if (!hits.length && !summaryHit) {
+      wrap.innerHTML = `<div class="empty-state">本章的知识点和笔记里都没有「${escapeHtml(raw)}」</div>`;
+      renderMath(wrap);
       return;
     }
 
-    // 本章总结不在筛选容器里，单独判一次：命中才留在页面上
-    const noteId = this.chapterNoteId(subjectId, chapterId);
-    const c = KaoyanData.chapter(subjectId, chapterId);
-    const q = searchText(raw);
-    const summaryHit =
-      Notes.has(noteId) && searchText(c.name + " 本章总结 " + Notes.get(noteId)).includes(q);
-    if (summary) summary.hidden = !summaryHit;
+    const rows = hits.map(({ it, inTitle, inBook, inNote }) => {
+      const parts = [];
+      if (inBook || inTitle) {
+        parts.push(
+          `<span class="result-snippet">${this.textSnippet(it.statement + " " + (it.explanation || ""), raw)}</span>`
+        );
+      }
+      if (inNote) {
+        parts.push(
+          `<span class="result-snippet"><span class="snippet-from">笔记</span>${this.textSnippet(Notes.get(it.id), raw)}</span>`
+        );
+      }
+      // 一张卡挂几个类型时（伴随矩阵那张定义、定理、性质都占），
+      // 正在按某个类型筛就显示那个类型的标，免得筛「定义」却看见「定理」的标
+      const tf = this.chapterTypeFilter || "all";
+      const badge = tf !== "all" && this.itemTypes(it).includes(tf) ? tf : it.type;
+      return `
+      <a class="result" href="#${subjectId}/${chapterId}" data-item="${it.id}">
+        <span class="result-type ${badge}">${TYPE_LABEL[badge]}</span>
+        <span class="result-body">
+          <span class="result-title"><span class="result-no">${nos[it.id]}</span>${this.mark(it.title, raw)}</span>
+          <span class="result-where">${escapeHtml(whereOf[it.id] || "")}</span>
+          ${parts.join("")}
+        </span>
+      </a>`;
+    });
 
-    let spots = this.markInDom(document.getElementById("chapter-item-groups"), raw);
-    if (summaryHit && summary) spots += this.markInDom(summary, raw);
+    if (summaryHit) {
+      rows.push(`
+      <a class="result" href="#${subjectId}/${chapterId}" data-item="${chNote}">
+        <span class="result-type summary">总结</span>
+        <span class="result-body">
+          <span class="result-title">${this.mark("本章笔记总结", raw)}</span>
+          <span class="result-where">整章串一遍</span>
+          <span class="result-snippet"><span class="snippet-from">笔记</span>${this.textSnippet(Notes.get(chNote), raw)}</span>
+        </span>
+      </a>`);
+    }
 
+    wrap.innerHTML = `<div class="result-list">${rows.join("")}</div>`;
+    renderMath(wrap);
+
+    // 点结果：清掉搜索、整章复原，再滚到那一条闪一下。
+    // hash 没变，所以直接重走一遍 route()。
+    wrap.querySelectorAll(".result").forEach((link) => {
+      link.addEventListener("click", (e) => {
+        e.preventDefault();
+        this._pendingHighlight = link.dataset.item;
+        this.route();
+      });
+    });
+  },
+
+  // 搜索框下面那行：命中几条、分布在哪儿
+  renderChapterHits(hits, summaryHit, total, raw) {
+    const bar = document.getElementById("chapter-hits");
     if (!bar) return;
-    const total = KaoyanData.itemsByChapter(subjectId, chapterId).length;
-    const parts = [];
-    parts.push(`本章 ${total} 条里命中 <b>${cardHits}</b> 条`);
+    const noteOnly = hits.filter((h) => !h.inTitle && !h.inBook && h.inNote).length;
+    if (!hits.length && !summaryHit) {
+      bar.hidden = false;
+      bar.innerHTML = `「${escapeHtml(raw)}」在本章没有出现`;
+      return;
+    }
+    const parts = [`本章 ${total} 条里命中 <b>${hits.length}</b> 条`];
     if (noteOnly) parts.push(`其中 <b>${noteOnly}</b> 条只写在笔记里`);
     if (summaryHit) parts.push("本章总结也命中");
-    if (spots) parts.push(`标出 <b>${spots}</b> 处`);
-    if (!cardHits && !summaryHit) parts.length = 0;
+    parts.push("点结果跳到正文");
     bar.hidden = false;
-    bar.innerHTML = parts.length
-      ? `「${escapeHtml(raw)}」　${parts.join("　·　")}`
-      : `「${escapeHtml(raw)}」在本章没有出现`;
-  },
-
-  // 把上一轮的高亮拆掉，文本节点合并回去，反复搜同一段也不会越切越碎。
-  unmark(scope) {
-    if (!scope) return;
-    scope.querySelectorAll("mark").forEach((m) => {
-      const parent = m.parentNode;
-      while (m.firstChild) parent.insertBefore(m.firstChild, m);
-      parent.removeChild(m);
-      parent.normalize();
-    });
-  },
-
-  // 在已经渲染好的页面里把关键词标黄。只动文本节点，绕开 KaTeX 公式和编辑中的输入框；
-  // 先把一张卡里的文本节点拼成一整串再找，所以「**零因子**陷阱」这种被 <strong> 断开的
-  // 写法也能整词命中。笔记原文存在 Notes 里，编辑框只从那儿读，这里改的 DOM 永远回不去。
-  markInDom(scope, query) {
-    const q = (query || "").trim().toLowerCase();
-    if (!scope || !q) return 0;
-
-    const nodes = [];
-    const walk = document.createTreeWalker(scope, NodeFilter.SHOW_TEXT, null);
-    while (walk.nextNode()) {
-      const n = walk.currentNode;
-      if (!n.nodeValue) continue;
-      let skip = false;
-      for (let p = n.parentNode; p && p !== scope; p = p.parentNode) {
-        const tag = p.nodeName;
-        if (tag === "TEXTAREA" || tag === "SCRIPT" || tag === "STYLE" || tag === "MARK") { skip = true; break; }
-        if (p.classList && (p.classList.contains("katex") || p.classList.contains("mynote-editing"))) { skip = true; break; }
-      }
-      if (!skip) nodes.push(n);
-    }
-
-    let text = "";
-    const map = [];
-    nodes.forEach((n) => { map.push({ n, s: text.length }); text += n.nodeValue; });
-
-    // 先把所有命中区间算出来，再动 DOM —— 一边切一边算的话偏移就全乱了
-    const ranges = new Map();
-    const hay = text.toLowerCase();
-    let i = hay.indexOf(q);
-    let count = 0;
-    while (i >= 0) {
-      const j = i + q.length;
-      count++;
-      map.forEach(({ n, s }) => {
-        const e = s + n.nodeValue.length;
-        if (e <= i || s >= j) return;
-        const list = ranges.get(n) || [];
-        list.push([Math.max(i, s) - s, Math.min(j, e) - s]);
-        ranges.set(n, list);
-      });
-      i = hay.indexOf(q, j);
-    }
-
-    ranges.forEach((list, n) => {
-      list.sort((x, y) => y[0] - x[0]); // 从后往前切，前面那些偏移才还作数
-      list.forEach(([from, to]) => {
-        const hit = n.splitText(from);
-        hit.splitText(to - from);
-        const m = document.createElement("mark");
-        n.parentNode.insertBefore(m, hit);
-        m.appendChild(hit);
-      });
-    });
-    return count;
+    bar.innerHTML = `「${escapeHtml(raw)}」　${parts.join("　·　")}`;
   },
 
   // ---------- 右侧「本章目录」导轨 ----------
