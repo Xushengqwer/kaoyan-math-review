@@ -31,6 +31,169 @@ function plainText(raw) {
     .trim();
 }
 
+// 课本正文与提示的分点排版（只改显示，数据文件里的原文一个字不动）。
+//
+// 一段话按最外层的「。」拆成句、按「；」拆成分句，一个点一行；
+// 「总述：甲；乙；丙。」冒号前做引子，后面分点；
+// 开头一句不带小标题的总述、后面还有两点以上时，它单独做引子。
+// 公式 $…$、括号引号、<strong> 这类行内标签里面的标点一律不碰；
+// 以「即 / 其中 / 称为」开头的是上一句的尾巴，不单独成点。
+// 已有的列表、表格、公式块、〔定义〕标签原样保留，只处理它们之间的文字。
+const PTS_BLOCK_TAG = /^<\/?(ul|ol|li|table|thead|tbody|tr|td|th|div|p|figure|figcaption|h[1-6]|pre|blockquote|hr|br)\b/i;
+const PTS_LIST_TAG = /^<(\/?)(ul|ol)\b/i;
+const PTS_OPEN = "（([「“《【‘";
+const PTS_CLOSE = "）)]」”》】’";
+const PTS_SENT_END = "。！？";
+const PTS_LABEL_HEAD = /^\s*<strong>[^<]{1,24}<\/strong>\s*[：:]|^\s*<strong>[^<]{1,24}[：:]<\/strong>/;
+const PTS_CONT_HEAD = /^(即(?!使|便)|其中|称为|叫做|也称)/;
+
+function bulletize(html) {
+  const src = String(html || "");
+  const toks = [];
+  const re = /\$\$[\s\S]*?\$\$|\$[^$\n]*\$|<[^>]+>/g;
+  let last = 0;
+  let m;
+  while ((m = re.exec(src))) {
+    for (const ch of src.slice(last, m.index)) toks.push({ t: "c", v: ch });
+    toks.push({ t: m[0][0] === "<" ? "tag" : "math", v: m[0] });
+    last = m.index + m[0].length;
+  }
+  for (const ch of src.slice(last)) toks.push({ t: "c", v: ch });
+
+  // 按块级标签切成一段段文字；已有列表里面的文字不动
+  let out = "";
+  let run = [];
+  let listDepth = 0;
+  const flush = () => {
+    out += listDepth > 0 ? run.map((x) => x.v).join("") : bulletRun(run);
+    run = [];
+  };
+  for (const tk of toks) {
+    if (tk.t === "tag" && PTS_BLOCK_TAG.test(tk.v)) {
+      flush();
+      const lm = tk.v.match(PTS_LIST_TAG);
+      if (lm) listDepth += lm[1] ? -1 : 1;
+      out += tk.v;
+    } else {
+      run.push(tk);
+    }
+  }
+  flush();
+  return out;
+}
+
+// 一段连续的行内内容 → 原样，或「引子 + 分点」
+function bulletRun(run) {
+  const whole = run.map((x) => x.v).join("");
+  if (!whole.trim()) return whole;
+
+  // 1) 断句：只在最外层（不在行内标签、括号、公式里）断
+  const sentences = [];
+  let clauses = [];
+  let cur = [];
+  let tagDepth = 0;
+  let brDepth = 0;
+  let colonAt = -1;
+  const endClause = () => {
+    clauses.push({ toks: cur, colonAt });
+    cur = [];
+    colonAt = -1;
+  };
+  const endSentence = () => {
+    if (cur.length) endClause();
+    if (clauses.length) sentences.push(clauses);
+    clauses = [];
+  };
+  for (const tk of run) {
+    cur.push(tk);
+    if (tk.t === "tag") {
+      if (/^<\//.test(tk.v)) tagDepth = Math.max(0, tagDepth - 1);
+      else if (!/\/>$/.test(tk.v)) tagDepth++;
+      continue;
+    }
+    if (tk.t !== "c") continue;
+    if (PTS_OPEN.includes(tk.v)) brDepth++;
+    else if (PTS_CLOSE.includes(tk.v)) brDepth = Math.max(0, brDepth - 1);
+    if (tagDepth || brDepth) continue;
+    if (PTS_SENT_END.includes(tk.v)) endSentence();
+    else if (tk.v === "；") endClause();
+    else if (tk.v === "：" && colonAt < 0 && clauses.length === 0) colonAt = cur.length - 1;
+  }
+  endSentence();
+
+  const H = (ts) => ts.map((x) => x.v).join("");
+  const T = (ts) => H(ts).trim();
+  const vis = (ts) => H(ts).replace(/<[^>]+>/g, "").replace(/\$[^$]*\$/g, "式").replace(/[\s。；，、：]/g, "");
+  const head = (ts) => H(ts).replace(/<[^>]+>/g, "").replace(/^\s+/, "");
+  const appendTo = (it, ts) => {
+    if (it.kind === "group") it.items[it.items.length - 1] = it.items[it.items.length - 1].concat(ts);
+    else it.toks = it.toks.concat(ts);
+  };
+
+  // 2) 句子 → 条目
+  const items = [];
+  let forcedLead = false;
+  for (const cl of sentences) {
+    const allToks = cl.reduce((a, c) => a.concat(c.toks), []);
+    if (!vis(allToks)) {
+      if (items.length) appendTo(items[items.length - 1], allToks);
+      continue;
+    }
+    // 句内：空分句、以「即 / 其中」开头的分句，并回前一个分句
+    const ps = [];
+    cl.forEach((p) => {
+      if (ps.length && (!vis(p.toks) || PTS_CONT_HEAD.test(head(p.toks)))) {
+        ps[ps.length - 1].toks = ps[ps.length - 1].toks.concat(p.toks);
+      } else {
+        ps.push({ toks: p.toks.slice(), colonAt: p.colonAt });
+      }
+    });
+    // 句首就是「即 / 其中 / 称为」：整句是上一句的尾巴
+    if (PTS_CONT_HEAD.test(head(ps[0].toks))) {
+      if (items.length) {
+        appendTo(items[items.length - 1], allToks);
+      } else {
+        items.push({ kind: "item", toks: allToks, whole: true });
+        forcedLead = true;
+      }
+      continue;
+    }
+    if (ps.length === 1) {
+      items.push({ kind: "item", toks: ps[0].toks, whole: true });
+      continue;
+    }
+    const f = ps[0];
+    if (f.colonAt >= 0) {
+      const lead = f.toks.slice(0, f.colonAt + 1);
+      const rest = f.toks.slice(f.colonAt + 1);
+      if (vis(lead) && vis(rest)) {
+        items.push({ kind: "group", lead, items: [rest].concat(ps.slice(1).map((p) => p.toks)) });
+        continue;
+      }
+    }
+    ps.forEach((p) => items.push({ kind: "item", toks: p.toks, whole: false }));
+  }
+  if (!items.length) return whole;
+
+  // 3) 排版
+  const ul = (arr) => '<ul class="pts">' + arr.map((x) => "<li>" + x + "</li>").join("") + "</ul>";
+  const liOf = (it) => (it.kind === "group" ? T(it.lead) + ul(it.items.map(T)) : T(it.toks));
+  const points = (arr) => arr.reduce((n, it) => n + (it.kind === "group" ? it.items.length : 1), 0);
+
+  let lead = "";
+  let rest = items;
+  const first = items[0];
+  const canLead = first.kind === "item" && first.whole && (forcedLead || !PTS_LABEL_HEAD.test(T(first.toks)));
+  if (canLead && points(items.slice(1)) >= 2) {
+    lead = T(first.toks);
+    rest = items.slice(1);
+  }
+  if (forcedLead && !lead) return whole;           // 紧跟公式的那句，后面不够两点：保持原样
+  if (rest.length === 1 && rest[0].kind === "item") return whole;
+  if (rest.length === 1) return lead + T(rest[0].lead) + ul(rest[0].items.map(T));
+  return lead + ul(rest.map(liOf));
+}
+
 function subjectSeal(s) {
   const ch = SUBJECT_SEAL[s.id] || s.name.charAt(0);
   return `<span class="seal">${ch}</span>`;
@@ -1083,9 +1246,9 @@ const App = {
           <h4 class="entry-title">${escapeHtml(item.title)}</h4>
           <!-- 两张卡：上面这张是课本（正文 + 提示），下面那张是自己写的笔记 -->
           <section class="card card-book">
-            <div class="entry-statement">${item.statement}</div>
+            <div class="entry-statement">${bulletize(item.statement)}</div>
             ${item.diagram ? `<figure class="entry-figure">${item.diagram}${item.diagramCaption ? `<figcaption>${escapeHtml(item.diagramCaption)}</figcaption>` : ""}</figure>` : ""}
-            <div class="entry-note"><span class="note-label">提示</span>${item.explanation}</div>
+            <div class="entry-note"><span class="note-label">提示</span>${bulletize(item.explanation)}</div>
           </section>
           <div class="mynote-slot" data-note="${item.id}">${this.myNoteHtml(item.id)}</div>
           ${
