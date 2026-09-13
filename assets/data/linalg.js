@@ -267,7 +267,7 @@ registerSubject({
       module: 4,
       card: "⑩",
       title: "矩阵的秩：定义与求法",
-      statement: "<div class=\"term\"><div class=\"term-label def\">〔定义〕矩阵的秩</div><div class=\"term-body\">在 $m\\times n$ 矩阵 $A$ 中，若存在某个 $r$ 阶子式不为零，而所有 $r+1$ 阶子式全为零，则称 $r$ 为 $A$ 的<strong>秩</strong>，记作 $r(A)$。规定零矩阵的秩为 $0$。</div></div><div class=\"term\"><div class=\"term-label thm\">〔定理〕初等变换不改变秩</div><div class=\"term-body\">初等变换（行、列）都不改变矩阵的秩；任意矩阵都可经有限次初等行变换化为<strong>行阶梯形</strong>，<strong>非零行的行数就等于 $r(A)$</strong>。</div></div><div class=\"term\"><div class=\"term-label method\">〔方法〕求秩的标准动作</div><div class=\"term-body\">化行阶梯形，数非零行。行阶梯形的标准：下一行的第一个非零元，必须<strong>严格</strong>在上一行第一个非零元的右边。</div></div><div class=\"term\"><div class=\"term-label prp\">〔性质〕取值范围</div><div class=\"term-body\">$0\\le r(A_{m\\times n})\\le\\min(m,n)$；　$r(A)=0\\iff A=O$。</div></div>",
+      statement: "<div class=\"term\"><div class=\"term-label def\">〔定义〕矩阵的秩</div><div class=\"term-body\">在 $m\\times n$ 矩阵 $A$ 中，若存在某个 $r$ 阶子式不为零，而所有 $r+1$ 阶子式全为零，则称 $r$ 为 $A$ 的<strong>秩</strong>，记作 $r(A)$。规定零矩阵的秩为 $0$。</div></div><div class=\"term\"><div class=\"term-label thm\">〔定理〕初等变换不改变秩</div><div class=\"term-body\">初等变换（行、列）都不改变矩阵的秩；任意矩阵都可经有限次初等行变换化为<strong>行阶梯形</strong>，<strong>非零行的行数就等于 $r(A)$</strong>。</div></div><div class=\"term\"><div class=\"term-label method\">〔方法〕求秩的标准动作</div><div class=\"term-body\">化行阶梯形，数非零行。行阶梯形的标准：下一行的第一个非零元，必须<strong>严格</strong>在上一行第一个非零元的右边。</div></div>",
       explanation: "秩的本质是矩阵承载的<strong>真实独立信息维数</strong>。子式判据是定义与证明工具，实战中算组合子式会算力爆炸，所以永远走初等行变换化阶梯形这条路。秩为什么不变：初等变换每一步都能反向算回去，没有丢失任何有效行，行空间维数守恒。",
       tags: ["矩阵", "秩", "行阶梯形", "定义", "定理"]
     },
