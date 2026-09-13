@@ -143,7 +143,7 @@ registerSubject({
       card: "⑪",
       title: "伴随矩阵",
       statement: "<div class=\"term\"><div class=\"term-label def\">〔定义〕伴随矩阵</div><div class=\"term-body\">设 $A=(a_{ij})$ 为 $n$ 阶方阵，$A_{ij}$ 为 $a_{ij}$ 的代数余子式，则 </div><div class=\"term-math\">$$A^{*}=\\begin{pmatrix}A_{11}&A_{21}&\\cdots&A_{n1}\\\\A_{12}&A_{22}&\\cdots&A_{n2}\\\\\\vdots&\\vdots&&\\vdots\\\\A_{1n}&A_{2n}&\\cdots&A_{nn}\\end{pmatrix}$$</div><div class=\"term-body\"> 称为 $A$ 的<strong>伴随矩阵</strong>。注意它是代数余子式按行算出后<strong>转置</strong>排列的，即 $(A^{*})_{ij}=A_{ji}$，下标是对换的。</div></div><div class=\"term\"><div class=\"term-label thm\">〔定理〕基本关系式</div><div class=\"term-body\">对任意 $n$ 阶方阵 $A$，恒有 <u>$AA^{*}=A^{*}A=|A|E$</u>。这是卡 ⑤ 那条 $\\sum_k a_{ik}A_{jk}=|A|\\delta_{ij}$ 的矩阵写法，<strong>不要求 $A$ 可逆</strong>。</div></div><div class=\"term\"><div class=\"term-label prp\">〔性质〕伴随的行列式</div><div class=\"term-body\">$|A^{*}|=|A|^{n-1}\\ (n\\ge2)$。</div></div>",
-      explanation: "$AA^{*}=|A|E$ 是<strong>无条件</strong>成立的，$|A|=0$ 时它退化为 $AA^{*}=O$。由它出发：$|A|\\neq0$ 时可得求逆公式 $A^{-1}=\\frac{1}{|A|}A^{*}$（见<strong>第 2 章 · 定理「矩阵可逆的充要条件与求逆公式」</strong>，那里还有完整的求逆方法选择）；$r(A^{*})$ 的三段式见<strong>第 2 章 · 性质「伴随矩阵的秩」</strong>。",
+      explanation: "$AA^{*}=|A|E$ 是<strong>无条件</strong>成立的，$|A|=0$ 时它退化为 $AA^{*}=O$。由它出发：$|A|\\neq0$ 时可得求逆公式 $A^{-1}=\\frac{1}{|A|}A^{*}$（见<strong>第 2 章 · 卡⑤</strong>，求逆方法怎么选见<strong>卡⑥</strong>）；$r(A^{*})$ 的三段式见<strong>第 2 章 · 性质「伴随矩阵的秩」</strong>。",
       tags: ["行列式", "伴随矩阵", "定义", "定理", "性质"]
     },
     {
@@ -220,9 +220,9 @@ registerSubject({
       module: 2,
       card: "⑥",
       title: "逆矩阵的运算性质",
-      statement: "<div class=\"term\"><div class=\"term-label prp\">〔性质〕五条运算律</div><div class=\"term-body\">设 $A,B$ 为同阶可逆矩阵，$k\\neq0$，则<ul><li>$(A^{-1})^{-1}=A$</li><li><strong>乘积反序</strong> $(AB)^{-1}=B^{-1}A^{-1}$</li><li>$(kA)^{-1}=\\dfrac{1}{k}A^{-1}$</li><li>$(A^{T})^{-1}=(A^{-1})^{T}$</li><li>$|A^{-1}|=|A|^{-1}$</li></ul></div></div><div class=\"term\"><div class=\"term-label method\">〔方法〕抽象多项式凑定义求逆</div><div class=\"term-body\">已知形如 $A^{2}+2A-3E=O$ 的关系式时，把常数项移到右边、左边提公因式，整理成 $A(\\cdots)=E$，括号内即为 $A^{-1}$。</div></div>",
+      statement: "<div class=\"term\"><div class=\"term-label prp\">〔性质〕五条运算律</div><div class=\"term-body\">设 $A,B$ 为同阶可逆矩阵，$k\\neq0$，则<ul><li>$(A^{-1})^{-1}=A$</li><li><strong>乘积反序</strong> $(AB)^{-1}=B^{-1}A^{-1}$</li><li>$(kA)^{-1}=\\dfrac{1}{k}A^{-1}$</li><li>$(A^{T})^{-1}=(A^{-1})^{T}$</li><li>$|A^{-1}|=|A|^{-1}$</li></ul></div></div><div class=\"term\"><div class=\"term-label method\">〔方法〕抽象多项式凑定义求逆</div><div class=\"term-body\">已知形如 $A^{2}+2A-3E=O$ 的关系式时，把常数项移到右边、左边提公因式，整理成 $A(\\cdots)=E$，括号内即为 $A^{-1}$。</div></div><div class=\"term\"><div class=\"term-label method\">〔方法〕求逆的五种情形怎么选</div><div class=\"term-body\"><ul><li>$2$ 阶数值：公式法，主对调、副变号、除 $|A|$。</li><li>$n\\ge3$ 数值：$(A\\mid E)\\to(E\\mid A^{-1})$（见卡⑨）。<strong>禁</strong>手算 $A^{*}$（要算 $n^{2}$ 个行列式）。</li><li>只求单个元素：$(A^{-1})_{ij}=\\dfrac{A_{ji}}{|A|}$，<strong>下标颠倒</strong>。</li><li>抽象多项式：凑定义（见上一条）。</li><li>已知 $A^{*}$ 与 $|A|$：直接代公式。</li></ul></div></div>",
       explanation: "反序的道理：先穿袜子再穿鞋，脱的时候要先脱鞋——<strong>后做的先撤销</strong>。<strong>两个易错</strong>：求逆提常数只是倒数 $\\frac{1}{k}$，只有取行列式才带 $n$ 次方（$|kA|=k^{n}|A|$）；另外 $(A+B)^{-1}\\neq A^{-1}+B^{-1}$，加法绝对不能拆。",
-      tags: ["矩阵", "逆矩阵", "性质"]
+      tags: ["矩阵", "逆矩阵", "求逆", "性质"]
     },
     {
       id: "la-mat-def-block-matrix",
@@ -252,13 +252,12 @@ registerSubject({
       id: "la-mat-thm-inverse-by-elementary",
       chapterId: "matrix",
       type: "theorem",
-      types: ["theorem", "property", "definition"],
       module: 3,
       card: "⑨",
       title: "初等行变换的三大应用",
-      statement: "<div class=\"term\"><div class=\"term-label thm\">〔定理〕求逆：$(A\\mid E)\\to(E\\mid A^{-1})$</div><div class=\"term-body\">若 $A$ 可逆，则存在有限个初等矩阵使 $P_s\\cdots P_1A=E$。对 $(A\\mid E)$ 施以一系列<strong>初等行变换</strong>，左半化为 $E$ 时，右半就化为 $A^{-1}$。</div></div><div class=\"term\"><div class=\"term-label thm\">〔定理〕同解：左乘可逆矩阵解集不变</div><div class=\"term-body\">$P$ 可逆时，$Ax=b$ 与 $PAx=Pb$ <strong>同解</strong>。这是高斯消元法解方程组的合法性根基。</div></div><div class=\"term\"><div class=\"term-label method\">〔方法〕求逆的五种情形怎么选</div><div class=\"term-body\"><ul><li>$2$ 阶数值：公式法，主对调、副变号、除 $|A|$。</li><li>$n\\ge3$ 数值：$(A\\mid E)\\to(E\\mid A^{-1})$。<strong>禁</strong>手算 $A^{*}$（要算 $n^{2}$ 个行列式）。</li><li>只求单个元素：$(A^{-1})_{ij}=\\dfrac{A_{ji}}{|A|}$，<strong>下标颠倒</strong>。</li><li>抽象多项式：凑定义（见卡⑥）。</li><li>已知 $A^{*}$ 与 $|A|$：直接代公式。</li></ul></div></div><div class=\"term\"><div class=\"term-label method\">〔方法〕行变换与列变换的使用边界</div><div class=\"term-body\">解方程组、求逆、求极大无关组 $\\to$ <strong>只能用行变换</strong>（左乘才作用于方程两端）；只求秩 $\\to$ 行列可以混用。</div></div>",
-      explanation: "求逆之所以成立：行变换等于左乘算子 $P$，左半化成 $E$ 就是 $PA=E$，即 $P=A^{-1}$，而同一个 $P$ 同步作用在右半的 $E$ 上，$PE=P=A^{-1}$。<strong>不可逆的特征</strong>：化简中左半一旦出现全零行，说明 $r(A)&lt;n$，直接停笔。右乘 $Q$ 会把 $Ax=b$ 变成 $(AQ)(Q^{-1}x)=b$，扭曲未知数的对应关系，所以解方程组不能用列变换。",
-      tags: ["矩阵", "初等行变换", "求逆", "同解", "定理", "方法"]
+      statement: "<div class=\"term\"><div class=\"term-label thm\">〔定理〕应用一：求逆矩阵</div><div class=\"term-body\">设 $n$ 阶方阵 $A$ 可逆，则存在有限个初等矩阵 $P_1,P_2,\\cdots,P_s$，使 $P_s\\cdots P_1A=E$。</div><div class=\"term-body\">对分块矩阵 $(A\\mid E)$ <strong>只作初等行变换</strong>：</div><div class=\"term-math\">$$(A\\mid E)\\xrightarrow{\\text{初等行变换}}(E\\mid A^{-1})$$</div><div class=\"term-body\">左半化为 $E$ 时，右半就是 $A^{-1}$。</div></div><div class=\"term\"><div class=\"term-label thm\">〔定理〕应用二：解线性方程组</div><div class=\"term-body\">设 $P$ 为可逆矩阵，则 $Ax=b$ 与 $PAx=Pb$ <strong>同解</strong>。</div><div class=\"term-body\">所以对增广矩阵 $(A\\mid b)$ 只作初等行变换、化为行阶梯形（高斯消元法），解集不变。</div></div><div class=\"term\"><div class=\"term-label method\">〔方法〕应用三：求极大无关组</div><div class=\"term-body\">把向量按<strong>列</strong>拼成矩阵，只作初等行变换化为行阶梯形；主元所在的列，对应的原向量就构成一个极大线性无关组（概念见第 3 章）。</div></div><div class=\"term\"><div class=\"term-label method\">〔方法〕行变换与列变换的使用边界</div><div class=\"term-body\"><strong>只能用行变换</strong>：解线性方程组（列变换会打乱未知数的对应关系）；求逆 $(A\\mid E)\\to(E\\mid A^{-1})$（只有左乘，左右两半才会同步乘上同一个 $P$）；求极大无关组（列变换会改变列向量之间的线性关系）。</div><div class=\"term-body\"><strong>行列可以混用</strong>：求秩、化等价标准形（初等变换都不改变秩）。</div></div>",
+      explanation: "<strong>求逆为什么成立</strong>：一串行变换等于左乘一个可逆矩阵 $P$，左半化成 $E$ 就是 $PA=E$，即 $P=A^{-1}$；同一个 $P$ 同步作用在右半，$PE=P=A^{-1}$。$n\\ge3$ 的数值矩阵求逆<strong>一律用初等行变换</strong>，别手算伴随矩阵（要算 $n^{2}$ 个行列式）。化简中左半一旦出现<strong>全零行</strong>，说明 $r(A)&lt;n$，$A$ 不可逆，直接停笔。",
+      tags: ["矩阵", "初等行变换", "求逆", "同解", "极大无关组", "定理", "方法"]
     },
     {
       id: "la-mat-def-rank",

@@ -1244,11 +1244,12 @@ const App = {
         <div class="entry-no" aria-hidden="true">${index}</div>
         <div class="entry-main">
           <h4 class="entry-title">${escapeHtml(item.title)}</h4>
-          <!-- 两张卡：上面这张是课本（正文 + 提示），下面那张是自己写的笔记 -->
+          <!-- 两张卡：上面这张是教材内容（正文 + 提示），下面那张是自己写的笔记 -->
           <section class="card card-book">
+            <div class="card-book-head"><span class="card-book-label">教材内容</span></div>
             <div class="entry-statement">${bulletize(item.statement)}</div>
             ${item.diagram ? `<figure class="entry-figure">${item.diagram}${item.diagramCaption ? `<figcaption>${escapeHtml(item.diagramCaption)}</figcaption>` : ""}</figure>` : ""}
-            <div class="entry-note"><span class="note-label">提示</span>${bulletize(item.explanation)}</div>
+            <div class="entry-note"><div class="note-label">〔提示〕</div><div class="note-body">${bulletize(item.explanation)}</div></div>
           </section>
           <div class="mynote-slot" data-note="${item.id}">${this.myNoteHtml(item.id)}</div>
           ${
