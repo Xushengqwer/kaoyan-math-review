@@ -279,7 +279,7 @@ registerSubject({
       card: "⑪",
       title: "秩的不等式与可逆的等价链",
       statement: "<div class=\"term\"><div class=\"term-label prp\">〔性质〕常用不等式</div><div class=\"term-body\"><ul><li>$0\\le r(A)\\le\\min(m,n)$，　$r(A^{T})=r(A)$</li><li>$r(A+B)\\le r(A)+r(B)$</li><li>$r(AB)\\le\\min\\{r(A),r(B)\\}$</li><li><strong>西尔维斯特</strong>：$AB=O\\Rightarrow r(A)+r(B)\\le n$（$n$ 为 $A$ 的列数）</li></ul></div></div><div class=\"term\"><div class=\"term-label prp\">〔性质〕乘可逆矩阵，秩不变</div><div class=\"term-body\">$P,Q$ 可逆时 $r(PA)=r(AQ)=r(PAQ)=r(A)$。证法是双向夹逼：$r(PA)\\le r(A)$，又 $A=P^{-1}(PA)$ 给出 $r(A)\\le r(PA)$。</div></div><div class=\"term\"><div class=\"term-label prp\">〔性质〕可逆的等价链</div><div class=\"term-body\">对 $n$ 阶方阵 $A$：$A$ 可逆 $\\iff |A|\\neq0\\iff r(A)=n\\iff$ 行（列）向量组线性无关 $\\iff Ax=0$ 只有零解 $\\iff 0$ 不是 $A$ 的特征值。</div></div>",
-      explanation: "乘法只会「降秩或保秩」，绝不凭空生出新维度，所以取短板；乘可逆阵只是换坐标系，信息全守恒。<strong>见到 $AB=O$ 就想两件事</strong>：$r(A)+r(B)\\le n$，以及 $B$ 的列全是 $Ax=0$ 的解。等价链的后两条分别属于<strong>第 3 章</strong>与<strong>第 5 章</strong>，这里只作串联。",
+      explanation: "乘法只会「降秩或保秩」，绝不凭空生出新维度，所以取短板；乘可逆阵只是换坐标系，信息全守恒。<strong>见到 $AB=O$ 就想两件事</strong>：$r(A)+r(B)\\le n$，以及 $B$ 的列全是 $Ax=0$ 的解。等价链的后三条分别属于<strong>第 3 章</strong>、<strong>第 4 章</strong>与<strong>第 5 章</strong>，这里只作串联。",
       tags: ["矩阵", "秩", "不等式", "等价链", "性质"]
     },
     {
