@@ -37,12 +37,53 @@ function plainText(raw) {
 //
 // 写法约定（教材和笔记通用）：
 // - 「### 〔定义〕名字」小标题按〔〕里的字上色：
-//   定义 蓝 / 定理、推论 橙 / 性质 绿 / 方法 灰 / 提示 紫
-// - ==重点== 显示为下划线（Markdown 本身没有下划线，这是本站约定）
+//   定义 蓝 / 定理、推论 橙 / 性质 绿 / 方法 红 / 例题 青 / 提示 紫
+// - ==重点== 显示为下划线（Markdown 本身没有下划线，这是本站约定），公式也能划
 // 教材额外一条：「### 〔提示〕」那一节放进卡片底部的提示区（笔记里留在原位）。
 // 公式先挖出来再交给 Markdown，保护流水线只有这一份。
-const BOOK_HEAD = /^#{1,6}[ \t]*(〔(定义|定理|性质|推论|方法|提示)〕.*?)[ \t]*$/;
-const BOOK_CLASS = { 定义: "def", 定理: "thm", 推论: "thm", 性质: "prp", 方法: "method", 提示: "tip" };
+const TERM_KINDS = "定义|定理|性质|推论|方法|例题|提示";
+const BOOK_HEAD = new RegExp("^#{1,6}[ \\t]*(〔(" + TERM_KINDS + ")〕.*?)[ \\t]*$");
+const BOOK_CLASS = { 定义: "def", 定理: "thm", 推论: "thm", 性质: "prp", 方法: "method", 例题: "ex", 提示: "tip" };
+
+// ==重点== 划到公式上：KaTeX 排出来的公式是 inline-block，外层 <u> 的下划线画不进去。
+// 所以被 ==…== 包住的公式、公式里面写的 ==…==，显示时都换成 KaTeX 自己的 \underline{}（原文不动）。
+const UL_RE = /==((?:(?!==)[^\n])+?)==/g;
+
+function mathForDisplay(src, underlined) {
+  const d = src.slice(0, 2) === "$$" ? "$$" : "$";
+  let body = src.slice(d.length, src.length - d.length)
+    .replace(/==((?:(?!==)[\s\S])+?)==/g, "\\underline{$1}");
+  if (underlined && !/\\tag\b/.test(body)) body = "\\underline{" + body + "}";
+  return d + body + d;
+}
+
+// ==…== 换成 <u>，记下哪些公式在 <u> 里；再把占位符换回公式（公式里的 < > & 转实体）
+function underlineAndUnmask(html, store) {
+  const NUL = String.fromCharCode(0);
+  const TOKEN = new RegExp(NUL + "(\\d+)" + NUL, "g");
+  const under = new Set();
+  html = html.replace(UL_RE, (m, inner) => {
+    (inner.match(TOKEN) || []).forEach((t) => under.add(Number(t.slice(1, -1))));
+    return "<u>" + inner + "</u>";
+  });
+  return html.replace(TOKEN, (m, k) => escapeHtml(mathForDisplay(store[Number(k)], under.has(Number(k)))));
+}
+
+// 分隔线 ---：教材的小节之间本来就有细线，开头、结尾的分隔线也没有意义，显示时略过（原文不动）。
+// 只去「前面是空行」的那种；紧贴在一段文字下面的 --- 是 Markdown 的标题写法，不碰。
+const HR_LINE = /^ {0,3}(?:(?:-[ \t]*){3,}|(?:\*[ \t]*){3,}|(?:_[ \t]*){3,})$/;
+
+function trimRules(text) {
+  const lines = String(text == null ? "" : text).split("\n");
+  const blank = (l) => l === undefined || !l.trim();
+  while (lines.length && (blank(lines[0]) || HR_LINE.test(lines[0]))) lines.shift();
+  while (lines.length) {
+    const last = lines[lines.length - 1];
+    if (blank(last) || (HR_LINE.test(last) && blank(lines[lines.length - 2]))) lines.pop();
+    else break;
+  }
+  return lines.join("\n");
+}
 
 function mdHtml(text, inline) {
   const NUL = String.fromCharCode(0);
@@ -60,16 +101,15 @@ function mdHtml(text, inline) {
     ? marked.parseInline(safe, { gfm: true })
     : marked.parse(safe, { gfm: true, breaks: false });
   html = html.split(B1).join("<strong>").split(B2).join("</strong>");
-  html = html.replace(/==((?:(?!==)[^\n])+?)==/g, "<u>$1</u>");
-  return html.replace(new RegExp(NUL + "(\\d+)" + NUL, "g"), (m, k) => escapeHtml(store[Number(k)]));
+  return underlineAndUnmask(html, store);
 }
 
 // 笔记里的〔〕小标题：和教材同一套颜色，但留在原位、标题层级照旧（笔记怎么排是自己定的，不挪）。
 // 前面带编号也认：「## 四、〔方法〕先凑零，再展开」。
-const NOTE_TERM_HEAD = /<h([1-6])>((?:[一二三四五六七八九十]+、|\d+[.、．][ \t]*)?〔(定义|定理|性质|推论|方法|提示)〕)/g;
+const NOTE_TERM_HEAD = new RegExp("<h([1-6])>((?:[一二三四五六七八九十]+、|\\d+[.、．][ \\t]*)?〔(" + TERM_KINDS + ")〕)", "g");
 
 function noteMdHtml(text) {
-  return mdHtml(text).replace(NOTE_TERM_HEAD, (m, level, head, kind) =>
+  return mdHtml(trimRules(text)).replace(NOTE_TERM_HEAD, (m, level, head, kind) =>
     "<h" + level + ' class="term-head ' + BOOK_CLASS[kind] + '">' + head);
 }
 
@@ -84,7 +124,7 @@ function bookParts(md) {
   let main = "";
   let tip = "";
   sections.forEach((s) => {
-    const body = s.lines.join("\n");
+    const body = trimRules(s.lines.join("\n"));
     if (s.kind === "提示") {
       // 「### 〔提示〕名字」：几块内容并在一张卡里时，每段提示前标出它属于哪一块
       const name = s.label.replace(/^〔提示〕/, "").trim();
@@ -1415,15 +1455,11 @@ const App = {
       store.push(part);
       return NUL + (store.length - 1) + NUL;
     }).join("");
-    // ③ 还原时才转义公式：浏览器解码回真的 < > &，KaTeX 照常识别
-    const unmask = (html) => html.replace(new RegExp(NUL + "(\\d+)" + NUL, "g"),
-      (m, k) => escapeHtml(store[Number(k)]));
+    // ③ 还原时才转义公式（underlineAndUnmask 里做）：浏览器解码回真的 < > &，KaTeX 照常识别
 
-    // ② 纯文本模式：维持原样，只认 **加粗** 和 ==下划线==
+    // ② 纯文本模式：维持原样，只认 **加粗** 和 ==下划线==（下划线和公式还原交给 underlineAndUnmask）
     const BOLD = new RegExp("\\*\\*([^*\\n]+?)\\*\\*", "g");
-    return unmask(escapeHtml(masked)
-      .replace(BOLD, "<strong>$1</strong>")
-      .replace(/==((?:(?!==)[^\n])+?)==/g, "<u>$1</u>"));
+    return underlineAndUnmask(escapeHtml(masked).replace(BOLD, "<strong>$1</strong>"), store);
   },
 
   // 体检：Markdown 里最容易踩的坑是「缩进被当成代码块」。

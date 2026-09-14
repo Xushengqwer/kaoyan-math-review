@@ -18,6 +18,8 @@
   --prp: #197f4e;
   --prp-bg: #e8f5ee;
   --tip: #7446c2;
+  --method: #c8364a;
+  --example: #0a7d8a;
 
   --seal-bg: #ececf0;
   --seal-text: #1d1d1f;
@@ -61,6 +63,8 @@
     --prp: #34d266;
     --prp-bg: #0f2e1c;
     --tip: #b595f5;
+    --method: #ff6b81;
+    --example: #3fc5d1;
 
     --seal-bg: #2c2c2e;
     --seal-text: #f5f5f7;
@@ -571,6 +575,11 @@ button { font: inherit; border: none; background: none; color: inherit; cursor: 
   text-decoration-thickness: 2px;
   text-underline-offset: 4px;
 }
+/* ==重点== 里的公式：显示时换成了 KaTeX 的 \underline，线的颜色粗细和文字下划线一致 */
+.katex .underline-line {
+  border-bottom-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  border-bottom-width: 2px !important;
+}
 .entry-statement ul, .entry-statement ol { margin: 6px 0 2px; padding-left: 22px; }
 .entry-statement li { margin: 3px 0; padding-left: 3px; }
 .entry-statement li::marker { color: var(--text-3); }
@@ -588,7 +597,8 @@ button { font: inherit; border: none; background: none; color: inherit; cursor: 
 .term-label.def { color: var(--def); }
 .term-label.thm { color: var(--thm); }
 .term-label.prp { color: var(--prp); }
-.term-label.method { color: var(--text-3); }
+.term-label.method { color: var(--method); }
+.term-label.ex { color: var(--example); }
 /* Markdown 版教材：一个〔〕小节里的段落、列表、独占一行的公式 */
 .term-md p { margin: 0 0 8px; }
 .term-md p:last-child, .term-md ul:last-child, .term-md ol:last-child { margin-bottom: 0; }
@@ -830,7 +840,8 @@ body.mynote-zoomed { overflow: hidden; }
 .md .term-head.def { color: var(--def); }
 .md .term-head.thm { color: var(--thm); }
 .md .term-head.prp { color: var(--prp); }
-.md .term-head.method { color: var(--text-2); }
+.md .term-head.method { color: var(--method); }
+.md .term-head.ex { color: var(--example); }
 .md .term-head.tip { color: var(--tip); }
 .md p { margin: 9px 0; }
 .md ul, .md ol { margin: 8px 0; padding-left: 22px; }
