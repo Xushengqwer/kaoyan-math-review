@@ -33,169 +33,6 @@ function plainText(raw) {
     .trim();
 }
 
-// 课本正文与提示的分点排版（只改显示，数据文件里的原文一个字不动）。
-//
-// 一段话按最外层的「。」拆成句、按「；」拆成分句，一个点一行；
-// 「总述：甲；乙；丙。」冒号前做引子，后面分点；
-// 开头一句不带小标题的总述、后面还有两点以上时，它单独做引子。
-// 公式 $…$、括号引号、<strong> 这类行内标签里面的标点一律不碰；
-// 以「即 / 其中 / 称为」开头的是上一句的尾巴，不单独成点。
-// 已有的列表、表格、公式块、〔定义〕标签原样保留，只处理它们之间的文字。
-const PTS_BLOCK_TAG = /^<\/?(ul|ol|li|table|thead|tbody|tr|td|th|div|p|figure|figcaption|h[1-6]|pre|blockquote|hr|br)\b/i;
-const PTS_LIST_TAG = /^<(\/?)(ul|ol)\b/i;
-const PTS_OPEN = "（([「“《【‘";
-const PTS_CLOSE = "）)]」”》】’";
-const PTS_SENT_END = "。！？";
-const PTS_LABEL_HEAD = /^\s*<strong>[^<]{1,24}<\/strong>\s*[：:]|^\s*<strong>[^<]{1,24}[：:]<\/strong>/;
-const PTS_CONT_HEAD = /^(即(?!使|便)|其中|称为|叫做|也称)/;
-
-function bulletize(html) {
-  const src = String(html || "");
-  const toks = [];
-  const re = /\$\$[\s\S]*?\$\$|\$[^$\n]*\$|<[^>]+>/g;
-  let last = 0;
-  let m;
-  while ((m = re.exec(src))) {
-    for (const ch of src.slice(last, m.index)) toks.push({ t: "c", v: ch });
-    toks.push({ t: m[0][0] === "<" ? "tag" : "math", v: m[0] });
-    last = m.index + m[0].length;
-  }
-  for (const ch of src.slice(last)) toks.push({ t: "c", v: ch });
-
-  // 按块级标签切成一段段文字；已有列表里面的文字不动
-  let out = "";
-  let run = [];
-  let listDepth = 0;
-  const flush = () => {
-    out += listDepth > 0 ? run.map((x) => x.v).join("") : bulletRun(run);
-    run = [];
-  };
-  for (const tk of toks) {
-    if (tk.t === "tag" && PTS_BLOCK_TAG.test(tk.v)) {
-      flush();
-      const lm = tk.v.match(PTS_LIST_TAG);
-      if (lm) listDepth += lm[1] ? -1 : 1;
-      out += tk.v;
-    } else {
-      run.push(tk);
-    }
-  }
-  flush();
-  return out;
-}
-
-// 一段连续的行内内容 → 原样，或「引子 + 分点」
-function bulletRun(run) {
-  const whole = run.map((x) => x.v).join("");
-  if (!whole.trim()) return whole;
-
-  // 1) 断句：只在最外层（不在行内标签、括号、公式里）断
-  const sentences = [];
-  let clauses = [];
-  let cur = [];
-  let tagDepth = 0;
-  let brDepth = 0;
-  let colonAt = -1;
-  const endClause = () => {
-    clauses.push({ toks: cur, colonAt });
-    cur = [];
-    colonAt = -1;
-  };
-  const endSentence = () => {
-    if (cur.length) endClause();
-    if (clauses.length) sentences.push(clauses);
-    clauses = [];
-  };
-  for (const tk of run) {
-    cur.push(tk);
-    if (tk.t === "tag") {
-      if (/^<\//.test(tk.v)) tagDepth = Math.max(0, tagDepth - 1);
-      else if (!/\/>$/.test(tk.v)) tagDepth++;
-      continue;
-    }
-    if (tk.t !== "c") continue;
-    if (PTS_OPEN.includes(tk.v)) brDepth++;
-    else if (PTS_CLOSE.includes(tk.v)) brDepth = Math.max(0, brDepth - 1);
-    if (tagDepth || brDepth) continue;
-    if (PTS_SENT_END.includes(tk.v)) endSentence();
-    else if (tk.v === "；") endClause();
-    else if (tk.v === "：" && colonAt < 0 && clauses.length === 0) colonAt = cur.length - 1;
-  }
-  endSentence();
-
-  const H = (ts) => ts.map((x) => x.v).join("");
-  const T = (ts) => H(ts).trim();
-  const vis = (ts) => H(ts).replace(/<[^>]+>/g, "").replace(/\$[^$]*\$/g, "式").replace(/[\s。；，、：]/g, "");
-  const head = (ts) => H(ts).replace(/<[^>]+>/g, "").replace(/^\s+/, "");
-  const appendTo = (it, ts) => {
-    if (it.kind === "group") it.items[it.items.length - 1] = it.items[it.items.length - 1].concat(ts);
-    else it.toks = it.toks.concat(ts);
-  };
-
-  // 2) 句子 → 条目
-  const items = [];
-  let forcedLead = false;
-  for (const cl of sentences) {
-    const allToks = cl.reduce((a, c) => a.concat(c.toks), []);
-    if (!vis(allToks)) {
-      if (items.length) appendTo(items[items.length - 1], allToks);
-      continue;
-    }
-    // 句内：空分句、以「即 / 其中」开头的分句，并回前一个分句
-    const ps = [];
-    cl.forEach((p) => {
-      if (ps.length && (!vis(p.toks) || PTS_CONT_HEAD.test(head(p.toks)))) {
-        ps[ps.length - 1].toks = ps[ps.length - 1].toks.concat(p.toks);
-      } else {
-        ps.push({ toks: p.toks.slice(), colonAt: p.colonAt });
-      }
-    });
-    // 句首就是「即 / 其中 / 称为」：整句是上一句的尾巴
-    if (PTS_CONT_HEAD.test(head(ps[0].toks))) {
-      if (items.length) {
-        appendTo(items[items.length - 1], allToks);
-      } else {
-        items.push({ kind: "item", toks: allToks, whole: true });
-        forcedLead = true;
-      }
-      continue;
-    }
-    if (ps.length === 1) {
-      items.push({ kind: "item", toks: ps[0].toks, whole: true });
-      continue;
-    }
-    const f = ps[0];
-    if (f.colonAt >= 0) {
-      const lead = f.toks.slice(0, f.colonAt + 1);
-      const rest = f.toks.slice(f.colonAt + 1);
-      if (vis(lead) && vis(rest)) {
-        items.push({ kind: "group", lead, items: [rest].concat(ps.slice(1).map((p) => p.toks)) });
-        continue;
-      }
-    }
-    ps.forEach((p) => items.push({ kind: "item", toks: p.toks, whole: false }));
-  }
-  if (!items.length) return whole;
-
-  // 3) 排版
-  const ul = (arr) => '<ul class="pts">' + arr.map((x) => "<li>" + x + "</li>").join("") + "</ul>";
-  const liOf = (it) => (it.kind === "group" ? T(it.lead) + ul(it.items.map(T)) : T(it.toks));
-  const points = (arr) => arr.reduce((n, it) => n + (it.kind === "group" ? it.items.length : 1), 0);
-
-  let lead = "";
-  let rest = items;
-  const first = items[0];
-  const canLead = first.kind === "item" && first.whole && (forcedLead || !PTS_LABEL_HEAD.test(T(first.toks)));
-  if (canLead && points(items.slice(1)) >= 2) {
-    lead = T(first.toks);
-    rest = items.slice(1);
-  }
-  if (forcedLead && !lead) return whole;           // 紧跟公式的那句，后面不够两点：保持原样
-  if (rest.length === 1 && rest[0].kind === "item") return whole;
-  if (rest.length === 1) return lead + T(rest[0].lead) + ul(rest[0].items.map(T));
-  return lead + ul(rest.map(liOf));
-}
-
 // 教材内容（Markdown 版）的显示。数据里存的是原文，这里只负责渲染，一个字不改。
 //
 // 写法约定：
@@ -215,10 +52,14 @@ function bookBodyHtml(text, inline) {
     store.push(part);
     return NUL + (store.length - 1) + NUL;
   }).join("");
-  const safe = masked.split("<").join("&lt;");
+  // 加粗：CommonMark 的规则遇到中文标点经常失效（「**甲）**乙」不加粗，星号原样露出来），
+  // 教材统一按「同一行里成对的 ** 就加粗」处理：先换成私用区字符躲过 Markdown，渲染完再换回 <strong>
+  const B1 = String.fromCharCode(0xE000), B2 = String.fromCharCode(0xE001);
+  const safe = masked.split("<").join("&lt;").replace(/\*\*([^*\n]+?)\*\*/g, B1 + "$1" + B2);
   let html = inline
     ? marked.parseInline(safe, { gfm: true })
     : marked.parse(safe, { gfm: true, breaks: false });
+  html = html.split(B1).join("<strong>").split(B2).join("</strong>");
   html = html.replace(/==((?:(?!==)[^\n])+?)==/g, "<u>$1</u>");
   return html.replace(new RegExp(NUL + "(\\d+)" + NUL, "g"), (m, k) => escapeHtml(store[Number(k)]));
 }
@@ -247,9 +88,9 @@ function bookParts(md) {
   return { main, tip };
 }
 
-// 搜索、摘要用的教材原文：Markdown 版直接用原文，老格式拼正文 + 提示
+// 搜索、摘要用的教材原文（本机改过的优先）
 function bookText(it) {
-  return it.md != null ? it.md : (it.statement || "") + " " + (it.explanation || "");
+  return BookEdits.get(it.id);
 }
 
 function subjectSeal(s) {
@@ -377,43 +218,49 @@ const App = {
     // 「还没进仓库」提醒
     const box = document.getElementById("side-pending");
     if (!box) return;
-    const n = Notes.pendingIds().length;
+    const n = Notes.pendingIds().length + BookEdits.pendingIds().length;
     box.hidden = n === 0;
     const num = document.getElementById("side-pending-n");
     if (num) num.textContent = n;
   },
 
-  // 把所有「还没进仓库」的笔记打包成一个 .md：每条都带完整出处和 id，
+  // 把所有「还没进仓库」的笔记和教材改动打包成一个 .md：每条都带完整出处和 id，
   // 正文夹在起止注释之间逐字节原样。文件本身就是 Markdown，
   // 直接丢进任何预览器（或交给我）都能正常看，也能原样提交进仓库。
   exportPending() {
     const ids = Notes.pendingIds();
-    if (ids.length === 0) { alert("所有笔记都已经在仓库里了。"); return; }
+    const bookIds = BookEdits.pendingIds();
+    const total = ids.length + bookIds.length;
+    if (total === 0) { alert("所有笔记和教材内容都已经在仓库里了。"); return; }
     // 极端情况：正文里如果自己带了结束标记，切分就会错位，先拦下来。
-    const clash = ids.filter((id) => Notes.get(id).indexOf(this.bodyClose(id)) >= 0);
+    const clash = ids.filter((id) => Notes.get(id).indexOf(this.bodyClose(id)) >= 0)
+      .concat(bookIds.filter((id) => BookEdits.get(id).indexOf(this.bodyClose("book:" + id)) >= 0).map((id) => "book:" + id));
     if (clash.length) {
-      alert("这几条笔记的正文里出现了导出用的结束标记，导出会切错：\n" + clash.join("\n"));
+      alert("这几条的正文里出现了导出用的结束标记，导出会切错：\n" + clash.join("\n"));
       return;
     }
     const date = new Date().toISOString().slice(0, 10);
+    const kind = ids.length && bookIds.length ? "笔记与教材" : bookIds.length ? "教材" : "笔记";
     const parts = [
-      "# 待提交笔记 · " + date,
+      "# 待提交" + kind + " · " + date,
       "",
-      "共 " + ids.length + " 条。每条正文夹在 `正文开始` / `正文结束` 两行注释之间，" +
+      "共 " + total + " 条" + (ids.length && bookIds.length ? "（笔记 " + ids.length + " 条、教材 " + bookIds.length + " 条）" : "") +
+        "。每条正文夹在 `正文开始` / `正文结束` 两行注释之间，" +
         "**与网页里输入的内容逐字节相同**，导出没有做任何转换。",
       "",
     ];
-    ids.forEach((id, i) => {
+    const texts = ids.map((id) => this.buildNoteText(id)).concat(bookIds.map((id) => this.buildBookText(id)));
+    texts.forEach((text, i) => {
       parts.push("---");
       parts.push("");
-      parts.push("<!-- 第 " + (i + 1) + " / " + ids.length + " 条 -->");
-      parts.push(this.buildNoteText(id));
+      parts.push("<!-- 第 " + (i + 1) + " / " + total + " 条 -->");
+      parts.push(text);
     });
     const blob = new Blob([parts.join("\n")], { type: "text/markdown;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "待提交笔记-" + date + ".md";
+    a.download = "待提交" + kind + "-" + date + ".md";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -573,7 +420,8 @@ const App = {
   _indexStamp: -1,
 
   searchIndex() {
-    if (this._index && this._indexStamp === Notes.stamp) return this._index;
+    const stamp = Notes.stamp + ":" + BookEdits.stamp;
+    if (this._index && this._indexStamp === stamp) return this._index;
     const rows = [];
     this.subjects.forEach((s) => {
       KaoyanData.items(s.id).forEach((it) => {
@@ -605,7 +453,7 @@ const App = {
       });
     });
     this._index = rows;
-    this._indexStamp = Notes.stamp;
+    this._indexStamp = stamp;
     return rows;
   },
 
@@ -841,6 +689,12 @@ const App = {
         renderMath(slot);
       }
     });
+    document.querySelectorAll("section.card-book[data-book]").forEach((sec) => {
+      if (sec.querySelector(".book-editing")) {
+        sec.innerHTML = this.bookCardInner(sec.dataset.book);
+        renderMath(sec);
+      }
+    });
     document.querySelectorAll("details.toc").forEach((d) => { d.open = true; });
     setTimeout(() => window.print(), 60);
   },
@@ -986,6 +840,7 @@ const App = {
     wrap.innerHTML = html;
     renderMath(wrap);
     this.bindNoteEditors(wrap);
+    this.bindBookEditors(wrap);
     this.bindToc(wrap);
   },
 
@@ -1297,20 +1152,13 @@ const App = {
   },
 
   entryHtml(item, index) {
-    // 教材写成 Markdown（md 字段）的卡走新渲染；还没转换的卡照旧
-    const book = item.md != null ? bookParts(item.md) : null;
-    const tip = book ? book.tip : bulletize(item.explanation);
     return `
       <article class="entry" id="item-${item.id}">
         <div class="entry-no" aria-hidden="true">${index}</div>
         <div class="entry-main">
           <h4 class="entry-title">${escapeHtml(item.title)}</h4>
           <!-- 两张卡：上面这张是教材内容（正文 + 提示），下面那张是自己写的笔记 -->
-          <section class="card card-book">
-            <div class="card-book-head"><span class="card-book-label">教材内容</span></div>
-            <div class="entry-statement">${book ? book.main : bulletize(item.statement)}</div>
-            ${item.diagram ? `<figure class="entry-figure">${item.diagram}${item.diagramCaption ? `<figcaption>${escapeHtml(item.diagramCaption)}</figcaption>` : ""}</figure>` : ""}
-            ${tip.trim() ? `<div class="entry-note"><div class="note-label">〔提示〕</div><div class="note-body">${tip}</div></div>` : ""}
+          <section class="card card-book" data-book="${item.id}">${this.bookCardInner(item.id)}
           </section>
           <div class="mynote-slot" data-note="${item.id}">${this.myNoteHtml(item.id)}</div>
           ${
@@ -1320,6 +1168,193 @@ const App = {
           }
         </div>
       </article>`;
+  },
+
+  // ---------------- 教材内容：显示与编辑（只收 Markdown） ----------------
+  // 仓库版在数据文件的 md 字段里；网页上改过、还没进仓库的存在本机（BookEdits），
+  // 和笔记一样打包成 .md 交给我提交。
+
+  bookCardInner(itemId) {
+    const it = KaoyanData.find(itemId);
+    const book = bookParts(BookEdits.get(itemId));
+    const pending = BookEdits.isPending(itemId);
+    return `
+            <div class="card-book-head">
+              <span class="card-book-label">教材内容</span>
+              ${pending ? `<span class="mynote-flag pending" title="这台设备上改过，和仓库里的那一版不一样。打包成 .md 交给我提交才算进仓库。">本地已改</span>
+              <button class="mynote-restore" data-book-action="restore" title="丢掉本机这一版，改用仓库里的那一版">用仓库版</button>` : ""}
+              <button class="mynote-edit" data-book-action="edit">编辑</button>
+            </div>
+            <div class="entry-statement">${book.main}</div>
+            ${it && it.diagram ? `<figure class="entry-figure">${it.diagram}${it.diagramCaption ? `<figcaption>${escapeHtml(it.diagramCaption)}</figcaption>` : ""}</figure>` : ""}
+            ${book.tip.trim() ? `<div class="entry-note"><div class="note-label">〔提示〕</div><div class="note-body">${book.tip}</div></div>` : ""}`;
+  },
+
+  bookEditorHtml() {
+    return `
+            <div class="mynote mynote-editing book-editing">
+              <div class="mynote-head">
+                <span class="card-book-label">教材内容 · 编辑</span>
+                <button class="mynote-md-btn" data-book-action="import-md" title="读取一个 .md 文件，原样填进来">导入 .md</button>
+                <button class="mynote-preview-btn" data-book-action="preview">预览</button>
+                <button class="mynote-zoom-btn" data-book-action="zoom" title="全屏编辑（Esc 退出）">放大</button>
+              </div>
+              <div class="mynote-warn"></div>
+              <textarea class="mynote-input" rows="14" spellcheck="false"></textarea>
+              <div class="mynote-preview book-preview" hidden></div>
+              <input type="file" class="mynote-md-file" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden />
+              <div class="mynote-actions">
+                <button class="mynote-save" data-book-action="save">保存</button>
+                <button class="mynote-cancel" data-book-action="cancel">取消</button>
+              </div>
+            </div>`;
+  },
+
+  // 体检：标题有没有按〔〕写（没按的不会上色）、有没有缩进被当成代码块
+  bookIssues(md) {
+    const text = String(md == null ? "" : md);
+    const lines = text.split("\n");
+    const heads = [];
+    const code = [];
+    let fence = false;
+    lines.forEach((l, i) => {
+      if (/^\s*```/.test(l)) fence = !fence;
+      if (!fence && /^#{1,6}\s/.test(l) && !BOOK_HEAD.test(l)) heads.push(i + 1);
+    });
+    const parts = bookParts(text);
+    if (/<pre/.test(parts.main + parts.tip)) {
+      lines.forEach((l, i) => {
+        if (/^ {4,}\S/.test(l) && !/^\s*([-*+]|\d+\.)\s/.test(l)) code.push(i + 1);
+      });
+    }
+    return { heads, code, empty: !text.trim() };
+  },
+
+  refreshBookWarn(section) {
+    const box = section.querySelector(".mynote-warn");
+    const ta = section.querySelector(".mynote-input");
+    if (!box || !ta) return;
+    const is = this.bookIssues(ta.value);
+    const list = (arr) => arr.slice(0, 6).join("、") + (arr.length > 6 ? " …" : "");
+    const bits = [
+      '<span class="mynote-fmt md">Markdown</span>',
+      '<span class="mynote-fmt-why">「### 〔定义〕名字」开一个小节，按〔〕里的字自动上色 · 「### 〔提示〕」放提示 · ==重点== 显示下划线</span>',
+    ];
+    if (is.heads.length) bits.push('<span class="mynote-codewarn">⚠ 第 ' + list(is.heads) + " 行的标题没按〔定义〕这类写法，不会上色</span>");
+    if (is.code.length) bits.push('<span class="mynote-codewarn">⚠ 第 ' + list(is.code) + " 行会显示成代码块</span>");
+    box.innerHTML = bits.join("");
+  },
+
+  bindBookEditors(scope) {
+    scope.querySelectorAll("section.card-book[data-book]").forEach((section) => {
+      if (section.dataset.bound) return;
+      section.dataset.bound = "1";
+      const id = section.dataset.book;
+      const show = (html) => { section.innerHTML = html; renderMath(section); };
+      const fit = (ta) => { ta.style.height = Math.min(ta.scrollHeight + 4, 640) + "px"; };
+
+      section.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-book-action]");
+        if (!btn) return;
+        const action = btn.dataset.bookAction;
+
+        if (action === "edit") {
+          show(this.bookEditorHtml());
+          const ta = section.querySelector(".mynote-input");
+          // 直接赋值而不是写进 HTML：textarea 会吞掉开头的换行，赋值才能逐字节原样
+          ta.value = BookEdits.get(id);
+          fit(ta);
+          this.refreshBookWarn(section);
+          ta.addEventListener("input", () => {
+            clearTimeout(this._bookWarnTimer);
+            this._bookWarnTimer = setTimeout(() => this.refreshBookWarn(section), 400);
+          });
+          this.bindBookMdFile(section);
+          ta.focus();
+        } else if (action === "zoom") {
+          this.toggleZoom(section, btn);
+        } else if (action === "preview") {
+          // 只换显示方式，不动输入框里的任何字符
+          const ta = section.querySelector(".mynote-input");
+          const pv = section.querySelector(".book-preview");
+          const toPreview = !ta.hidden;
+          ta.hidden = toPreview;
+          pv.hidden = !toPreview;
+          btn.textContent = toPreview ? "回到编辑" : "预览";
+          if (toPreview) {
+            const b = bookParts(ta.value);
+            pv.innerHTML = `<div class="entry-statement">${b.main}</div>` +
+              (b.tip.trim() ? `<div class="entry-note"><div class="note-label">〔提示〕</div><div class="note-body">${b.tip}</div></div>` : "");
+            renderMath(pv);
+          }
+        } else if (action === "import-md") {
+          section.querySelector(".mynote-md-file").click();
+        } else if (action === "save") {
+          const val = section.querySelector(".mynote-input").value;
+          const is = this.bookIssues(val);
+          if (is.empty && !confirm("教材内容是空的，保存后这张卡只剩标题。确定吗？")) return;
+          if (is.code.length && !confirm("第 " + is.code.slice(0, 8).join("、") + " 行的缩进会显示成代码块。内容不会丢，要继续保存吗？")) return;
+          if (!BookEdits.set(id, val)) {
+            alert("保存失败：浏览器存储空间不足或被禁用。");
+            return;
+          }
+          this.exitZoom();
+          show(this.bookCardInner(id));
+          this.refreshNoteCount();
+        } else if (action === "cancel") {
+          const ta = section.querySelector(".mynote-input");
+          if (ta && ta.value !== BookEdits.get(id) && !confirm("改动还没保存，确定放弃吗？")) return;
+          this.exitZoom();
+          show(this.bookCardInner(id));
+        } else if (action === "restore") {
+          if (!confirm("用仓库里的那一版覆盖本机改过的教材内容？\n本机这一版会被清掉，无法撤销。")) return;
+          BookEdits.reset(id);
+          show(this.bookCardInner(id));
+          this.refreshNoteCount();
+        }
+      });
+    });
+  },
+
+  // 选一个 .md 文件，原样填进输入框（不解析、不转换、不清洗）
+  bindBookMdFile(section) {
+    const input = section.querySelector(".mynote-md-file");
+    if (!input) return;
+    input.addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      e.target.value = "";
+      if (!file) return;
+      const ta = section.querySelector(".mynote-input");
+      if (ta.value.trim() && !confirm("输入框里已经有内容，用文件内容覆盖掉？")) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        ta.value = String(reader.result);
+        ta.style.height = Math.min(ta.scrollHeight + 4, 640) + "px";
+        this.refreshBookWarn(section);
+        ta.focus();
+      };
+      reader.readAsText(file, "utf-8");
+    });
+  },
+
+  // 导出用：和笔记同一种起止标记，id 前加 book: 区分
+  buildBookText(itemId) {
+    const p = this.locate(itemId);
+    const nid = "book:" + itemId;
+    const where = p
+      ? p.subject.name + " · 第" + p.chapter.order + "章 " + p.chapter.name + " · " + this.noteSlotLabel(p) + " · 教材内容"
+      : "教材内容";
+    return [
+      "> **" + where + "**",
+      "> " + (p ? p.title : itemId) + "　·　`" + nid + "`　·　教材 Markdown",
+      "",
+      this.BODY_OPEN,
+      "",
+      BookEdits.get(itemId),
+      "",
+      this.bodyClose(nid),
+      "",
+    ].join("\n");
   },
 
   // 公式段的正则：$$...$$（可跨行）或 $...$（不跨行）

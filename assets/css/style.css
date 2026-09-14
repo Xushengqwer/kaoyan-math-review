@@ -598,15 +598,7 @@ button { font: inherit; border: none; background: none; color: inherit; cursor: 
 .note-body p { margin: 0 0 8px; }
 .note-body p:last-child { margin-bottom: 0; }
 .note-body ul ul { list-style-type: circle; }
-.term-body { margin: 0; }
-.term-body + .term-body { margin-top: 10px; }
-/* 句子中间的大矩阵挪出来独占一行，正文的行高就不会被撑得忽高忽低 */
-.term-math { margin: 14px 0 2px; overflow-x: auto; overflow-y: hidden; }
-.term-math .katex-display { margin: 0; }
 
-/* ---- 分点：正文和提示里一句一行（bulletize 在显示时拆，数据原文不动） ---- */
-ul.pts ul.pts { margin: 2px 0 2px; list-style-type: circle; }
-.term-body > ul.pts:first-child, .entry-statement > ul.pts:first-child { margin-top: 0; }
 
 .entry-figure {
   margin: 26px 0 8px; padding: 22px 18px;
@@ -630,7 +622,6 @@ ul.pts ul.pts { margin: 2px 0 2px; list-style-type: circle; }
 .entry-note ul, .entry-note ol { margin: 6px 0 2px; padding-left: 22px; }
 .entry-note li { margin: 3px 0; padding-left: 3px; }
 .entry-note li::marker { color: var(--text-3); }
-.note-body > ul.pts:first-child { margin-top: 0; }
 
 .entry-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
 .entry-tags span {
@@ -690,7 +681,7 @@ mark { background: #ffe58a; color: inherit; border-radius: 3px; padding: 0 2px; 
   border-radius: var(--r-md);
 }
 /* 教材卡顶上的名字，和笔记卡的「笔记」对称，讲到哪张卡都叫得出来 */
-.card-book-head { margin-bottom: 11px; }
+.card-book-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; margin-bottom: 11px; }
 .card-book-label { font-size: 12px; font-weight: 700; letter-spacing: .06em; color: var(--text-2); }
 .mynote-slot { margin-top: 14px; }
 .mynote-add {
@@ -888,6 +879,13 @@ body.mynote-zoomed { overflow: hidden; }
   transition: background .15s, color .15s;
 }
 .mynote-md-btn:hover { background: var(--accent-soft); color: var(--accent); }
+
+/* ---- 教材卡的编辑器：放在教材卡里面，不再套一层边框和底色（全屏时照旧） ---- */
+.card-book .book-editing:not(.fullscreen) {
+  padding: 0; border: none; border-radius: 0; box-shadow: none; background: transparent;
+}
+.book-preview { white-space: normal; }
+.book-preview .entry-note { margin-top: 18px; }
 
 /* ---- 章末：本章笔记总结 ---- */
 .chapter-summary {

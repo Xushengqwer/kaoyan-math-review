@@ -152,3 +152,75 @@ const NoteFormat = {
     try { localStorage.setItem(NOTE_FMT_KEY, JSON.stringify(all)); } catch (e) { /* ignore */ }
   },
 };
+
+// 教材内容的本地修改（Markdown 原文）。
+// 仓库里的那一版在各学科数据文件的 md 字段里；这里只存「在网页上改过、还没进仓库」的卡。
+// 和笔记一样原样保存：不 trim、不归一化，导出时逐字节带出去。
+const BOOK_KEY = "kaoyan_book_v1";
+
+const BookEdits = {
+  _cache: null,
+  stamp: 0, // 改一次 +1，搜索索引靠它判断要不要重建
+
+  _local() {
+    if (this._cache) return this._cache;
+    try {
+      const raw = localStorage.getItem(BOOK_KEY);
+      this._cache = raw ? JSON.parse(raw) : {};
+    } catch (e) {
+      this._cache = {};
+    }
+    // 已经和仓库版逐字相同的（多半是交给我提交过了）清掉，免得仓库以后再改时被旧副本盖住
+    const stale = Object.keys(this._cache).filter((k) => this._cache[k] === this.seed(k));
+    if (stale.length) {
+      stale.forEach((k) => delete this._cache[k]);
+      this._save();
+    }
+    return this._cache;
+  },
+
+  _save() {
+    try {
+      localStorage.setItem(BOOK_KEY, JSON.stringify(this._cache));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  },
+
+  // 仓库版
+  seed(itemId) {
+    const it = KaoyanData.find(itemId);
+    return it && it.md != null ? it.md : "";
+  },
+
+  get(itemId) {
+    const local = this._local();
+    return Object.prototype.hasOwnProperty.call(local, itemId) ? local[itemId] : this.seed(itemId);
+  },
+
+  isPending(itemId) {
+    const local = this._local();
+    return Object.prototype.hasOwnProperty.call(local, itemId) && local[itemId] !== this.seed(itemId);
+  },
+
+  pendingIds() {
+    return Object.keys(this._local()).filter((k) => this.isPending(k));
+  },
+
+  // 改回和仓库版一字不差时，不留本地副本
+  set(itemId, text) {
+    const local = this._local();
+    const raw = text == null ? "" : String(text);
+    if (raw === this.seed(itemId)) delete local[itemId];
+    else local[itemId] = raw;
+    this.stamp++;
+    return this._save();
+  },
+
+  reset(itemId) {
+    delete this._local()[itemId];
+    this.stamp++;
+    return this._save();
+  },
+};
