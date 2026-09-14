@@ -33,18 +33,18 @@ function plainText(raw) {
     .trim();
 }
 
-// 教材内容（Markdown 版）的显示。数据里存的是原文，这里只负责渲染，一个字不改。
+// 教材内容和笔记（Markdown）的显示。数据里存的是原文，这里只负责渲染，一个字不改。
 //
-// 写法约定：
-// - 「### 〔定义〕名字」开一个小节，网页按〔〕里的字给小标题上色：
+// 写法约定（教材和笔记通用）：
+// - 「### 〔定义〕名字」小标题按〔〕里的字上色：
 //   定义 蓝 / 定理、推论 橙 / 性质 绿 / 方法 灰 / 提示 紫
-// - 「### 〔提示〕」那一节放进卡片底部的提示区
 // - ==重点== 显示为下划线（Markdown 本身没有下划线，这是本站约定）
-// 公式先挖出来再交给 Markdown，和笔记走同一条保护流水线。
+// 教材额外一条：「### 〔提示〕」那一节放进卡片底部的提示区（笔记里留在原位）。
+// 公式先挖出来再交给 Markdown，保护流水线只有这一份。
 const BOOK_HEAD = /^#{1,6}[ \t]*(〔(定义|定理|性质|推论|方法|提示)〕.*?)[ \t]*$/;
-const BOOK_CLASS = { 定义: "def", 定理: "thm", 推论: "thm", 性质: "prp", 方法: "method" };
+const BOOK_CLASS = { 定义: "def", 定理: "thm", 推论: "thm", 性质: "prp", 方法: "method", 提示: "tip" };
 
-function bookBodyHtml(text, inline) {
+function mdHtml(text, inline) {
   const NUL = String.fromCharCode(0);
   const store = [];
   const masked = String(text == null ? "" : text).split(App.MATH_RE()).map((part, i) => {
@@ -64,6 +64,15 @@ function bookBodyHtml(text, inline) {
   return html.replace(new RegExp(NUL + "(\\d+)" + NUL, "g"), (m, k) => escapeHtml(store[Number(k)]));
 }
 
+// 笔记里的〔〕小标题：和教材同一套颜色，但留在原位、标题层级照旧（笔记怎么排是自己定的，不挪）。
+// 前面带编号也认：「## 四、〔方法〕先凑零，再展开」。
+const NOTE_TERM_HEAD = /<h([1-6])>((?:[一二三四五六七八九十]+、|\d+[.、．][ \t]*)?〔(定义|定理|性质|推论|方法|提示)〕)/g;
+
+function noteMdHtml(text) {
+  return mdHtml(text).replace(NOTE_TERM_HEAD, (m, level, head, kind) =>
+    "<h" + level + ' class="term-head ' + BOOK_CLASS[kind] + '">' + head);
+}
+
 // → { main: 正文 HTML（一个〔〕小节一个 .term）, tip: 提示 HTML }
 function bookParts(md) {
   const sections = [{ label: null, kind: null, lines: [] }];
@@ -79,12 +88,12 @@ function bookParts(md) {
     if (s.kind === "提示") {
       // 「### 〔提示〕名字」：几块内容并在一张卡里时，每段提示前标出它属于哪一块
       const name = s.label.replace(/^〔提示〕/, "").trim();
-      tip += (name ? '<p class="tip-from">' + bookBodyHtml(name, true) + "</p>" : "") + bookBodyHtml(body);
+      tip += (name ? '<p class="tip-from">' + mdHtml(name, true) + "</p>" : "") + mdHtml(body);
     } else if (!s.label) {
-      if (body.trim()) main += '<div class="term-md">' + bookBodyHtml(body) + "</div>";
+      if (body.trim()) main += '<div class="term-md">' + mdHtml(body) + "</div>";
     } else {
       main += '<div class="term"><div class="term-label ' + BOOK_CLASS[s.kind] + '">' +
-        bookBodyHtml(s.label, true) + '</div><div class="term-md">' + bookBodyHtml(body) + "</div></div>";
+        mdHtml(s.label, true) + '</div><div class="term-md">' + mdHtml(body) + "</div></div>";
     }
   });
   return { main, tip };
@@ -1386,10 +1395,16 @@ const App = {
 
   // 笔记正文的显示。四步流水线，存储和导出的原文一个字不动：
   //   ① 把 $...$ / $$...$$ 挖出来换成占位符（公式先保护起来）
-  //   ② 剩下的交给 Markdown 渲染（或纯文本模式下只认 **加粗**）
+  //   ② 剩下的交给 Markdown 渲染（或纯文本模式下只认 **加粗** 和 ==下划线==）
   //   ③ 占位符换回公式，公式里的 < > & 转成实体，浏览器解码回真字符
   //   ④ 交给 KaTeX（由调用方的 renderMath 完成）
+  // Markdown 这条路和教材是同一个函数（mdHtml），〔〕小标题上色、==下划线== 两边一致。
   noteBodyHtml(text, noteId) {
+    const asMd = noteId !== undefined
+      ? this.noteFormat(noteId, text) === "md"
+      : this.looksLikeMarkdown(text);
+    if (asMd && typeof marked !== "undefined") return noteMdHtml(text);
+
     const NUL = String.fromCharCode(0);
     const store = [];
     // ① 一律先从「原文」里挖公式段，先不转义。
@@ -1404,19 +1419,11 @@ const App = {
     const unmask = (html) => html.replace(new RegExp(NUL + "(\\d+)" + NUL, "g"),
       (m, k) => escapeHtml(store[Number(k)]));
 
-    const asMd = noteId !== undefined
-      ? this.noteFormat(noteId, text) === "md"
-      : this.looksLikeMarkdown(text);
-
-    // ② 公式之外的部分
-    if (asMd && typeof marked !== "undefined") {
-      // 只把 < 换成 &lt; 挡住原始 HTML 标签；& 一律不动，
-      // 这样 AI 常用的 &emsp; &nbsp; 这类实体还能正常生效。
-      return unmask(marked.parse(masked.split("<").join("&lt;"), { gfm: true, breaks: false }));
-    }
-    // 纯文本模式：维持原样，只认 **加粗**
+    // ② 纯文本模式：维持原样，只认 **加粗** 和 ==下划线==
     const BOLD = new RegExp("\\*\\*([^*\\n]+?)\\*\\*", "g");
-    return unmask(escapeHtml(masked).replace(BOLD, "<strong>$1</strong>"));
+    return unmask(escapeHtml(masked)
+      .replace(BOLD, "<strong>$1</strong>")
+      .replace(/==((?:(?!==)[^\n])+?)==/g, "<u>$1</u>"));
   },
 
   // 体检：Markdown 里最容易踩的坑是「缩进被当成代码块」。
@@ -1636,6 +1643,9 @@ const App = {
       (forced ? "（手动指定）" : "（按内容自动判定）") + "</span>");
     bits.push('<button class="mynote-fmt-btn" data-action="toggle-fmt">改成' +
       (fmt === "md" ? "纯文本" : "Markdown") + "</button>");
+    bits.push('<span class="mynote-fmt-why">' + (fmt === "md"
+      ? "「### 〔定义〕名字」小标题按〔〕里的字自动上色 · ==重点== 显示下划线"
+      : "==重点== 显示下划线") + "</span>");
     if (chk) {
       bits.push('<span class="mynote-codewarn">⚠ 第 ' +
         chk.lines.slice(0, 6).join("、") + (chk.lines.length > 6 ? " …" : "") +

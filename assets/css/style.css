@@ -565,7 +565,7 @@ button { font: inherit; border: none; background: none; color: inherit; cursor: 
 
 .entry-statement { font-size: 15.5px; line-height: 2.05; color: var(--text); }
 .entry-statement strong { font-weight: 600; }
-.entry-statement u {
+.entry-statement u, .entry-note u, .mynote-body u, .mynote-preview u {
   text-decoration: underline;
   text-decoration-color: color-mix(in srgb, var(--accent) 55%, transparent);
   text-decoration-thickness: 2px;
@@ -826,6 +826,12 @@ body.mynote-zoomed { overflow: hidden; }
 .md h2 { font-size: 15.5px; color: var(--accent); }
 .md h3 { font-size: 14.5px; }
 .md h4, .md h5, .md h6 { font-size: 14px; color: var(--text-2); }
+/* 〔定义〕〔定理〕这类小标题：和教材同一套颜色，标题大小照旧 */
+.md .term-head.def { color: var(--def); }
+.md .term-head.thm { color: var(--thm); }
+.md .term-head.prp { color: var(--prp); }
+.md .term-head.method { color: var(--text-2); }
+.md .term-head.tip { color: var(--tip); }
 .md p { margin: 9px 0; }
 .md ul, .md ol { margin: 8px 0; padding-left: 22px; }
 .md li { margin: 3px 0; }
