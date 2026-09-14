@@ -18,7 +18,13 @@ registerSubject({
       { no: "三", name: "初等变换", brief: "全章的通用手段：三种变换，和它的三大应用" },
       { no: "四", name: "矩阵的秩", brief: "全书主线：定义、求法、不等式，以及可逆的等价链" }
     ] },
-    { id: "vector-space", name: "向量组的线性相关性与秩", order: 3 },
+    // 第3章按「模块」组织：4 个模块 8 张卡，模块与本章总结的四层一一对应。
+    { id: "vector-space", name: "向量组的线性相关性与秩", order: 3, modules: [
+      { no: "一", name: "相关性", brief: "一组向量内部是否存在冗余" },
+      { no: "二", name: "表示", brief: "一个向量能不能被一组向量拼出来" },
+      { no: "三", name: "等价", brief: "两组向量是不是同一片地" },
+      { no: "四", name: "空间与参考系", brief: "这些向量住在哪、怎么定位" }
+    ] },
     { id: "linear-equations", name: "线性方程组", order: 4 },
     { id: "eigen", name: "特征值、特征向量与相似对角化", order: 5 },
     { id: "quadratic-form", name: "二次型", order: 6 }
@@ -270,65 +276,56 @@ registerSubject({
       tags: ["矩阵", "伴随矩阵", "秩", "性质"]
     },
     {
-      id: "la-vec-def-linear-combination",
-      chapterId: "vector-space",
-      type: "definition",
-      title: "线性组合与线性表示",
-      md: "### 〔定义〕\n\n给定向量组 $A:\\alpha_1,\\alpha_2,\\cdots,\\alpha_m$，若存在一组数 $k_1,k_2,\\cdots,k_m$，使 $\\beta=k_1\\alpha_1+k_2\\alpha_2+\\cdots+k_m\\alpha_m$，则称 $\\beta$ 是向量组 $A$ 的一个**线性组合**，也称 $\\beta$ 可由向量组 $A$ **线性表示**。\n\n### 〔提示〕\n\n$\\beta$ 能由 $A$ 线性表示的**充要条件**是方程组 $x_1\\alpha_1+\\cdots+x_m\\alpha_m=\\beta$ 有解，等价于矩阵 $(\\alpha_1,\\cdots,\\alpha_m)$ 的秩等于矩阵 $(\\alpha_1,\\cdots,\\alpha_m,\\beta)$ 的秩。\n",
-      tags: ["向量组", "线性表示", "定义"]
-    },
-    {
       id: "la-vec-def-linear-dependence",
       chapterId: "vector-space",
       type: "definition",
-      title: "向量组线性相关与线性无关的定义",
-      md: "### 〔定义〕\n\n- 给定向量组 $A:\\alpha_1,\\alpha_2,\\cdots,\\alpha_m$，如果存在**不全为零**的数 $k_1,k_2,\\cdots,k_m$，使得 $k_1\\alpha_1+k_2\\alpha_2+\\cdots+k_m\\alpha_m=0$，则称向量组 $A$ **线性相关**；\n- 否则（即只有当 $k_1=k_2=\\cdots=k_m=0$ 时上式才成立），称向量组 $A$ **线性无关**。\n\n### 〔提示〕\n\n记忆要点：判断线性相关性本质是看齐次方程组 $x_1\\alpha_1+\\cdots+x_m\\alpha_m=0$ 是否有非零解。\n\n- 含零向量的向量组一定线性相关。\n- 单个非零向量线性无关。\n- 两个向量线性相关等价于对应分量成比例（共线）。\n",
-      diagram: `<svg viewBox="0 0 320 150" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="60" cy="120" r="2" fill="currentColor" opacity="0.5"/>
-        <line x1="60" y1="120" x2="100" y2="70" stroke="currentColor" stroke-width="2"/>
-        <polygon points="100,70 90,74 95,63" fill="currentColor"/>
-        <line x1="60" y1="120" x2="130" y2="35" stroke="#3b82f6" stroke-width="2"/>
-        <polygon points="130,35 118,41 123,29" fill="#3b82f6"/>
-        <text x="55" y="140" font-size="11" fill="currentColor" opacity="0.75">线性相关（共线）</text>
-
-        <circle cx="230" cy="120" r="2" fill="currentColor" opacity="0.5"/>
-        <line x1="230" y1="120" x2="270" y2="60" stroke="currentColor" stroke-width="2"/>
-        <polygon points="270,60 259,64 264,52" fill="currentColor"/>
-        <line x1="230" y1="120" x2="300" y2="95" stroke="#3b82f6" stroke-width="2"/>
-        <polygon points="300,95 287,92 291,82" fill="#3b82f6"/>
-        <text x="232" y="140" font-size="11" fill="currentColor" opacity="0.75">线性无关</text>
-      </svg>`,
+      types: ["definition", "theorem"],
+      module: 1,
+      card: "①",
+      title: "线性相关性：定义与秩判据",
+      md: "### 〔定义〕线性相关与线性无关\n\n- 给定向量组 $A:\\alpha_1,\\alpha_2,\\cdots,\\alpha_m$，如果存在**不全为零**的数 $k_1,k_2,\\cdots,k_m$，使得 $k_1\\alpha_1+k_2\\alpha_2+\\cdots+k_m\\alpha_m=0$，则称向量组 $A$ **线性相关**；\n- 否则（即只有当 $k_1=k_2=\\cdots=k_m=0$ 时上式才成立），称向量组 $A$ **线性无关**。\n\n### 〔提示〕线性相关与线性无关\n\n记忆要点：判断线性相关性本质是看齐次方程组 $x_1\\alpha_1+\\cdots+x_m\\alpha_m=0$ 是否有非零解。\n\n- 含零向量的向量组一定线性相关。\n- 单个非零向量线性无关。\n- 两个向量线性相关等价于对应分量成比例（共线）。\n\n### 〔定理〕线性相关性与矩阵秩的关系\n\n- 向量组 $\\alpha_1,\\alpha_2,\\cdots,\\alpha_m$ 线性相关的充要条件是由这些向量为列构成的矩阵 $A=(\\alpha_1,\\alpha_2,\\cdots,\\alpha_m)$ 的秩 **$r(A)<m$**；\n- 线性无关的充要条件是 **$r(A)=m$**。\n- 特别地，当 $m=n$（向量个数等于维数）时，$\\alpha_1,\\cdots,\\alpha_n$ 线性无关的充要条件是 $|A|\\neq0$。\n\n### 〔提示〕线性相关性与矩阵秩的关系\n\n- 这是判断线性相关性的核心计算方法：**把向量组按列（或行）排成矩阵，通过初等变换求秩，与向量个数比较**。\n- 这一定理把“线性相关性”这一代数概念转化为可直接计算的“矩阵秩”问题。\n",
+      diagram: "<svg viewBox=\"0 0 320 150\" xmlns=\"http://www.w3.org/2000/svg\">\n        <circle cx=\"60\" cy=\"120\" r=\"2\" fill=\"currentColor\" opacity=\"0.5\"/>\n        <line x1=\"60\" y1=\"120\" x2=\"100\" y2=\"70\" stroke=\"currentColor\" stroke-width=\"2\"/>\n        <polygon points=\"100,70 90,74 95,63\" fill=\"currentColor\"/>\n        <line x1=\"60\" y1=\"120\" x2=\"130\" y2=\"35\" stroke=\"#3b82f6\" stroke-width=\"2\"/>\n        <polygon points=\"130,35 118,41 123,29\" fill=\"#3b82f6\"/>\n        <text x=\"55\" y=\"140\" font-size=\"11\" fill=\"currentColor\" opacity=\"0.75\">线性相关（共线）</text>\n\n        <circle cx=\"230\" cy=\"120\" r=\"2\" fill=\"currentColor\" opacity=\"0.5\"/>\n        <line x1=\"230\" y1=\"120\" x2=\"270\" y2=\"60\" stroke=\"currentColor\" stroke-width=\"2\"/>\n        <polygon points=\"270,60 259,64 264,52\" fill=\"currentColor\"/>\n        <line x1=\"230\" y1=\"120\" x2=\"300\" y2=\"95\" stroke=\"#3b82f6\" stroke-width=\"2\"/>\n        <polygon points=\"300,95 287,92 291,82\" fill=\"#3b82f6\"/>\n        <text x=\"232\" y=\"140\" font-size=\"11\" fill=\"currentColor\" opacity=\"0.75\">线性无关</text>\n      </svg>",
       diagramCaption: "两个向量线性相关 ⟺ 共线（左）；不共线则线性无关（右）——低维情形的直观图像",
-      tags: ["向量组", "线性相关", "线性无关", "定义"]
-    },
-    {
-      id: "la-vec-thm-dependence-rank",
-      chapterId: "vector-space",
-      type: "theorem",
-      title: "线性相关性与矩阵秩的关系",
-      md: "### 〔定理〕\n\n- 向量组 $\\alpha_1,\\alpha_2,\\cdots,\\alpha_m$ 线性相关的充要条件是由这些向量为列构成的矩阵 $A=(\\alpha_1,\\alpha_2,\\cdots,\\alpha_m)$ 的秩 **$r(A)<m$**；\n- 线性无关的充要条件是 **$r(A)=m$**。\n- 特别地，当 $m=n$（向量个数等于维数）时，$\\alpha_1,\\cdots,\\alpha_n$ 线性无关的充要条件是 $|A|\\neq0$。\n\n### 〔提示〕\n\n- 这是判断线性相关性的核心计算方法：**把向量组按列（或行）排成矩阵，通过初等变换求秩，与向量个数比较**。\n- 这一定理把“线性相关性”这一代数概念转化为可直接计算的“矩阵秩”问题。\n",
-      tags: ["向量组", "线性相关", "秩", "定理"]
+      tags: ["向量组", "线性相关", "线性无关", "秩", "定义", "定理"]
     },
     {
       id: "la-vec-def-max-independent-set",
       chapterId: "vector-space",
       type: "definition",
-      title: "极大线性无关组的定义",
-      md: "### 〔定义〕\n\n设向量组 $A$ 中有一个部分组 $A_0:\\alpha_{i_1},\\alpha_{i_2},\\cdots,\\alpha_{i_r}$ 满足：\n\n- $A_0$ **线性无关**；\n- 向量组 $A$ 中任意一个向量都可由 $A_0$ 线性表示（等价地，向量组 $A$ 中再任取一个向量加入 $A_0$ 都线性相关）；\n\n则称 $A_0$ 是向量组 $A$ 的一个**极大线性无关组**。\n\n### 〔提示〕\n\n- 极大无关组不唯一，但其中所含向量的**个数是唯一确定的**，这个个数就是向量组的秩。\n- 极大无关组与原向量组等价（可以相互线性表示），这是“用少数向量代表整个向量组”的核心思想。\n",
-      tags: ["向量组", "极大无关组", "定义"]
+      types: ["definition", "property"],
+      module: 1,
+      card: "②",
+      title: "极大线性无关组与向量组的秩",
+      md: "### 〔定义〕极大线性无关组\n\n设向量组 $A$ 中有一个部分组 $A_0:\\alpha_{i_1},\\alpha_{i_2},\\cdots,\\alpha_{i_r}$ 满足：\n\n- $A_0$ **线性无关**；\n- 向量组 $A$ 中任意一个向量都可由 $A_0$ 线性表示（等价地，向量组 $A$ 中再任取一个向量加入 $A_0$ 都线性相关）；\n\n则称 $A_0$ 是向量组 $A$ 的一个**极大线性无关组**。\n\n### 〔提示〕极大线性无关组\n\n- 极大无关组不唯一，但其中所含向量的**个数是唯一确定的**，这个个数就是向量组的秩。\n- 极大无关组与原向量组等价（可以相互线性表示），这是“用少数向量代表整个向量组”的核心思想。\n\n### 〔定义〕向量组的秩\n\n- 向量组的极大线性无关组所含向量的个数，称为该向量组的**秩**，记作 $r(\\alpha_1,\\alpha_2,\\cdots,\\alpha_m)$。\n- 规定：仅含零向量的向量组的秩为 $0$。\n\n### 〔提示〕向量组的秩\n\n向量组的秩等于以这些向量为行（或列）构成的矩阵的秩，二者数值相等，这是连接“向量组”与“矩阵”两个角度的桥梁：**矩阵的秩既是行向量组的秩，也是列向量组的秩**。\n\n### 〔性质〕向量组秩与矩阵秩的等价刻画\n\n矩阵 $A$ 的秩 $r(A)$ 等于 $A$ 的行向量组的秩，也等于 $A$ 的列向量组的秩（**行秩＝列秩＝矩阵的秩**）。\n\n### 〔提示〕向量组秩与矩阵秩的等价刻画\n\n这一结论说明矩阵的秩不依赖于按行还是按列来考察，是矩阵理论中的核心定理之一，也是求向量组的秩时“**把向量按列排成矩阵求秩**”这一操作合法性的依据。\n",
+      tags: ["向量组", "极大无关组", "秩", "矩阵", "定义", "性质"]
     },
     {
-      id: "la-vec-def-vector-group-rank",
+      id: "la-vec-def-linear-combination",
       chapterId: "vector-space",
       type: "definition",
-      title: "向量组的秩",
-      md: "### 〔定义〕\n\n- 向量组的极大线性无关组所含向量的个数，称为该向量组的**秩**，记作 $r(\\alpha_1,\\alpha_2,\\cdots,\\alpha_m)$。\n- 规定：仅含零向量的向量组的秩为 $0$。\n\n### 〔提示〕\n\n向量组的秩等于以这些向量为行（或列）构成的矩阵的秩，二者数值相等，这是连接“向量组”与“矩阵”两个角度的桥梁：**矩阵的秩既是行向量组的秩，也是列向量组的秩**。\n",
-      tags: ["向量组", "秩", "定义"]
+      types: ["definition", "theorem"],
+      module: 2,
+      card: "③",
+      title: "线性表示：定义与判定",
+      md: "### 〔定义〕线性组合与线性表示\n\n给定向量组 $A:\\alpha_1,\\alpha_2,\\cdots,\\alpha_m$，若存在一组数 $k_1,k_2,\\cdots,k_m$，使 $\\beta=k_1\\alpha_1+k_2\\alpha_2+\\cdots+k_m\\alpha_m$，则称 $\\beta$ 是向量组 $A$ 的一个**线性组合**，也称 $\\beta$ 可由向量组 $A$ **线性表示**。\n\n### 〔提示〕线性组合与线性表示\n\n$\\beta$ 能由 $A$ 线性表示的**充要条件**是方程组 $x_1\\alpha_1+\\cdots+x_m\\alpha_m=\\beta$ 有解，等价于矩阵 $(\\alpha_1,\\cdots,\\alpha_m)$ 的秩等于矩阵 $(\\alpha_1,\\cdots,\\alpha_m,\\beta)$ 的秩。\n\n### 〔定理〕向量能由向量组线性表示的判定\n\n- 向量 $\\beta$ 能由向量组 $A:\\alpha_1,\\alpha_2,\\cdots,\\alpha_m$ 线性表示的**充要条件**是矩阵 $A=(\\alpha_1,\\cdots,\\alpha_m)$ 的秩等于矩阵 $(A,\\beta)=(\\alpha_1,\\cdots,\\alpha_m,\\beta)$ 的秩，即 **$r(A)=r(A,\\beta)$**；\n- 且表示法**唯一**的充要条件是进一步有 $r(A)=m$。\n\n### 〔提示〕向量能由向量组线性表示的判定\n\n这一判定定理把“线性表示”问题**转化为矩阵求秩问题**，与非齐次线性方程组有解的判定定理本质相同（因为 $\\beta=x_1\\alpha_1+\\cdots+x_m\\alpha_m$ 本身就是一个线性方程组）。\n",
+      tags: ["向量组", "线性表示", "定义", "定理"]
+    },
+    {
+      id: "la-vec-def-equivalent-groups",
+      chapterId: "vector-space",
+      type: "definition",
+      module: 3,
+      card: "④",
+      title: "向量组的等价",
+      md: "### 〔定义〕\n\n设有两个向量组 $A$ 与 $B$，若 $A$ 中每个向量都能由向量组 $B$ 线性表示，且 $B$ 中每个向量也都能由向量组 $A$ 线性表示，则称向量组 $A$ 与向量组 $B$ **等价**。\n\n### 〔提示〕\n\n向量组等价满足自反性、对称性、传递性。\n\n- 任一向量组都与它自身的极大线性无关组等价，这是“用极大无关组代表整个向量组”的理论依据。\n- 注意：**等价向量组秩相等，但秩相等的向量组不一定等价**。\n",
+      tags: ["向量组", "等价", "定义"]
     },
     {
       id: "la-vec-def-vector-space",
       chapterId: "vector-space",
       type: "definition",
+      module: 4,
+      card: "⑤",
       title: "向量空间、基、维数的定义",
       md: "### 〔定义〕\n\n- 设 $V$ 是 $n$ 维向量的非空集合，如果 $V$ 对向量的加法和数乘运算**封闭**（即 $\\forall \\alpha,\\beta\\in V$ 有 $\\alpha+\\beta\\in V$，$\\forall k\\in\\mathbb{R}, \\alpha\\in V$ 有 $k\\alpha\\in V$），则称 $V$ 为**向量空间**。\n- 若向量空间 $V$ 中的向量组 $\\alpha_1,\\cdots,\\alpha_r$ 满足：$\\alpha_1,\\cdots,\\alpha_r$ 线性无关，且 $V$ 中任一向量都可由它们线性表示，则称 $\\alpha_1,\\cdots,\\alpha_r$ 为 $V$ 的一个**基**，$r$ 称为 $V$ 的**维数**，记 $\\dim V=r$。\n\n### 〔提示〕\n\n向量空间的基类似于向量组的极大无关组，维数类似于向量组的秩。\n\n- 基不唯一，但**维数唯一确定**。\n- 齐次线性方程组的解集就是一个向量空间，称为**解空间**，其维数为 $n-r(A)$。\n",
       tags: ["向量空间", "基", "维数", "定义"]
@@ -337,57 +334,31 @@ registerSubject({
       id: "la-vec-def-coordinates",
       chapterId: "vector-space",
       type: "definition",
-      title: "向量在基下的坐标",
-      md: "### 〔定义〕\n\n设 $\\alpha_1,\\alpha_2,\\cdots,\\alpha_r$ 是向量空间 $V$ 的一个基，对任意 $\\xi\\in V$，都存在**唯一**一组数 $x_1,x_2,\\cdots,x_r$，使 $\\xi=x_1\\alpha_1+x_2\\alpha_2+\\cdots+x_r\\alpha_r$，则称有序数组 $(x_1,x_2,\\cdots,x_r)$ 为向量 $\\xi$ 在基 $\\alpha_1,\\cdots,\\alpha_r$ 下的**坐标**。\n\n### 〔提示〕\n\n- 坐标的存在性由“可以线性表示”保证，唯一性由基的线性无关性保证（若有两种表示相减即得线性无关向量组的非零组合等于零，矛盾）。\n- 不同基下同一向量的坐标一般不同，二者之间通过**过渡矩阵**联系。\n",
-      tags: ["向量空间", "坐标", "定义"]
-    },
-    {
-      id: "la-vec-thm-orthogonal-basis-schmidt",
-      chapterId: "vector-space",
-      type: "theorem",
-      title: "施密特正交化方法",
-      md: "### 〔定理〕\n\n- 设 $\\alpha_1,\\alpha_2,\\cdots,\\alpha_r$ 线性无关，令 $\\beta_1=\\alpha_1$，$\\beta_2=\\alpha_2-\\dfrac{(\\alpha_2,\\beta_1)}{(\\beta_1,\\beta_1)}\\beta_1$，$\\beta_3=\\alpha_3-\\dfrac{(\\alpha_3,\\beta_1)}{(\\beta_1,\\beta_1)}\\beta_1-\\dfrac{(\\alpha_3,\\beta_2)}{(\\beta_2,\\beta_2)}\\beta_2$，依此类推，则 $\\beta_1,\\beta_2,\\cdots,\\beta_r$ **两两正交**，且与原向量组等价；\n- 再将各 $\\beta_i$ 单位化 $e_i=\\dfrac{\\beta_i}{|\\beta_i|}$，即得到一个**标准正交向量组**。\n\n### 〔提示〕\n\n施密特正交化是把一般基化为标准正交基的标准算法，是实对称矩阵正交对角化中“求正交矩阵 $Q$”这一步骤的核心工具，务必记住递推公式的结构（**每一步减去在前面已正交化向量上的投影**）。\n",
-      tags: ["向量空间", "正交化", "施密特", "定理"]
+      module: 4,
+      card: "⑥",
+      title: "坐标、基变换与过渡矩阵",
+      md: "### 〔定义〕向量在基下的坐标\n\n设 $\\alpha_1,\\alpha_2,\\cdots,\\alpha_r$ 是向量空间 $V$ 的一个基，对任意 $\\xi\\in V$，都存在**唯一**一组数 $x_1,x_2,\\cdots,x_r$，使 $\\xi=x_1\\alpha_1+x_2\\alpha_2+\\cdots+x_r\\alpha_r$，则称有序数组 $(x_1,x_2,\\cdots,x_r)$ 为向量 $\\xi$ 在基 $\\alpha_1,\\cdots,\\alpha_r$ 下的**坐标**。\n\n### 〔提示〕向量在基下的坐标\n\n- 坐标的存在性由“可以线性表示”保证，唯一性由基的线性无关性保证（若有两种表示相减即得线性无关向量组的非零组合等于零，矛盾）。\n- 不同基下同一向量的坐标一般不同，二者之间通过**过渡矩阵**联系。\n\n### 〔定义〕基变换公式与过渡矩阵\n\n- 设 $\\alpha_1,\\cdots,\\alpha_n$ 与 $\\beta_1,\\cdots,\\beta_n$ 是向量空间 $V$ 的两个基，若 $(\\beta_1,\\beta_2,\\cdots,\\beta_n)=(\\alpha_1,\\alpha_2,\\cdots,\\alpha_n)C$，则称 $C$ 为由基 $\\alpha_1,\\cdots,\\alpha_n$ 到基 $\\beta_1,\\cdots,\\beta_n$ 的**过渡矩阵**，$C$ 必为可逆矩阵。\n- 若向量 $\\xi$ 在两个基下的坐标分别为 $x$ 和 $y$，则坐标变换公式为 **$x=Cy$**。\n\n### 〔提示〕基变换公式与过渡矩阵\n\n- 过渡矩阵的各列就是新基中每个向量在旧基下的坐标。\n- 求过渡矩阵、坐标变换是向量空间部分的常见计算题型，注意坐标变换公式中 $x=Cy$ 的**方向不要与基变换公式的方向搞反**。\n",
+      tags: ["向量空间", "坐标", "基变换", "过渡矩阵", "定义"]
     },
     {
       id: "la-vec-def-orthogonal-vector",
       chapterId: "vector-space",
       type: "definition",
+      module: 4,
+      card: "⑦",
       title: "向量的内积、长度与正交",
       md: "### 〔定义〕\n\n- 设 $\\alpha=(a_1,\\cdots,a_n)^{T}$，$\\beta=(b_1,\\cdots,b_n)^{T}$，规定**内积** $(\\alpha,\\beta)=\\alpha^{T}\\beta=a_1b_1+\\cdots+a_nb_n$；\n- 向量的**长度（范数）**$|\\alpha|=\\sqrt{(\\alpha,\\alpha)}$；\n- 当 $(\\alpha,\\beta)=0$ 时，称 $\\alpha$ 与 $\\beta$ **正交**。\n- 长度为 $1$ 的向量称为**单位向量**。\n\n### 〔提示〕\n\n- 内积满足对称性 $(\\alpha,\\beta)=(\\beta,\\alpha)$、线性性等基本运算律。\n- **两两正交且都是非零向量的向量组必线性无关**，这是判断线性无关性的一条捷径。\n",
       tags: ["向量空间", "内积", "正交", "定义"]
     },
     {
-      id: "la-vec-prop-rank-relation-AB",
-      chapterId: "vector-space",
-      type: "property",
-      title: "向量组秩与矩阵秩的等价刻画",
-      md: "### 〔性质〕\n\n矩阵 $A$ 的秩 $r(A)$ 等于 $A$ 的行向量组的秩，也等于 $A$ 的列向量组的秩（**行秩＝列秩＝矩阵的秩**）。\n\n### 〔提示〕\n\n这一结论说明矩阵的秩不依赖于按行还是按列来考察，是矩阵理论中的核心定理之一，也是求向量组的秩时“**把向量按列排成矩阵求秩**”这一操作合法性的依据。\n",
-      tags: ["向量组", "矩阵", "秩", "性质"]
-    },
-    {
-      id: "la-vec-thm-representation-criterion",
+      id: "la-vec-thm-orthogonal-basis-schmidt",
       chapterId: "vector-space",
       type: "theorem",
-      title: "向量能由向量组线性表示的判定定理",
-      md: "### 〔定理〕\n\n- 向量 $\\beta$ 能由向量组 $A:\\alpha_1,\\alpha_2,\\cdots,\\alpha_m$ 线性表示的**充要条件**是矩阵 $A=(\\alpha_1,\\cdots,\\alpha_m)$ 的秩等于矩阵 $(A,\\beta)=(\\alpha_1,\\cdots,\\alpha_m,\\beta)$ 的秩，即 **$r(A)=r(A,\\beta)$**；\n- 且表示法**唯一**的充要条件是进一步有 $r(A)=m$。\n\n### 〔提示〕\n\n这一判定定理把“线性表示”问题**转化为矩阵求秩问题**，与非齐次线性方程组有解的判定定理本质相同（因为 $\\beta=x_1\\alpha_1+\\cdots+x_m\\alpha_m$ 本身就是一个线性方程组）。\n",
-      tags: ["向量组", "线性表示", "定理"]
-    },
-    {
-      id: "la-vec-def-equivalent-groups",
-      chapterId: "vector-space",
-      type: "definition",
-      title: "向量组的等价",
-      md: "### 〔定义〕\n\n设有两个向量组 $A$ 与 $B$，若 $A$ 中每个向量都能由向量组 $B$ 线性表示，且 $B$ 中每个向量也都能由向量组 $A$ 线性表示，则称向量组 $A$ 与向量组 $B$ **等价**。\n\n### 〔提示〕\n\n向量组等价满足自反性、对称性、传递性。\n\n- 任一向量组都与它自身的极大线性无关组等价，这是“用极大无关组代表整个向量组”的理论依据。\n- 注意：**等价向量组秩相等，但秩相等的向量组不一定等价**。\n",
-      tags: ["向量组", "等价", "定义"]
-    },
-    {
-      id: "la-vec-def-transition-matrix",
-      chapterId: "vector-space",
-      type: "definition",
-      title: "基变换公式与过渡矩阵",
-      md: "### 〔定义〕\n\n- 设 $\\alpha_1,\\cdots,\\alpha_n$ 与 $\\beta_1,\\cdots,\\beta_n$ 是向量空间 $V$ 的两个基，若 $(\\beta_1,\\beta_2,\\cdots,\\beta_n)=(\\alpha_1,\\alpha_2,\\cdots,\\alpha_n)C$，则称 $C$ 为由基 $\\alpha_1,\\cdots,\\alpha_n$ 到基 $\\beta_1,\\cdots,\\beta_n$ 的**过渡矩阵**，$C$ 必为可逆矩阵。\n- 若向量 $\\xi$ 在两个基下的坐标分别为 $x$ 和 $y$，则坐标变换公式为 **$x=Cy$**。\n\n### 〔提示〕\n\n- 过渡矩阵的各列就是新基中每个向量在旧基下的坐标。\n- 求过渡矩阵、坐标变换是向量空间部分的常见计算题型，注意坐标变换公式中 $x=Cy$ 的**方向不要与基变换公式的方向搞反**。\n",
-      tags: ["向量空间", "基变换", "过渡矩阵", "定义"]
+      module: 4,
+      card: "⑧",
+      title: "施密特正交化方法",
+      md: "### 〔定理〕\n\n- 设 $\\alpha_1,\\alpha_2,\\cdots,\\alpha_r$ 线性无关，令 $\\beta_1=\\alpha_1$，$\\beta_2=\\alpha_2-\\dfrac{(\\alpha_2,\\beta_1)}{(\\beta_1,\\beta_1)}\\beta_1$，$\\beta_3=\\alpha_3-\\dfrac{(\\alpha_3,\\beta_1)}{(\\beta_1,\\beta_1)}\\beta_1-\\dfrac{(\\alpha_3,\\beta_2)}{(\\beta_2,\\beta_2)}\\beta_2$，依此类推，则 $\\beta_1,\\beta_2,\\cdots,\\beta_r$ **两两正交**，且与原向量组等价；\n- 再将各 $\\beta_i$ 单位化 $e_i=\\dfrac{\\beta_i}{|\\beta_i|}$，即得到一个**标准正交向量组**。\n\n### 〔提示〕\n\n施密特正交化是把一般基化为标准正交基的标准算法，是实对称矩阵正交对角化中“求正交矩阵 $Q$”这一步骤的核心工具，务必记住递推公式的结构（**每一步减去在前面已正交化向量上的投影**）。\n",
+      tags: ["向量空间", "正交化", "施密特", "定理"]
     },
     {
       id: "la-le-def-solution-types",

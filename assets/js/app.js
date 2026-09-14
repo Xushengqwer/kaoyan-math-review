@@ -77,7 +77,9 @@ function bookParts(md) {
   sections.forEach((s) => {
     const body = s.lines.join("\n");
     if (s.kind === "提示") {
-      tip += bookBodyHtml(body);
+      // 「### 〔提示〕名字」：几块内容并在一张卡里时，每段提示前标出它属于哪一块
+      const name = s.label.replace(/^〔提示〕/, "").trim();
+      tip += (name ? '<p class="tip-from">' + bookBodyHtml(name, true) + "</p>" : "") + bookBodyHtml(body);
     } else if (!s.label) {
       if (body.trim()) main += '<div class="term-md">' + bookBodyHtml(body) + "</div>";
     } else {
