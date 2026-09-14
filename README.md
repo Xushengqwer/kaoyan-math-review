@@ -159,6 +159,7 @@ assets/
     linalg.js         线性代数数据（含少量 SVG 示意图）
     probability.js      概率论与数理统计数据（含少量 SVG 示意图）
     notes.js          笔记（跟着仓库走的那一份）
+    superseded.js     进过仓库又被改过的旧版本指纹（本机旧副本自动清掉，不用手改）
   vendor/katex/        本地打包的 KaTeX（css/js/字体），无外部依赖
   vendor/marked/       本地打包的 marked（Markdown 渲染，MIT），同样不走 CDN
 CONTENT_SCHEMA.md      新增/编辑知识点时的数据格式说明（含可选 diagram 字段说明）

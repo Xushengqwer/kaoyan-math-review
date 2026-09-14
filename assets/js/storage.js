@@ -9,6 +9,37 @@ function registerNotes(map) {
   Object.assign(window.__KAOYAN_SEED_NOTES__, map || {});
 }
 
+// 进过仓库、后来仓库里又改过的旧版本的指纹（assets/data/superseded.js 登记）。
+// 本机存的副本如果正好是其中一版，说明它早就在 Git 历史里了：打开网页时清掉，
+// 免得旧副本盖住仓库里的新版、还误报「本地已改」。自己改过、没交的内容指纹对不上，不会被动。
+window.__KAOYAN_SUPERSEDED__ = { notes: {}, book: {} };
+function registerSuperseded(map) {
+  ["notes", "book"].forEach((kind) => {
+    const all = window.__KAOYAN_SUPERSEDED__[kind];
+    Object.keys((map && map[kind]) || {}).forEach((id) => {
+      all[id] = (all[id] || []).concat(map[kind][id]);
+    });
+  });
+}
+
+// 53 位文本指纹（cyrb53），只用来认「是不是同一版」
+function textFingerprint(str) {
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+  for (let i = 0; i < str.length; i++) {
+    const ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+}
+
+function isSuperseded(kind, id, text) {
+  const list = window.__KAOYAN_SUPERSEDED__[kind][id];
+  return !!list && list.indexOf(textFingerprint(text)) >= 0;
+}
+
 const Notes = {
   _cache: null,
 
@@ -22,6 +53,17 @@ const Notes = {
       this._cache = raw ? JSON.parse(raw) : {};
     } catch (e) {
       this._cache = {};
+    }
+    // 和仓库版是同一份（多半是交给我提交过了），或者是仓库历史上的某一版：清掉本机副本。
+    // 「同一份」沿用 _norm 的口径，和 get / isPending 的判断一致。
+    const stale = Object.keys(this._cache).filter((k) => {
+      const mine = this._norm(this._cache[k]);
+      const seed = window.__KAOYAN_SEED_NOTES__[k];
+      return (!!seed && mine === this._norm(seed)) || isSuperseded("notes", k, mine);
+    });
+    if (stale.length) {
+      stale.forEach((k) => delete this._cache[k]);
+      this._save();
     }
     return this._cache;
   },
@@ -170,8 +212,9 @@ const BookEdits = {
     } catch (e) {
       this._cache = {};
     }
-    // 已经和仓库版逐字相同的（多半是交给我提交过了）清掉，免得仓库以后再改时被旧副本盖住
-    const stale = Object.keys(this._cache).filter((k) => this._cache[k] === this.seed(k));
+    // 已经和仓库版逐字相同的（多半是交给我提交过了），或者是仓库历史上的某一版，清掉，免得被旧副本盖住
+    const stale = Object.keys(this._cache).filter((k) =>
+      this._cache[k] === this.seed(k) || isSuperseded("book", k, this._cache[k]));
     if (stale.length) {
       stale.forEach((k) => delete this._cache[k]);
       this._save();
