@@ -14,6 +14,7 @@ function searchText(raw) {
   return String(raw || "")
     .replace(HTML_TAG, " ")
     .replace(/[*`~]/g, "")
+    .replace(/==/g, "")
     .toLowerCase();
 }
 
@@ -26,6 +27,7 @@ function plainText(raw) {
     .replace(/^[ \t]*(?:[-*+]|\d+\.)\s+/gm, " ")
     .replace(/^[ \t]*#{1,6}\s*/gm, " ")
     .replace(/[*`~]/g, "")
+    .replace(/==/g, "")
     .replace(/\|/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -192,6 +194,62 @@ function bulletRun(run) {
   if (rest.length === 1 && rest[0].kind === "item") return whole;
   if (rest.length === 1) return lead + T(rest[0].lead) + ul(rest[0].items.map(T));
   return lead + ul(rest.map(liOf));
+}
+
+// 教材内容（Markdown 版）的显示。数据里存的是原文，这里只负责渲染，一个字不改。
+//
+// 写法约定：
+// - 「### 〔定义〕名字」开一个小节，网页按〔〕里的字给小标题上色：
+//   定义 蓝 / 定理、推论 橙 / 性质 绿 / 方法 灰 / 提示 紫
+// - 「### 〔提示〕」那一节放进卡片底部的提示区
+// - ==重点== 显示为下划线（Markdown 本身没有下划线，这是本站约定）
+// 公式先挖出来再交给 Markdown，和笔记走同一条保护流水线。
+const BOOK_HEAD = /^#{1,6}[ \t]*(〔(定义|定理|性质|推论|方法|提示)〕.*?)[ \t]*$/;
+const BOOK_CLASS = { 定义: "def", 定理: "thm", 推论: "thm", 性质: "prp", 方法: "method" };
+
+function bookBodyHtml(text, inline) {
+  const NUL = String.fromCharCode(0);
+  const store = [];
+  const masked = String(text == null ? "" : text).split(App.MATH_RE()).map((part, i) => {
+    if (!(i % 2)) return part;
+    store.push(part);
+    return NUL + (store.length - 1) + NUL;
+  }).join("");
+  const safe = masked.split("<").join("&lt;");
+  let html = inline
+    ? marked.parseInline(safe, { gfm: true })
+    : marked.parse(safe, { gfm: true, breaks: false });
+  html = html.replace(/==((?:(?!==)[^\n])+?)==/g, "<u>$1</u>");
+  return html.replace(new RegExp(NUL + "(\\d+)" + NUL, "g"), (m, k) => escapeHtml(store[Number(k)]));
+}
+
+// → { main: 正文 HTML（一个〔〕小节一个 .term）, tip: 提示 HTML }
+function bookParts(md) {
+  const sections = [{ label: null, kind: null, lines: [] }];
+  String(md == null ? "" : md).split("\n").forEach((line) => {
+    const m = line.match(BOOK_HEAD);
+    if (m) sections.push({ label: m[1], kind: m[2], lines: [] });
+    else sections[sections.length - 1].lines.push(line);
+  });
+  let main = "";
+  let tip = "";
+  sections.forEach((s) => {
+    const body = s.lines.join("\n");
+    if (s.kind === "提示") {
+      tip += bookBodyHtml(body);
+    } else if (!s.label) {
+      if (body.trim()) main += '<div class="term-md">' + bookBodyHtml(body) + "</div>";
+    } else {
+      main += '<div class="term"><div class="term-label ' + BOOK_CLASS[s.kind] + '">' +
+        bookBodyHtml(s.label, true) + '</div><div class="term-md">' + bookBodyHtml(body) + "</div></div>";
+    }
+  });
+  return { main, tip };
+}
+
+// 搜索、摘要用的教材原文：Markdown 版直接用原文，老格式拼正文 + 提示
+function bookText(it) {
+  return it.md != null ? it.md : (it.statement || "") + " " + (it.explanation || "");
 }
 
 function subjectSeal(s) {
@@ -526,7 +584,7 @@ const App = {
           noteId: it.id,
           title: searchText(it.title),
           body: searchText(
-            it.statement + " " + (it.explanation || "") + " " + (it.tags || []).join(" ")
+            bookText(it) + " " + (it.tags || []).join(" ")
           ),
           note: searchText(Notes.get(it.id)),
         });
@@ -614,7 +672,7 @@ const App = {
 
   // 取一段包含关键词的纯文本摘要（去掉 HTML 和公式，避免搜索结果里塞满 LaTeX）
   snippet(item, query) {
-    return this.textSnippet(item.statement + " " + (item.explanation || ""), query);
+    return this.textSnippet(bookText(item), query);
   },
 
   textSnippet(raw, query) {
@@ -961,7 +1019,7 @@ const App = {
       .map((it) => {
         const inTitle = searchText(it.title).includes(q);
         const inBook = searchText(
-          it.statement + " " + (it.explanation || "") + " " + (it.tags || []).join(" ")
+          bookText(it) + " " + (it.tags || []).join(" ")
         ).includes(q);
         const inNote = searchText(Notes.get(it.id)).includes(q);
         return inTitle || inBook || inNote ? { it, inTitle, inBook, inNote } : null;
@@ -986,7 +1044,7 @@ const App = {
       const parts = [];
       if (inBook || inTitle) {
         parts.push(
-          `<span class="result-snippet">${this.textSnippet(it.statement + " " + (it.explanation || ""), raw)}</span>`
+          `<span class="result-snippet">${this.textSnippet(bookText(it), raw)}</span>`
         );
       }
       if (inNote) {
@@ -1239,6 +1297,9 @@ const App = {
   },
 
   entryHtml(item, index) {
+    // 教材写成 Markdown（md 字段）的卡走新渲染；还没转换的卡照旧
+    const book = item.md != null ? bookParts(item.md) : null;
+    const tip = book ? book.tip : bulletize(item.explanation);
     return `
       <article class="entry" id="item-${item.id}">
         <div class="entry-no" aria-hidden="true">${index}</div>
@@ -1247,9 +1308,9 @@ const App = {
           <!-- 两张卡：上面这张是教材内容（正文 + 提示），下面那张是自己写的笔记 -->
           <section class="card card-book">
             <div class="card-book-head"><span class="card-book-label">教材内容</span></div>
-            <div class="entry-statement">${bulletize(item.statement)}</div>
+            <div class="entry-statement">${book ? book.main : bulletize(item.statement)}</div>
             ${item.diagram ? `<figure class="entry-figure">${item.diagram}${item.diagramCaption ? `<figcaption>${escapeHtml(item.diagramCaption)}</figcaption>` : ""}</figure>` : ""}
-            <div class="entry-note"><div class="note-label">〔提示〕</div><div class="note-body">${bulletize(item.explanation)}</div></div>
+            ${tip.trim() ? `<div class="entry-note"><div class="note-label">〔提示〕</div><div class="note-body">${tip}</div></div>` : ""}
           </section>
           <div class="mynote-slot" data-note="${item.id}">${this.myNoteHtml(item.id)}</div>
           ${
