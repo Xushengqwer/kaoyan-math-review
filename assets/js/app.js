@@ -126,9 +126,11 @@ function bookParts(md) {
   sections.forEach((s) => {
     const body = trimRules(s.lines.join("\n"));
     if (s.kind === "提示") {
-      // 「### 〔提示〕名字」：几块内容并在一张卡里时，每段提示前标出它属于哪一块
+      // 提示放到卡片底部的提示区；「### 〔提示〕名字」和「〔定义〕名字」一样，名字跟在同一行
       const name = s.label.replace(/^〔提示〕/, "").trim();
-      tip += (name ? '<p class="tip-from">' + mdHtml(name, true) + "</p>" : "") + mdHtml(body);
+      if (name || body.trim()) {
+        tip += '<div class="note-label">' + mdHtml(s.label, true) + '</div><div class="note-body">' + mdHtml(body) + "</div>";
+      }
     } else if (!s.label) {
       if (body.trim()) main += '<div class="term-md">' + mdHtml(body) + "</div>";
     } else {
@@ -1238,7 +1240,7 @@ const App = {
             </div>
             <div class="entry-statement">${book.main}</div>
             ${it && it.diagram ? `<figure class="entry-figure">${it.diagram}${it.diagramCaption ? `<figcaption>${escapeHtml(it.diagramCaption)}</figcaption>` : ""}</figure>` : ""}
-            ${book.tip.trim() ? `<div class="entry-note"><div class="note-label">〔提示〕</div><div class="note-body">${book.tip}</div></div>` : ""}`;
+            ${book.tip ? `<div class="entry-note">${book.tip}</div>` : ""}`;
   },
 
   bookEditorHtml() {
@@ -1335,7 +1337,7 @@ const App = {
           if (toPreview) {
             const b = bookParts(ta.value);
             pv.innerHTML = `<div class="entry-statement">${b.main}</div>` +
-              (b.tip.trim() ? `<div class="entry-note"><div class="note-label">〔提示〕</div><div class="note-body">${b.tip}</div></div>` : "");
+              (b.tip ? `<div class="entry-note">${b.tip}</div>` : "");
             renderMath(pv);
           }
         } else if (action === "import-md") {
