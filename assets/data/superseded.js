@@ -25,7 +25,9 @@ registerSuperseded({
     "la-det-thm-A-Astar": ["11rw9edc096"],
     "la-det-thm-cramer": ["6ltxv0y69t","wljpvyjbpq"],
     "la-det-thm-expansion": ["763x9z5b5c","1k2lah3507g"],
+    "la-eig-def-multiplicity": ["1a7gitr2uo1"],
     "la-eig-prop-function-eigenvalue": ["1tlmqf4eb18"],
+    "la-eig-prop-geometric-le-algebraic": ["2as0jc8p3x0"],
     "la-eig-thm-orthogonal-diagonalization": ["3vxjn08802"],
     "la-le-def-augmented-matrix": ["1mii6915d61","11ceryc86eu","1qawcsfdl97"],
     "la-le-def-equivalent-system": ["mlp0v1wj19","etjm5msbmz","1q54a4b1brp"],
@@ -75,6 +77,8 @@ registerSuperseded({
     "la-vec-thm-representation-criterion": ["29e883afoil"],
   },
   book: {
+    "la-eig-def-multiplicity": ["nmzidyc2bw"],
+    "la-eig-prop-geometric-le-algebraic": ["n852bris4j"],
     "la-le-def-augmented-matrix": ["2fs5ktyj0rw"],
     "la-le-def-equivalent-system": ["898v83ifc3","2ehcxkh2gbn","boczyzdeiy"],
     "la-le-def-general-solution-structure": ["1jelxb3vfmo","10r0kifvd8s","295dizue7jq"],

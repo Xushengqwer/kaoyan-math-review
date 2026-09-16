@@ -33,7 +33,14 @@ registerSubject({
       { no: "四", name: "高斯消元算法与变量解耦" },
       { no: "五", name: "多方程组的关系拓展" }
     ] },
-    { id: "eigen", name: "特征值、特征向量与相似对角化", order: 5 },
+    // 第5章按「模块」组织：5 个模块 15 张卡（本原与求解 → 空间结构 → 基底变换 → 降维解耦 → 完美形态）。
+    { id: "eigen", name: "特征值、特征向量与相似对角化", order: 5, modules: [
+      { no: "一", name: "本原与求解", brief: "特征值与特征向量的代数与几何" },
+      { no: "二", name: "空间结构", brief: "特征向量组与特征子空间" },
+      { no: "三", name: "基底变换", brief: "相似矩阵及其不变量" },
+      { no: "四", name: "降维解耦", brief: "一般矩阵的相似对角化与应用" },
+      { no: "五", name: "完美形态", brief: "实对称矩阵与正交相似对角化" }
+    ] },
     { id: "quadratic-form", name: "二次型", order: 6 }
   ],
   items: [
@@ -464,18 +471,11 @@ registerSubject({
       id: "la-eig-def-eigen",
       chapterId: "eigen",
       type: "definition",
-      title: "特征值与特征向量的定义",
+      module: 1,
+      card: "①",
+      title: "特征值与特征向量（几何动作与代数定义）",
       md: "### 〔定义〕\n\n设 $A$ 是 $n$ 阶方阵，如果数 $\\lambda$ 和 $n$ 维非零列向量 $\\xi$ 满足 $A\\xi=\\lambda\\xi$，则称 $\\lambda$ 为 $A$ 的一个**特征值**，非零向量 $\\xi$ 称为 $A$ 的对应于特征值 $\\lambda$ 的**特征向量**。\n\n### 〔提示〕\n\n- **特征向量必须是非零向量**，但特征值可以为零。\n- 特征方程 $|A-\\lambda E|=0$ 的根就是矩阵 $A$ 的全部特征值，对应齐次方程组 $(A-\\lambda E)x=0$ 的非零解就是对应的特征向量。\n",
-      diagram: `<svg viewBox="0 0 300 180" xmlns="http://www.w3.org/2000/svg">
-        <line x1="150" y1="150" x2="150" y2="20" stroke="currentColor" stroke-width="1" stroke-dasharray="2 2" opacity="0.3"/>
-        <line x1="20" y1="150" x2="280" y2="150" stroke="currentColor" stroke-width="1" stroke-dasharray="2 2" opacity="0.3"/>
-        <line x1="150" y1="150" x2="220" y2="90" stroke="currentColor" stroke-width="2"/>
-        <polygon points="220,90 208,92 214,80" fill="currentColor"/>
-        <text x="224" y="90" font-size="11" fill="currentColor">ξ</text>
-        <line x1="150" y1="150" x2="255" y2="60" stroke="#3b82f6" stroke-width="2"/>
-        <polygon points="255,60 241,60 248,47" fill="#3b82f6"/>
-        <text x="258" y="58" font-size="11" fill="#3b82f6">Aξ = λξ</text>
-      </svg>`,
+      diagram: "<svg viewBox=\"0 0 300 180\" xmlns=\"http://www.w3.org/2000/svg\">\n        <line x1=\"150\" y1=\"150\" x2=\"150\" y2=\"20\" stroke=\"currentColor\" stroke-width=\"1\" stroke-dasharray=\"2 2\" opacity=\"0.3\"/>\n        <line x1=\"20\" y1=\"150\" x2=\"280\" y2=\"150\" stroke=\"currentColor\" stroke-width=\"1\" stroke-dasharray=\"2 2\" opacity=\"0.3\"/>\n        <line x1=\"150\" y1=\"150\" x2=\"220\" y2=\"90\" stroke=\"currentColor\" stroke-width=\"2\"/>\n        <polygon points=\"220,90 208,92 214,80\" fill=\"currentColor\"/>\n        <text x=\"224\" y=\"90\" font-size=\"11\" fill=\"currentColor\">ξ</text>\n        <line x1=\"150\" y1=\"150\" x2=\"255\" y2=\"60\" stroke=\"#3b82f6\" stroke-width=\"2\"/>\n        <polygon points=\"255,60 241,60 248,47\" fill=\"#3b82f6\"/>\n        <text x=\"258\" y=\"58\" font-size=\"11\" fill=\"#3b82f6\">Aξ = λξ</text>\n      </svg>",
       diagramCaption: "Aξ 与 ξ 方向相同（共线），只是长度被缩放了 λ 倍——这正是特征向量的几何意义",
       tags: ["特征值", "特征向量", "定义"]
     },
@@ -483,7 +483,9 @@ registerSubject({
       id: "la-eig-def-char-polynomial",
       chapterId: "eigen",
       type: "definition",
-      title: "特征多项式与特征方程",
+      module: 1,
+      card: "②",
+      title: "特征多项式与特征方程（标准求解两步法）",
       md: "### 〔定义〕\n\n- 设 $A$ 为 $n$ 阶方阵，$|A-\\lambda E|$ 称为 $A$ 的**特征多项式**，是关于 $\\lambda$ 的 $n$ 次多项式；\n- 方程 $|A-\\lambda E|=0$ 称为 $A$ 的**特征方程**，其在复数域内恰有 $n$ 个根（重根按重数计算），即为 $A$ 的 $n$ 个特征值。\n\n### 〔提示〕\n\n求特征值的标准流程：\n\n- **先写出特征多项式 $|A-\\lambda E|$，展开求根即得全部特征值**；\n- 再对每个特征值 $\\lambda_i$ 代入 $(A-\\lambda_i E)x=0$ 求基础解系即得对应特征向量。\n",
       tags: ["特征值", "特征多项式", "定义"]
     },
@@ -491,7 +493,9 @@ registerSubject({
       id: "la-eig-prop-sum-product",
       chapterId: "eigen",
       type: "property",
-      title: "特征值的和与积",
+      module: 1,
+      card: "③",
+      title: "特征值的和与积（迹与行列式的守恒）",
       md: "### 〔性质〕\n\n设 $n$ 阶方阵 $A$ 的 $n$ 个特征值为 $\\lambda_1,\\lambda_2,\\cdots,\\lambda_n$（含重根），则 **$\\displaystyle\\sum_{i=1}^n\\lambda_i=\\sum_{i=1}^n a_{ii}=\\mathrm{tr}(A)$**（矩阵的迹），且 **$\\displaystyle\\prod_{i=1}^n\\lambda_i=|A|$**。\n\n### 〔提示〕\n\n- 这是快速验证特征值求解是否正确的重要工具：求出特征值后，检验其和是否等于矩阵主对角元之和、其积是否等于矩阵行列式。\n- 由此还可得出：$A$ 可逆的充要条件是**所有特征值都不为零**。\n",
       tags: ["特征值", "迹", "行列式", "性质"]
     },
@@ -499,23 +503,60 @@ registerSubject({
       id: "la-eig-prop-function-eigenvalue",
       chapterId: "eigen",
       type: "property",
-      title: "矩阵多项式与特征值的对应关系",
+      module: 1,
+      card: "④",
+      title: "矩阵函数变形与特征值映射（多项式/逆/伴随/转置）",
       md: "### 〔性质〕\n\n设 $\\lambda$ 是 $A$ 的特征值，$\\xi$ 是对应的特征向量，则：\n\n- $k\\lambda$ 是 $kA$ 的特征值\n- $\\lambda^m$ 是 $A^m$ 的特征值\n- $\\varphi(\\lambda)=a_0+a_1\\lambda+\\cdots+a_m\\lambda^m$ 是 $\\varphi(A)=a_0E+a_1A+\\cdots+a_mA^m$ 的特征值\n- 当 $A$ 可逆时，$\\lambda^{-1}$ 是 $A^{-1}$ 的特征值，$\\dfrac{|A|}{\\lambda}$ 是 $A^{*}$ 的特征值\n\n以上情形对应的特征向量都仍是 $\\xi$。\n\n### 〔提示〕\n\n此性质是求 $A^m$、$A^{-1}$、$A^{*}$、$\\varphi(A)$ 等矩阵多项式的特征值的关键工具，**特征向量在这些变换下保持不变**，只有特征值按对应函数关系变化。\n",
       tags: ["特征值", "特征向量", "矩阵多项式", "性质"]
+    },
+    {
+      id: "la-eig-prop-AB-BA-eigenvalue",
+      chapterId: "eigen",
+      type: "property",
+      module: 1,
+      card: "⑤",
+      title: "乘积矩阵 AB 与 BA 的特征值（含秩 1 矩阵秒杀）",
+      md: "### 〔性质〕\n\n- 设 $A$ 为 $m\\times n$ 矩阵，$B$ 为 $n\\times m$ 矩阵，则 $AB$（$m$ 阶方阵）与 $BA$（$n$ 阶方阵）有**相同的非零特征值**（重数也相同）。\n- 特别地，当 $m=n$ 时，$AB$ 与 $BA$ 的特征多项式相同。\n\n### 〔提示〕\n\n此性质常用于求形如 $\\alpha\\beta^{T}$（秩为 1 的矩阵）的特征值：因为 $\\beta^{T}\\alpha$ 是一个数，**$\\alpha\\beta^{T}$ 的非零特征值就等于这个数 $\\beta^{T}\\alpha$**，其余特征值都为零，是考研中处理秩 1 矩阵特征值问题的经典技巧。\n",
+      tags: ["特征值", "矩阵乘法", "性质"]
+    },
+    {
+      id: "la-eig-prop-eigenvector-linear-combo",
+      chapterId: "eigen",
+      type: "property",
+      module: 2,
+      card: "⑥",
+      title: "同特征值的特征向量与特征子空间（解空间封闭性）",
+      md: "### 〔性质〕\n\n设 $\\xi_1,\\xi_2$ 都是方阵 $A$ 属于同一特征值 $\\lambda_0$ 的特征向量，则当 $k_1\\xi_1+k_2\\xi_2\\neq0$ 时，$k_1\\xi_1+k_2\\xi_2$ **仍是 $A$ 属于 $\\lambda_0$ 的特征向量**。\n\n### 〔提示〕\n\n- 这说明属于同一特征值 $\\lambda_0$ 的全部特征向量再添上零向量，构成一个向量空间，即齐次方程组 $(A-\\lambda_0E)x=0$ 的解空间（称为 $\\lambda_0$ 的**特征子空间**）。\n- 但**不同特征值对应的特征向量之和一般不再是特征向量**。\n",
+      tags: ["特征值", "特征向量", "性质"]
     },
     {
       id: "la-eig-thm-distinct-independent",
       chapterId: "eigen",
       type: "theorem",
-      title: "不同特征值对应特征向量线性无关",
+      module: 2,
+      card: "⑦",
+      title: "不同特征值的特征向量线性无关（宏观与微观的尺度冲突）",
       md: "### 〔定理〕\n\n设 $\\lambda_1,\\lambda_2,\\cdots,\\lambda_m$ 是方阵 $A$ 的 $m$ 个**互不相同**的特征值，$\\xi_1,\\xi_2,\\cdots,\\xi_m$ 依次是对应的特征向量，则 $\\xi_1,\\xi_2,\\cdots,\\xi_m$ **线性无关**。\n\n### 〔提示〕\n\n- 更一般地，属于不同特征值的特征向量组，把各自对应的线性无关的特征向量合并在一起，**整体仍线性无关**。\n- 这是判断矩阵能否相似对角化的重要基础定理。\n",
       tags: ["特征值", "特征向量", "线性无关", "定理"]
+    },
+    {
+      id: "la-eig-def-multiplicity",
+      chapterId: "eigen",
+      type: "definition",
+      types: ["definition", "property"],
+      module: 2,
+      card: "⑧",
+      title: "代数重数与几何重数（定义、几何重数 ≤ 代数重数与缩水机制）",
+      md: "### 〔定义〕特征值的代数重数与几何重数\n\n- 特征值 $\\lambda_0$ 作为特征方程 $|A-\\lambda E|=0$ 的根的重数，称为 $\\lambda_0$ 的**代数重数**；\n- $\\lambda_0$ 对应的线性无关特征向量的最大个数，即 $n-r(A-\\lambda_0E)$，称为 $\\lambda_0$ 的**几何重数**。\n\n### 〔提示〕特征值的代数重数与几何重数\n\n- 几何重数就是对应齐次方程组 $(A-\\lambda_0E)x=0$ 解空间的维数。\n- 代数重数与几何重数是理解“何时可对角化”问题的两把标尺，**二者相等是可对角化的关键**。\n\n\n### 〔性质〕几何重数不超过代数重数\n\n对任意 $n$ 阶方阵 $A$ 的任一特征值 $\\lambda_0$，其**几何重数不超过代数重数**，即 $n-r(A-\\lambda_0E)\\le k_0$，其中 $k_0$ 为 $\\lambda_0$ 的代数重数。\n\n### 〔提示〕几何重数不超过代数重数\n\n这一不等式解释了为何一般矩阵未必可对角化：只有当**每个特征值的几何重数都恰好等于代数重数**（即不等式取等号）时，才能凑够 $n$ 个线性无关的特征向量实现对角化。\n",
+      tags: ["特征值", "重数", "定义", "性质"]
     },
     {
       id: "la-eig-def-similar",
       chapterId: "eigen",
       type: "definition",
-      title: "相似矩阵的定义",
+      module: 3,
+      card: "⑨",
+      title: "相似矩阵与相似变换（同一个几何动作在不同基下的表达）",
       md: "### 〔定义〕\n\n设 $A,B$ 都是 $n$ 阶方阵，若存在可逆矩阵 $P$，使得 $P^{-1}AP=B$，则称矩阵 $A$ 与 $B$ **相似**，记作 $A\\sim B$，$P$ 称为把 $A$ 变成 $B$ 的相似变换矩阵。\n\n### 〔提示〕\n\n- 相似是一种等价关系（满足自反性、对称性、传递性）。\n- 相似矩阵有相同的特征多项式，从而有相同的特征值、相同的迹、相同的行列式，但**特征向量一般不同**（需通过 $P$ 变换）。\n",
       tags: ["相似矩阵", "定义"]
     },
@@ -523,7 +564,9 @@ registerSubject({
       id: "la-eig-prop-similar-invariants",
       chapterId: "eigen",
       type: "property",
-      title: "相似矩阵的不变量",
+      module: 3,
+      card: "⑩",
+      title: "相似矩阵的不变量与排除法判定（迹/行列式/秩/特征值的充要与必要陷阱）",
       md: "### 〔性质〕\n\n若 $A\\sim B$，则：\n\n- $A$ 与 $B$ 有相同的特征多项式，从而有相同的特征值\n- $|A|=|B|$，$\\mathrm{tr}(A)=\\mathrm{tr}(B)$\n- $r(A)=r(B)$\n- 若 $A$ 可逆，则 $B$ 也可逆，且 $A^{-1}\\sim B^{-1}$\n- $A^m\\sim B^m$\n\n### 〔提示〕\n\n- 反之，**特征值相同的两个矩阵不一定相似**（相似是比“特征值相同”更强的条件）。\n- 判断两矩阵是否相似的常用方法：先比较特征值、迹、行列式、秩是否都相等，若某一不变量不等则一定不相似。\n",
       tags: ["相似矩阵", "特征值", "性质"]
     },
@@ -531,15 +574,29 @@ registerSubject({
       id: "la-eig-thm-diagonalizable-iff",
       chapterId: "eigen",
       type: "theorem",
-      title: "矩阵可相似对角化的充要条件",
+      module: 4,
+      card: "⑪",
+      title: "矩阵可相似对角化的充要条件（P 的可逆性与重数充要检验）",
       md: "### 〔定理〕\n\n- $n$ 阶方阵 $A$ 能够相似对角化（即存在可逆矩阵 $P$ 使 $P^{-1}AP=\\Lambda$ 为对角矩阵）的充要条件是 $A$ 有**$n$ 个线性无关的特征向量**；\n- 等价地，对 $A$ 的每一个特征值 $\\lambda_i$（设其重数为 $k_i$），都有 $n-r(A-\\lambda_i E)=k_i$，即该特征值的**几何重数等于代数重数**。\n\n### 〔提示〕\n\n- 重要推论：若 $A$ 的 $n$ 个特征值互不相同，则 $A$ 必可相似对角化（充分不必要条件）。\n- 对角化后 $\\Lambda=\\mathrm{diag}(\\lambda_1,\\cdots,\\lambda_n)$ 的对角元就是 $A$ 的全部特征值，$P$ 的各列就是对应的线性无关特征向量，且**顺序要与 $\\Lambda$ 中特征值的排列顺序一致**。\n",
       tags: ["相似对角化", "特征值", "定理"]
+    },
+    {
+      id: "la-eig-thm-power-via-diagonalization",
+      chapterId: "eigen",
+      type: "theorem",
+      module: 4,
+      card: "⑫",
+      title: "利用相似对角化计算矩阵的幂（解耦与连乘消去思想）",
+      md: "### 〔定理〕\n\n若 $n$ 阶方阵 $A$ 可相似对角化，即存在可逆矩阵 $P$ 使 $P^{-1}AP=\\Lambda=\\mathrm{diag}(\\lambda_1,\\cdots,\\lambda_n)$，则 $A=P\\Lambda P^{-1}$，从而对任意正整数 $k$ 有 **$A^{k}=P\\Lambda^{k}P^{-1}=P\\,\\mathrm{diag}(\\lambda_1^{k},\\cdots,\\lambda_n^{k})\\,P^{-1}$**。\n\n### 〔提示〕\n\n这是求矩阵高次幂 $A^k$ 最重要的应用之一：直接计算 $A^k$ 通常很繁琐，而**对角矩阵的幂只需把对角元分别取幂**，再用 $P$、$P^{-1}$ 还原即可，是考研计算题的常规套路（常与数列递推、差分方程结合考查）。\n",
+      tags: ["相似对角化", "矩阵的幂", "定理"]
     },
     {
       id: "la-eig-def-orthogonal-matrix",
       chapterId: "eigen",
       type: "definition",
-      title: "正交矩阵的定义",
+      module: 5,
+      card: "⑬",
+      title: "正交矩阵与正交变换（保角保距、逆即转置）",
       md: "### 〔定义〕\n\n若 $n$ 阶方阵 $Q$ 满足 $Q^{T}Q=QQ^{T}=E$（即 $Q^{-1}=Q^{T}$），则称 $Q$ 为**正交矩阵**。\n\n### 〔提示〕\n\n- 正交矩阵的等价刻画：$Q$ 的列向量组是两两正交的单位向量组（标准正交基），行向量组亦然。\n- 正交矩阵对应的线性变换（正交变换）**保持向量的内积、长度和向量间夹角不变**，是实对称矩阵对角化中过渡矩阵的标准选取。\n",
       tags: ["正交矩阵", "定义"]
     },
@@ -547,7 +604,9 @@ registerSubject({
       id: "la-eig-thm-real-symmetric-eigen",
       chapterId: "eigen",
       type: "theorem",
-      title: "实对称矩阵特征值与特征向量的性质",
+      module: 5,
+      card: "⑭",
+      title: "实对称矩阵的三大特权（实根性、正交性、重根必满）",
       md: "### 〔定理〕\n\n设 $A$ 为 $n$ 阶实对称矩阵，则：\n\n- $A$ 的特征值都是**实数**\n- $A$ 的属于不同特征值的特征向量必**正交**\n- 对于 $k$ 重特征值 $\\lambda_0$，矩阵 $A-\\lambda_0E$ 的秩必为 $n-k$，即恰有 $k$ 个线性无关的特征向量与之对应（**几何重数等于代数重数**）\n\n### 〔提示〕\n\n- 这三条性质保证了实对称矩阵**一定可以相似对角化，且可以用正交矩阵实现对角化**，是本章的核心考点。\n- 性质(2)是施密特正交化只需在同一特征值内部进行的原因——不同特征值的特征向量天然正交，无需额外正交化。\n",
       tags: ["实对称矩阵", "特征值", "定理"]
     },
@@ -555,49 +614,11 @@ registerSubject({
       id: "la-eig-thm-orthogonal-diagonalization",
       chapterId: "eigen",
       type: "theorem",
-      title: "实对称矩阵的正交相似对角化定理",
+      module: 5,
+      card: "⑮",
+      title: "实对称矩阵的正交相似对角化（施密特正交化的真正落点）",
       md: "### 〔定理〕\n\n对任意 $n$ 阶实对称矩阵 $A$，都**存在正交矩阵 $Q$**，使得 $Q^{-1}AQ=Q^{T}AQ=\\Lambda$ 为对角矩阵，其中 $\\Lambda$ 的对角元恰为 $A$ 的 $n$ 个特征值（含重数）。\n\n### 〔提示〕\n\n求正交对角化的标准步骤：\n\n- 求出 $A$ 的全部特征值\n- 对每个特征值求出对应的线性无关特征向量\n- 对同一特征值对应的多个特征向量施密特正交化，不同特征值的特征向量自动正交\n- 把所有特征向量单位化后按列排成正交矩阵 $Q$\n\n这是考研线代压轴计算题的典型考法。\n",
       tags: ["实对称矩阵", "正交对角化", "定理"]
-    },
-    {
-      id: "la-eig-prop-eigenvector-linear-combo",
-      chapterId: "eigen",
-      type: "property",
-      title: "同一特征值对应特征向量的线性组合",
-      md: "### 〔性质〕\n\n设 $\\xi_1,\\xi_2$ 都是方阵 $A$ 属于同一特征值 $\\lambda_0$ 的特征向量，则当 $k_1\\xi_1+k_2\\xi_2\\neq0$ 时，$k_1\\xi_1+k_2\\xi_2$ **仍是 $A$ 属于 $\\lambda_0$ 的特征向量**。\n\n### 〔提示〕\n\n- 这说明属于同一特征值 $\\lambda_0$ 的全部特征向量再添上零向量，构成一个向量空间，即齐次方程组 $(A-\\lambda_0E)x=0$ 的解空间（称为 $\\lambda_0$ 的**特征子空间**）。\n- 但**不同特征值对应的特征向量之和一般不再是特征向量**。\n",
-      tags: ["特征值", "特征向量", "性质"]
-    },
-    {
-      id: "la-eig-prop-AB-BA-eigenvalue",
-      chapterId: "eigen",
-      type: "property",
-      title: "AB 与 BA 特征值的关系",
-      md: "### 〔性质〕\n\n- 设 $A$ 为 $m\\times n$ 矩阵，$B$ 为 $n\\times m$ 矩阵，则 $AB$（$m$ 阶方阵）与 $BA$（$n$ 阶方阵）有**相同的非零特征值**（重数也相同）。\n- 特别地，当 $m=n$ 时，$AB$ 与 $BA$ 的特征多项式相同。\n\n### 〔提示〕\n\n此性质常用于求形如 $\\alpha\\beta^{T}$（秩为 1 的矩阵）的特征值：因为 $\\beta^{T}\\alpha$ 是一个数，**$\\alpha\\beta^{T}$ 的非零特征值就等于这个数 $\\beta^{T}\\alpha$**，其余特征值都为零，是考研中处理秩 1 矩阵特征值问题的经典技巧。\n",
-      tags: ["特征值", "矩阵乘法", "性质"]
-    },
-    {
-      id: "la-eig-def-multiplicity",
-      chapterId: "eigen",
-      type: "definition",
-      title: "特征值的代数重数与几何重数",
-      md: "### 〔定义〕\n\n- 特征值 $\\lambda_0$ 作为特征方程 $|A-\\lambda E|=0$ 的根的重数，称为 $\\lambda_0$ 的**代数重数**；\n- $\\lambda_0$ 对应的线性无关特征向量的最大个数，即 $n-r(A-\\lambda_0E)$，称为 $\\lambda_0$ 的**几何重数**。\n\n### 〔提示〕\n\n- 几何重数就是对应齐次方程组 $(A-\\lambda_0E)x=0$ 解空间的维数。\n- 代数重数与几何重数是理解“何时可对角化”问题的两把标尺，**二者相等是可对角化的关键**。\n",
-      tags: ["特征值", "重数", "定义"]
-    },
-    {
-      id: "la-eig-prop-geometric-le-algebraic",
-      chapterId: "eigen",
-      type: "property",
-      title: "几何重数不超过代数重数",
-      md: "### 〔性质〕\n\n对任意 $n$ 阶方阵 $A$ 的任一特征值 $\\lambda_0$，其**几何重数不超过代数重数**，即 $n-r(A-\\lambda_0E)\\le k_0$，其中 $k_0$ 为 $\\lambda_0$ 的代数重数。\n\n### 〔提示〕\n\n这一不等式解释了为何一般矩阵未必可对角化：只有当**每个特征值的几何重数都恰好等于代数重数**（即不等式取等号）时，才能凑够 $n$ 个线性无关的特征向量实现对角化。\n",
-      tags: ["特征值", "重数", "性质"]
-    },
-    {
-      id: "la-eig-thm-power-via-diagonalization",
-      chapterId: "eigen",
-      type: "theorem",
-      title: "利用相似对角化计算矩阵的幂",
-      md: "### 〔定理〕\n\n若 $n$ 阶方阵 $A$ 可相似对角化，即存在可逆矩阵 $P$ 使 $P^{-1}AP=\\Lambda=\\mathrm{diag}(\\lambda_1,\\cdots,\\lambda_n)$，则 $A=P\\Lambda P^{-1}$，从而对任意正整数 $k$ 有 **$A^{k}=P\\Lambda^{k}P^{-1}=P\\,\\mathrm{diag}(\\lambda_1^{k},\\cdots,\\lambda_n^{k})\\,P^{-1}$**。\n\n### 〔提示〕\n\n这是求矩阵高次幂 $A^k$ 最重要的应用之一：直接计算 $A^k$ 通常很繁琐，而**对角矩阵的幂只需把对角元分别取幂**，再用 $P$、$P^{-1}$ 还原即可，是考研计算题的常规套路（常与数列递推、差分方程结合考查）。\n",
-      tags: ["相似对角化", "矩阵的幂", "定理"]
     },
     {
       id: "la-qf-def-quadratic-form",
