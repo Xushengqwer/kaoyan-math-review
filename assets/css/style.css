@@ -870,6 +870,10 @@ body.mynote-zoomed { overflow: hidden; }
 .md table { border-collapse: collapse; margin: 12px 0; font-size: 13px; display: block; overflow-x: auto; }
 .md th, .md td { border: 1px solid var(--border); padding: 6px 11px; text-align: left; }
 .md th { background: color-mix(in srgb, var(--text) 5%, transparent); font-weight: 700; }
+/* 教材里的表格：和笔记同一个样子（原来没有教材用过表格，浏览器默认无边框、手机上会撑宽） */
+.term-md table, .entry-note .note-body table { border-collapse: collapse; margin: 10px 0; font-size: 14px; line-height: 1.7; display: block; overflow-x: auto; }
+.term-md th, .term-md td, .entry-note .note-body th, .entry-note .note-body td { border: 1px solid var(--border); padding: 6px 11px; text-align: left; }
+.term-md th, .entry-note .note-body th { background: color-mix(in srgb, var(--text) 5%, transparent); font-weight: 700; }
 .md a { color: var(--accent); text-decoration: underline; }
 
 /* ---- 编辑器顶部的状态条 ---- */
