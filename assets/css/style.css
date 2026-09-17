@@ -752,10 +752,10 @@ mark { background: #ffe58a; color: inherit; border-radius: 3px; padding: 0 2px; 
   margin-left: auto; font-size: 12.5px; color: var(--text-3);
 }
 .mynote-edit:hover { color: var(--accent); }
-/* 笔记正文：纯文本，保留换行 */
+/* 笔记正文：一律按 Markdown 显示，换行由标签控制 */
 .mynote-body {
   font-size: 14px; line-height: 1.9; color: var(--text);
-  white-space: pre-wrap; word-break: break-word;
+  word-break: break-word;
 }
 /* **两个星号** 之间的内容显示为加粗（只在显示时转换，原文不动） */
 .mynote-body strong, .mynote-preview strong { font-weight: 700; color: var(--text); }
@@ -813,7 +813,7 @@ body.mynote-zoomed { overflow: hidden; }
   border: 1px dashed var(--border); border-radius: var(--r-sm);
   background: var(--bg);
   font-size: 14px; line-height: 1.9; color: var(--text);
-  white-space: pre-wrap; word-break: break-word;
+  word-break: break-word;
 }
 .mynote-actions { display: flex; gap: 8px; margin-top: 10px; }
 .mynote-actions button {
@@ -871,8 +871,6 @@ body.mynote-zoomed { overflow: hidden; }
 .md th, .md td { border: 1px solid var(--border); padding: 6px 11px; text-align: left; }
 .md th { background: color-mix(in srgb, var(--text) 5%, transparent); font-weight: 700; }
 .md a { color: var(--accent); text-decoration: underline; }
-/* Markdown 模式下由标签控制换行，不要再用 pre-wrap */
-.mynote-body.md, .mynote-preview.md { white-space: normal; }
 
 /* ---- 编辑器顶部的状态条 ---- */
 .mynote-warn {
@@ -883,13 +881,7 @@ body.mynote-zoomed { overflow: hidden; }
   padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 700;
 }
 .mynote-fmt.md { background: var(--accent-soft); color: var(--accent); }
-.mynote-fmt.text { background: var(--hairline); color: var(--text-2); }
 .mynote-fmt-why { color: var(--text-3); }
-.mynote-fmt-btn {
-  padding: 2px 10px; border-radius: 999px; font-size: 11px;
-  color: var(--text-2); background: var(--bg); box-shadow: inset 0 0 0 1px var(--border);
-}
-.mynote-fmt-btn:hover { color: var(--accent); }
 .mynote-codewarn {
   padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 600;
   background: var(--pend-bg); color: var(--pend);

@@ -1430,59 +1430,17 @@ const App = {
     return new RegExp("(\\$\\$[\\s\\S]*?\\$\\$|\\$[^$\\n]*\\$)");
   },
 
-  // 这条笔记按不按 Markdown 显示。
-  // 判定只看内容本身（所以跟着笔记走，换设备一样），并允许手动覆盖。
-  // 现有的纯文本笔记一条都不含下面这些记号，所以不会被影响。
-  looksLikeMarkdown(text) {
-    const body = String(text || "").split(this.MATH_RE()).filter((_, i) => !(i % 2)).join(" ");
-    return body.split(String.fromCharCode(10)).some((l) =>
-      /^#{1,6}\s/.test(l) ||          // # 标题
-      /^\s*```/.test(l) ||            // 代码围栏
-      /^\s*\|.*\|/.test(l) ||          // | 表格 |
-      /^>\s/.test(l) ||               // > 引用
-      /^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(l)   // --- 分隔线
-    );
-  },
-
-  noteFormat(noteId, text) {
-    const forced = NoteFormat.get(noteId);
-    if (forced) return forced;
-    return this.looksLikeMarkdown(text) ? "md" : "text";
-  },
-
-  // 笔记正文的显示。四步流水线，存储和导出的原文一个字不动：
-  //   ① 把 $...$ / $$...$$ 挖出来换成占位符（公式先保护起来）
-  //   ② 剩下的交给 Markdown 渲染（或纯文本模式下只认 **加粗** 和 ==下划线==）
-  //   ③ 占位符换回公式，公式里的 < > & 转成实体，浏览器解码回真字符
-  //   ④ 交给 KaTeX（由调用方的 renderMath 完成）
-  // Markdown 这条路和教材是同一个函数（mdHtml），〔〕小标题上色、==下划线== 两边一致。
-  noteBodyHtml(text, noteId) {
-    const asMd = noteId !== undefined
-      ? this.noteFormat(noteId, text) === "md"
-      : this.looksLikeMarkdown(text);
-    if (asMd && typeof marked !== "undefined") return noteMdHtml(text);
-
-    const NUL = String.fromCharCode(0);
-    const store = [];
-    // ① 一律先从「原文」里挖公式段，先不转义。
-    //    （早先纯文本那条路是先 escapeHtml 再挖，公式会被转义两次，
-    //      $r(A) < n-1$ 就显示成字面的 &lt;。）
-    const masked = String(text == null ? "" : text).split(this.MATH_RE()).map((part, i) => {
-      if (!(i % 2)) return part;
-      store.push(part);
-      return NUL + (store.length - 1) + NUL;
-    }).join("");
-    // ③ 还原时才转义公式（underlineAndUnmask 里做）：浏览器解码回真的 < > &，KaTeX 照常识别
-
-    // ② 纯文本模式：维持原样，只认 **加粗** 和 ==下划线==（下划线和公式还原交给 underlineAndUnmask）
-    const BOLD = new RegExp("\\*\\*([^*\\n]+?)\\*\\*", "g");
-    return underlineAndUnmask(escapeHtml(masked).replace(BOLD, "<strong>$1</strong>"), store);
+  // 笔记正文的显示：一律按 Markdown，和教材同一个函数（mdHtml）——
+  // 公式先挖出来保护、〔〕小标题上色、==重点== 下划线；存储和导出的原文一个字不动。
+  // （以前还有按内容自动判定、可手动切换的「纯文本」显示模式，已统一去掉。）
+  noteBodyHtml(text) {
+    return noteMdHtml(text);
   },
 
   // 体检：Markdown 里最容易踩的坑是「缩进被当成代码块」。
   // 渲染完数一下 <pre>，多于原文的 ``` 围栏就说明有意外代码块。
   codeBlockCheck(text) {
-    if (!this.looksLikeMarkdown(text) || typeof marked === "undefined") return null;
+    if (typeof marked === "undefined") return null;
     const html = this.noteBodyHtml(text);
     const got = (html.match(/<pre/g) || []).length;
     const want = Math.floor((text.match(/^\s*```/gm) || []).length / 2);
@@ -1528,7 +1486,7 @@ const App = {
         }
         <button class="mynote-edit" data-action="edit">编辑</button>
       </div>
-      <div class="mynote-body${this.noteFormat(noteId, text) === "md" ? " md" : ""}">${this.noteBodyHtml(text, noteId)}</div>
+      <div class="mynote-body md">${this.noteBodyHtml(text, noteId)}</div>
     </div>`;
   },
 
@@ -1599,30 +1557,16 @@ const App = {
           pv.hidden = !toPreview;
           btn.textContent = toPreview ? "回到编辑" : "预览";
           if (toPreview) {
-            const fmt = this.noteFormat(id, ta.value);
-            pv.className = "mynote-preview" + (fmt === "md" ? " md" : "");
+            pv.className = "mynote-preview md";
             pv.innerHTML = ta.value.trim() ? this.noteBodyHtml(ta.value, id) : "还没写内容";
             renderMath(pv);
           }
           this.refreshEditorWarn(slot, id);
         } else if (action === "import-md") {
           slot.querySelector(".mynote-md-file").click();
-        } else if (action === "toggle-fmt") {
-          // 手动切换显示模式（只影响这一条，且只存在本机）
-          const ta = slot.querySelector(".mynote-input");
-          const now = this.noteFormat(id, ta.value);
-          NoteFormat.set(id, now === "md" ? "text" : "md");
-          this.refreshEditorWarn(slot, id);
-          const pv = slot.querySelector(".mynote-preview");
-          if (!pv.hidden) {
-            const fmt = this.noteFormat(id, ta.value);
-            pv.className = "mynote-preview" + (fmt === "md" ? " md" : "");
-            pv.innerHTML = ta.value.trim() ? this.noteBodyHtml(ta.value, id) : "还没写内容";
-            renderMath(pv);
-          }
         } else if (action === "save") {
           const val = slot.querySelector(".mynote-input").value;
-          const chk = this.noteFormat(id, val) === "md" ? this.codeBlockCheck(val) : null;
+          const chk = this.codeBlockCheck(val);
           if (chk && !confirm(
             "体检发现 " + chk.lines.length + " 行缩进被当成了代码块（第 " +
             chk.lines.slice(0, 8).join("、") + (chk.lines.length > 8 ? " …" : "") + " 行）。" +
@@ -1681,24 +1625,16 @@ const App = {
     });
   },
 
-  // 编辑器顶部的状态条：当前按什么显示、能不能切、有没有意外代码块
-  refreshEditorWarn(slot, noteId) {
+  // 编辑器顶部的状态条：写法提示 + 有没有意外代码块
+  refreshEditorWarn(slot) {
     const box = slot.querySelector(".mynote-warn");
     const ta = slot.querySelector(".mynote-input");
     if (!box || !ta) return;
-    const fmt = this.noteFormat(noteId, ta.value);
-    const forced = NoteFormat.get(noteId);
-    const chk = fmt === "md" ? this.codeBlockCheck(ta.value) : null;
-    const bits = [];
-    bits.push('<span class="mynote-fmt ' + fmt + '">' +
-      (fmt === "md" ? "Markdown" : "纯文本") + "</span>");
-    bits.push('<span class="mynote-fmt-why">' +
-      (forced ? "（手动指定）" : "（按内容自动判定）") + "</span>");
-    bits.push('<button class="mynote-fmt-btn" data-action="toggle-fmt">改成' +
-      (fmt === "md" ? "纯文本" : "Markdown") + "</button>");
-    bits.push('<span class="mynote-fmt-why">' + (fmt === "md"
-      ? "「### 〔定义〕名字」小标题按〔〕里的字自动上色 · ==重点== 显示下划线"
-      : "==重点== 显示下划线") + "</span>");
+    const chk = this.codeBlockCheck(ta.value);
+    const bits = [
+      '<span class="mynote-fmt md">Markdown</span>',
+      '<span class="mynote-fmt-why">「### 〔定义〕名字」小标题按〔〕里的字自动上色 · ==重点== 显示下划线</span>',
+    ];
     if (chk) {
       bits.push('<span class="mynote-codewarn">⚠ 第 ' +
         chk.lines.slice(0, 6).join("、") + (chk.lines.length > 6 ? " …" : "") +
@@ -1767,11 +1703,10 @@ const App = {
     return p.typeLabel + String(p.index).padStart(2, "0");
   },
 
-  // 后缀跟着内容走：Markdown 的笔记导出 .md，纯文本的仍是 .txt。
-  // 文件名：线性代数-第3章-定义05-向量空间、基、维数的定义.md
-  //         线性代数-第5章-本章总结-特征值与特征向量.txt
-  noteFileExt(noteId) {
-    return this.noteFormat(noteId, Notes.get(noteId)) === "md" ? ".md" : ".txt";
+  // 笔记一律是 Markdown，导出 .md。
+  // 文件名：线性代数-第3章-卡③-线性表示：点与组的关系（能否拼出目标向量）.md
+  noteFileExt() {
+    return ".md";
   },
 
   noteFileName(noteId) {
@@ -1804,7 +1739,7 @@ const App = {
     if (!p) return body;
     const where = p.subject.name + " · 第" + p.chapter.order + "章 " + p.chapter.name +
       " · " + this.noteSlotLabel(p);
-    const fmt = this.noteFormat(noteId, body) === "md" ? "Markdown" : "纯文本";
+    const fmt = "Markdown";
     return [
       "> **" + where + "**",
       "> " + p.title + "　·　`" + noteId + "`　·　" + fmt,
