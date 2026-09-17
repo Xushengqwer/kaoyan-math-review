@@ -372,7 +372,7 @@ const App = {
     this._pendingHighlight = null;
     const node = target && document.getElementById("item-" + target);
     if (node) {
-      node.scrollIntoView({ block: "center" });
+      this.scrollToItem(node);
       node.classList.add("flash");
       setTimeout(() => node.classList.remove("flash"), 1800);
     } else {
@@ -1191,13 +1191,28 @@ const App = {
     });
   },
 
+  // 跳到某张卡：让卡片顶部（标题）停在吸顶栏下方。
+  // 原来用 scrollIntoView 把整张卡居中——卡片比一屏高时，
+  // 屏幕中间落在下面的笔记上，标题和教材反而被滚出屏幕。
+  scrollToItem(node) {
+    // 吸顶的只有手机顶栏和章节工具栏；按「吸住的位置 + 自身高度」算出会挡住多少
+    let covered = 0;
+    document.querySelectorAll(".mobile-topbar, .toolbar").forEach((el) => {
+      const cs = getComputedStyle(el);
+      if (!el.offsetHeight || cs.display === "none" || cs.position !== "sticky") return;
+      covered = Math.max(covered, (parseFloat(cs.top) || 0) + el.offsetHeight);
+    });
+    const top = node.getBoundingClientRect().top + window.scrollY - covered - 12;
+    window.scrollTo({ top: Math.max(0, top) });
+  },
+
   bindToc(scope) {
     scope.querySelectorAll("[data-goto]").forEach((a) => {
       a.addEventListener("click", (e) => {
         e.preventDefault();
         const node = document.getElementById("item-" + a.dataset.goto);
         if (!node) return;
-        node.scrollIntoView({ block: "center" });
+        this.scrollToItem(node);
         node.classList.add("flash");
         setTimeout(() => node.classList.remove("flash"), 1800);
       });
