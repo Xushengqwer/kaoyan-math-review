@@ -155,7 +155,7 @@ assets/
     katex-init.js      KaTeX 渲染封装
     app.js           侧边栏导航 + hash 路由 + 全局搜索 + 笔记编辑
   data/
-    calculus.js       高等数学数据（含少量 SVG 示意图）
+    calculus.js       高等数学数据（按章节「模块」组织）
     linalg.js         线性代数数据（含少量 SVG 示意图）
     probability.js      概率论与数理统计数据（含少量 SVG 示意图）
     notes.js          笔记（跟着仓库走的那一份）
