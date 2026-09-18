@@ -3,883 +3,401 @@ registerSubject({
   name: "概率论与数理统计",
   color: "#a1751f",
   chapters: [
-    { id: "probability-basics", name: "随机事件与概率", order: 1 },
-    { id: "random-variable", name: "一维随机变量及其分布", order: 2 },
-    { id: "multivariate-rv", name: "多维随机变量及其分布", order: 3 },
-    { id: "numerical-characteristics", name: "随机变量的数字特征", order: 4 },
-    { id: "limit-theorems", name: "大数定律与中心极限定理", order: 5 },
-    { id: "statistics-basics", name: "数理统计的基本概念", order: 6 },
-    { id: "parameter-estimation", name: "参数估计", order: 7 },
-    { id: "hypothesis-testing", name: "假设检验", order: 8 }
+    // 第1章按「模块」组织：2 个模块 5 张卡。
+    { id: "probability-basics", name: "随机事件与概率", order: 1, modules: [
+      { no: "一", name: "随机事件与概率", brief: "研究对象：事件及其运算，概率的定义、性质与两种等可能模型" },
+      { no: "二", name: "条件概率与独立性", brief: "已知部分信息时的概率，以及事件之间互不影响的情形" }
+    ] },
+    // 第2章按「模块」组织：3 个模块 4 张卡。
+    { id: "random-variable", name: "一维随机变量及其分布", order: 2, modules: [
+      { no: "一", name: "随机变量与分布函数", brief: "研究对象：随机变量，以及刻画它的分布函数" },
+      { no: "二", name: "常见分布", brief: "离散型用分布律，连续型用概率密度，以及八种常见分布" },
+      { no: "三", name: "随机变量函数的分布", brief: "已知 X 的分布，求 Y = g(X) 的分布" }
+    ] },
+    // 第3章按「模块」组织：3 个模块 6 张卡。
+    { id: "multivariate-rv", name: "多维随机变量及其分布", order: 3, modules: [
+      { no: "一", name: "联合分布、边缘分布与条件分布", brief: "二维随机变量的整体分布，以及由它得到的单个分量与条件分布" },
+      { no: "二", name: "独立性与常见二维分布", brief: "分量之间互不影响的条件，以及二维均匀分布、二维正态分布" },
+      { no: "三", name: "两个随机变量函数的分布", brief: "已知 (X, Y) 的分布，求 Z = g(X, Y) 的分布" }
+    ] },
+    // 第4章按「模块」组织：2 个模块 5 张卡。
+    { id: "numerical-characteristics", name: "随机变量的数字特征", order: 4, modules: [
+      { no: "一", name: "期望与方差", brief: "随机变量的平均值与离散程度，以及常用分布的结果" },
+      { no: "二", name: "矩、协方差与相关系数", brief: "两个随机变量之间的线性关联，以及不相关与独立的区别" }
+    ] },
+    // 第5章按「模块」组织：2 个模块 2 张卡。
+    { id: "limit-theorems", name: "大数定律与中心极限定理", order: 5, modules: [
+      { no: "一", name: "大数定律", brief: "大量随机变量的平均值稳定在期望附近" },
+      { no: "二", name: "中心极限定理", brief: "大量独立随机变量之和近似服从正态分布" }
+    ] },
+    // 第6章按「模块」组织：2 个模块 3 张卡。
+    { id: "statistics-basics", name: "数理统计的基本概念", order: 6, modules: [
+      { no: "一", name: "总体、样本与统计量", brief: "研究对象：从总体中抽样，用样本的函数推断总体" },
+      { no: "二", name: "抽样分布", brief: "三大抽样分布，以及正态总体下常用统计量的分布" }
+    ] },
+    // 第7章按「模块」组织：2 个模块 4 张卡。
+    { id: "parameter-estimation", name: "参数估计", order: 7, modules: [
+      { no: "一", name: "点估计", brief: "用一个统计量估计未知参数：两种求法与三条评选标准" },
+      { no: "二", name: "区间估计", brief: "给出以一定概率包含未知参数的随机区间" }
+    ] },
+    // 第8章按「模块」组织：2 个模块 3 张卡。
+    { id: "hypothesis-testing", name: "假设检验", order: 8, modules: [
+      { no: "一", name: "基本概念", brief: "小概率原理、拒绝域、两类错误与检验步骤" },
+      { no: "二", name: "正态总体参数的检验", brief: "单个与两个正态总体的均值、方差检验" }
+    ] }
   ],
   items: [
     {
-      id: "prob-basics-def-sample-space",
+      id: "prob-evt-events",
       chapterId: "probability-basics",
       type: "definition",
-      title: "样本空间与随机事件",
-      md: "### 〔定义〕\n\n随机试验 $E$ 的所有可能结果组成的集合称为**样本空间**，记作 $\\Omega$，$\\Omega$ 中的元素称为样本点。\n\n- 样本空间的子集称为**随机事件**，简称事件，仅含一个样本点的事件称为**基本事件**；\n- $\\Omega$ 称为**必然事件**，空集 $\\varnothing$ 称为**不可能事件**。\n\n### 〔提示〕\n\n随机试验需满足三个特点：\n\n- 可重复\n- 结果不止一个且试验前明确\n- 每次试验前不能确定哪个结果出现\n\n事件发生当且仅当该子集中某一样本点出现。\n",
-      tags: ["样本空间", "随机事件", "基本概念"]
+      types: ["definition", "property"],
+      module: 1,
+      card: "①",
+      title: "随机事件及其运算",
+      md: "### 〔定义〕随机试验与样本空间\n\n满足下列条件的试验称为==随机试验==，记作 $E$：\n- **可重复**：可以在相同条件下重复进行；\n- **结果明确**：所有可能结果事先明确，且不止一个；\n- **结果随机**：每次试验前不能确定出现哪一个结果。\n\n$E$ 的所有可能结果组成的集合称为==样本空间==，记作 $\\Omega$，其元素称为样本点。\n\n---\n\n### 〔定义〕随机事件\n\n- **随机事件**：样本空间 $\\Omega$ 的子集，简称事件；试验中出现的样本点属于 $A$ 时，称事件 $A$ 发生；\n- **基本事件**：只含一个样本点的事件；\n- **必然事件与不可能事件**：$\\Omega$ 与 $\\varnothing$。\n\n---\n\n### 〔定义〕事件的关系与运算\n\n- **包含**：$A \\subset B$，$A$ 发生必导致 $B$ 发生；$A \\subset B$ 且 $B \\subset A$ 时称 $A = B$；\n- **和**：$A \\cup B$，$A$ 与 $B$ 至少有一个发生；\n- **积**：$A \\cap B$（记作 $AB$），$A$ 与 $B$ 同时发生；\n- **差**：$A - B$，$A$ 发生而 $B$ 不发生；\n- **互不相容（互斥）**：$AB = \\varnothing$，$A$ 与 $B$ 不能同时发生；\n- **对立**：$A \\cup B = \\Omega$ 且 $AB = \\varnothing$，记 $B = \\overline{A}$。\n\n---\n\n### 〔性质〕事件的运算律\n\n- **交换律与结合律**：$A \\cup B = B \\cup A$，$AB = BA$；$(A \\cup B) \\cup C = A \\cup (B \\cup C)$，$(AB)C = A(BC)$；\n- **分配律**：$A(B \\cup C) = AB \\cup AC$，$A \\cup BC = (A \\cup B)(A \\cup C)$；\n- **德摩根律**：$\\overline{A \\cup B} = \\overline{A}\\,\\overline{B}$，$\\overline{AB} = \\overline{A} \\cup \\overline{B}$，可推广到 $n$ 个事件；\n- **差的转化**：$A - B = A\\overline{B} = A - AB$。\n\n---\n\n### 〔提示〕\n\n- 对立事件一定互斥，互斥事件不一定对立。",
+      tags: ["随机试验", "样本空间", "随机事件", "事件的关系", "事件的运算", "互斥", "对立事件", "德摩根律", "定义", "性质"]
     },
     {
-      id: "prob-basics-def-event-relations",
+      id: "prob-evt-probability",
       chapterId: "probability-basics",
       type: "definition",
-      title: "事件的关系与运算",
-      md: "### 〔定义〕\n\n- **包含：**$A\\subset B$ 表示 $A$ 发生必导致 $B$ 发生。\n- **和事件：**$A\\cup B$（$A,B$ 至少一个发生）。\n- **积事件：**$A\\cap B$（简记 $AB$，$A,B$ 同时发生）。\n- **差事件：**$A-B=A\\overline{B}$（$A$ 发生而 $B$ 不发生）。\n- **互斥（互不相容）：**$AB=\\varnothing$。\n- **对立事件：**$A\\cup B=\\Omega$ 且 $AB=\\varnothing$，记 $B=\\overline{A}$。\n\n### 〔提示〕\n\n- ==对立事件一定互斥，但互斥事件不一定对立==（互斥只要求不能同时发生，未要求必有一个发生）。\n- 差事件常用公式 $A-B=A-AB=A\\overline{B}$ 便于计算。\n",
-      tags: ["事件关系", "并交差", "互斥对立"]
+      types: ["definition", "theorem", "property"],
+      module: 1,
+      card: "②",
+      title: "概率的定义与性质",
+      md: "### 〔定义〕概率的公理化定义\n\n设 $E$ 的样本空间为 $\\Omega$，对每个事件 $A$ 赋予一个实数 $P(A)$，若满足：\n1. **非负性**：$P(A) \\ge 0$；\n2. **规范性**：$P(\\Omega) = 1$；\n3. **可列可加性**：对两两互不相容的事件 $A_1, A_2, \\cdots$，\n   $$P\\left(\\bigcup_{i=1}^{\\infty} A_i\\right) = \\sum_{i=1}^{\\infty} P(A_i)$$\n\n则称 $P(A)$ 为事件 $A$ 的==概率==。\n\n---\n\n### 〔性质〕概率的基本性质\n\n- **不可能事件**：$P(\\varnothing) = 0$；\n- **有限可加**：$A_1, \\cdots, A_n$ 两两互不相容时，$P(A_1 \\cup \\cdots \\cup A_n) = P(A_1) + \\cdots + P(A_n)$；\n- **对立事件**：$P(\\overline{A}) = 1 - P(A)$；\n- **减法公式**：$P(A - B) = P(A) - P(AB)$；特别地，$B \\subset A$ 时 $P(A - B) = P(A) - P(B)$，且 $P(B) \\le P(A)$；\n- **有界**：$0 \\le P(A) \\le 1$。\n\n---\n\n### 〔定理〕加法公式\n\n- **两个事件**：$P(A \\cup B) = P(A) + P(B) - P(AB)$；\n- **三个事件**：\n  $$\\begin{aligned} & P(A \\cup B \\cup C) \\\\ = {} & P(A) + P(B) + P(C) \\\\ & - P(AB) - P(AC) - P(BC) \\\\ & + P(ABC) \\end{aligned}$$",
+      tags: ["概率", "公理化定义", "可列可加性", "减法公式", "加法公式", "定义", "定理", "性质"]
     },
     {
-      id: "prob-basics-prop-de-morgan",
-      chapterId: "probability-basics",
-      type: "property",
-      title: "事件运算的德摩根律",
-      md: "### 〔性质〕\n\n- $\\overline{A\\cup B}=\\overline{A}\\cap\\overline{B}$，$\\overline{A\\cap B}=\\overline{A}\\cup\\overline{B}$；\n- 一般地，$\\overline{\\bigcup\\limits_{i=1}^{n}A_i}=\\bigcap\\limits_{i=1}^{n}\\overline{A_i}$，$\\overline{\\bigcap\\limits_{i=1}^{n}A_i}=\\bigcup\\limits_{i=1}^{n}\\overline{A_i}$。\n\n### 〔提示〕\n\n- 记忆口诀：**\"取反变符号，并变交、交变并\"**。\n- 是事件运算化简、求对立事件概率（正难则反）的常用工具。\n",
-      tags: ["德摩根律", "事件运算"]
-    },
-    {
-      id: "prob-basics-def-classical",
+      id: "prob-evt-classical-geometric",
       chapterId: "probability-basics",
       type: "definition",
-      title: "古典概型",
-      md: "### 〔定义〕\n\n- 若随机试验的样本空间 $\\Omega$ 只含有限个样本点，且每个样本点发生的可能性相同，则称此试验为**古典概型（等可能概型）**。\n- 事件 $A$ 所含样本点数为 $k$，$\\Omega$ 中样本点总数为 $n$，则 $P(A)=\\dfrac{k}{n}=\\dfrac{A\\text{ 所包含的基本事件数}}{\\Omega\\text{ 中基本事件总数}}$。\n\n### 〔提示〕\n\n求解古典概型问题的关键是正确使用排列组合计数：\n\n- 不放回抽样用组合\n- 放回抽样用乘法原理\n- 有序问题用排列\n\n==计数时分子分母的计数口径要一致==（都算作有序或都算作无序）。\n",
-      tags: ["古典概型", "等可能", "排列组合"]
+      types: ["definition"],
+      module: 1,
+      card: "③",
+      title: "古典概型与几何概型",
+      md: "### 〔定义〕古典概型\n\n若试验满足：\n- **有限**：样本空间只含有限个样本点；\n- **等可能**：每个样本点出现的可能性相同；\n\n则称为==古典概型==（等可能概型）。设 $\\Omega$ 含 $n$ 个样本点，事件 $A$ 含 $k$ 个，则\n$$P(A) = \\dfrac{k}{n}$$\n\n---\n\n### 〔定义〕几何概型\n\n若试验满足：\n- **区域**：样本空间 $\\Omega$ 是一个可度量的几何区域（度量指长度、面积或体积）；\n- **等可能**：样本点落在 $\\Omega$ 的子区域 $A$ 内的可能性只与 $A$ 的度量成正比，而与 $A$ 的位置、形状无关；\n\n则称为==几何概型==。记 $m(\\cdot)$ 为度量，则\n$$P(A) = \\dfrac{m(A)}{m(\\Omega)}$$",
+      tags: ["古典概型", "等可能概型", "几何概型", "定义"]
     },
     {
-      id: "prob-basics-def-geometric",
+      id: "prob-evt-conditional",
       chapterId: "probability-basics",
       type: "definition",
-      title: "几何概型",
-      md: "### 〔定义〕\n\n若样本空间 $\\Omega$ 是某个可度量的几何区域，且样本点落在 $\\Omega$ 中任一子区域的概率只与该子区域的度量（长度、面积、体积）成正比而与其位置和形状无关，则称此试验为**几何概型**，此时 $P(A)=\\dfrac{A\\text{ 的度量}}{\\Omega\\text{ 的度量}}$。\n\n### 〔提示〕\n\n常见于会面问题、随机投点等题型，解题关键是**把随机变量取值范围转化为平面区域，再求面积比**。\n",
-      tags: ["几何概型", "度量比"]
+      types: ["definition", "theorem", "property"],
+      module: 2,
+      card: "④",
+      title: "条件概率、全概率公式与贝叶斯公式",
+      md: "### 〔定义〕条件概率\n\n设 $P(A) > 0$，称\n$$P(B \\mid A) = \\dfrac{P(AB)}{P(A)}$$\n\n为在事件 $A$ 发生的条件下事件 $B$ 发生的==条件概率==。\n\n---\n\n### 〔性质〕条件概率的性质\n\n条件概率 $P(\\cdot \\mid A)$ 满足概率的三条公理，因而具有概率的一切性质，如：\n- **对立事件**：$P(\\overline{B} \\mid A) = 1 - P(B \\mid A)$；\n- **加法公式**：$P(B_1 \\cup B_2 \\mid A) = P(B_1 \\mid A) + P(B_2 \\mid A) - P(B_1 B_2 \\mid A)$。\n\n---\n\n### 〔定理〕乘法公式\n\n- **两个事件**：$P(A) > 0$ 时，$P(AB) = P(A)P(B \\mid A)$；\n- **$n$ 个事件**：$P(A_1 A_2 \\cdots A_{n-1}) > 0$ 时，\n  $$\\begin{aligned} & P(A_1 A_2 \\cdots A_n) \\\\ = {} & P(A_1)P(A_2 \\mid A_1)P(A_3 \\mid A_1 A_2) \\\\ & \\cdots P(A_n \\mid A_1 \\cdots A_{n-1}) \\end{aligned}$$\n\n---\n\n### 〔定义〕完备事件组\n\n若事件 $B_1, B_2, \\cdots, B_n$ 满足：\n- **两两互斥**：$B_i B_j = \\varnothing\\ (i \\neq j)$；\n- **和为全集**：$B_1 \\cup B_2 \\cup \\cdots \\cup B_n = \\Omega$；\n\n则称 $B_1, B_2, \\cdots, B_n$ 为样本空间 $\\Omega$ 的一个==划分==（完备事件组）。\n\n---\n\n### 〔定理〕全概率公式\n\n设 $B_1, \\cdots, B_n$ 为 $\\Omega$ 的一个划分，且 $P(B_i) > 0$，则对任一事件 $A$，\n$$P(A) = \\sum_{i=1}^{n} P(B_i)P(A \\mid B_i)$$\n\n---\n\n### 〔定理〕贝叶斯公式\n\n在全概率公式的条件下，若 $P(A) > 0$，则\n$$P(B_i \\mid A) = \\dfrac{P(B_i)P(A \\mid B_i)}{\\sum\\limits_{j=1}^{n} P(B_j)P(A \\mid B_j)}$$\n\n（$i = 1, \\cdots, n$），其中 $P(B_i)$ 称为==先验概率==，$P(B_i \\mid A)$ 称为==后验概率==。",
+      tags: ["条件概率", "乘法公式", "完备事件组", "全概率公式", "贝叶斯公式", "先验概率", "后验概率", "定义", "定理", "性质"]
     },
     {
-      id: "prob-basics-def-axioms",
+      id: "prob-evt-independence",
       chapterId: "probability-basics",
       type: "definition",
-      title: "概率的公理化定义",
-      md: "### 〔定义〕\n\n设 $E$ 的样本空间为 $\\Omega$，对每一事件 $A$ 赋予一个实数 $P(A)$，若满足：\n\n- **非负性：**$P(A)\\geqslant 0$。\n- **规范性：**$P(\\Omega)=1$。\n- **可列可加性：**对两两互不相容的事件 $A_1,A_2,\\cdots$ 有 $P\\left(\\bigcup\\limits_{i=1}^{\\infty}A_i\\right)=\\sum\\limits_{i=1}^{\\infty}P(A_i)$。\n\n则称 $P(A)$ 为事件 $A$ 的概率。\n\n### 〔提示〕\n\n- 这三条**公理**是概率论的公理化基础，古典概型、几何概型、后续所有分布的概率都必须满足这三条。\n- 由此可推出 $P(\\varnothing)=0$、有限可加性等一系列基本性质。\n",
-      tags: ["概率公理", "可列可加性"]
+      types: ["definition", "theorem", "property"],
+      module: 2,
+      card: "⑤",
+      title: "事件的独立性与伯努利概型",
+      md: "### 〔定义〕两个事件的独立性\n\n若 $P(AB) = P(A)P(B)$，则称事件 $A$ 与 $B$ ==相互独立==。\n\n---\n\n### 〔性质〕独立性的性质\n\n- **与条件概率**：$P(A) > 0$ 时，$A$ 与 $B$ 独立 $\\iff P(B \\mid A) = P(B)$；\n- **换成对立事件**：若 $A$ 与 $B$ 独立，则 $A$ 与 $\\overline{B}$、$\\overline{A}$ 与 $B$、$\\overline{A}$ 与 $\\overline{B}$ 也都相互独立；\n- **与互斥的关系**：若 $P(A) > 0$，$P(B) > 0$，则「$A, B$ 独立」与「$A, B$ 互斥」不能同时成立；\n- **概率为 $0$ 或 $1$ 的事件**：与任何事件都相互独立。\n\n---\n\n### 〔定义〕多个事件的独立性\n\n对事件 $A_1, A_2, \\cdots, A_n$：\n- **相互独立**：对其中任意 $k$ 个（$2 \\le k \\le n$）事件 $A_{i_1}, \\cdots, A_{i_k}$，都有\n  $$P(A_{i_1} A_{i_2} \\cdots A_{i_k}) = P(A_{i_1})P(A_{i_2}) \\cdots P(A_{i_k})$$\n- **两两独立**：只要求其中任意两个事件相互独立。\n\n相互独立 $\\implies$ 两两独立，==反之不成立==。\n\n---\n\n### 〔性质〕相互独立事件的性质\n\n设 $A_1, \\cdots, A_n$ 相互独立：\n- **部分独立**：其中任取一部分事件，仍相互独立；\n- **换成对立事件**：把其中任意几个换成各自的对立事件，仍相互独立；\n- **至少一个发生**：$P(A_1 \\cup \\cdots \\cup A_n) = 1 - P(\\overline{A_1})P(\\overline{A_2}) \\cdots P(\\overline{A_n})$。\n\n---\n\n### 〔定义〕伯努利概型\n\n若试验只有 $A$ 与 $\\overline{A}$ 两个结果，$P(A) = p\\ (0 < p < 1)$，把它在相同条件下==独立地重复==进行 $n$ 次，称为 ==$n$ 重伯努利试验==。\n\n---\n\n### 〔定理〕二项概率公式\n\n在 $n$ 重伯努利试验中，事件 $A$ 恰好发生 $k$ 次的概率为\n$$P_n(k) = \\mathrm{C}_n^k\\, p^k (1 - p)^{n-k}, \\quad k = 0, 1, \\cdots, n$$",
+      tags: ["独立性", "相互独立", "两两独立", "伯努利试验", "二项概率公式", "定义", "定理", "性质"]
     },
     {
-      id: "prob-basics-prop-basic",
-      chapterId: "probability-basics",
-      type: "property",
-      title: "概率的基本性质",
-      md: "### 〔性质〕\n\n- $P(\\varnothing)=0$。\n- **有限可加性：**若 $A_1,\\cdots,A_n$ 两两互斥，则 $P\\left(\\bigcup\\limits_{i=1}^{n}A_i\\right)=\\sum\\limits_{i=1}^{n}P(A_i)$。\n- $P(\\overline{A})=1-P(A)$。\n- 若 $A\\subset B$，则 $P(B-A)=P(B)-P(A)$，且 $P(A)\\leqslant P(B)$。\n- 对任意事件 $A,B$，$P(A-B)=P(A)-P(AB)$。\n\n### 〔提示〕\n\n**\"正难则反\"**是概率论解题的核心技巧之一，==遇到\"至少\"\"至多\"型问题优先考虑对立事件 $P(A)=1-P(\\overline{A})$==。\n",
-      tags: ["概率性质", "对立事件"]
-    },
-    {
-      id: "prob-basics-thm-addition",
-      chapterId: "probability-basics",
-      type: "theorem",
-      title: "概率加法公式",
-      md: "### 〔定理〕\n\n- 对任意两事件 $A,B$，$P(A\\cup B)=P(A)+P(B)-P(AB)$；\n- 对任意三事件 $A,B,C$，$P(A\\cup B\\cup C)=P(A)+P(B)+P(C)-P(AB)-P(AC)-P(BC)+P(ABC)$。\n\n### 〔提示〕\n\n- 当 $A,B$ 互斥时 $P(AB)=0$，退化为有限可加性。\n- 这是**容斥原理**在概率上的体现，三事件公式记忆口诀：**\"单加、两两减、三个加回来\"**。\n",
-      tags: ["加法公式", "容斥原理"]
-    },
-    {
-      id: "prob-basics-def-conditional",
-      chapterId: "probability-basics",
-      type: "definition",
-      title: "条件概率",
-      md: "### 〔定义〕\n\n设 $A,B$ 是两个事件，且 $P(A)>0$，则称 $P(B\\mid A)=\\dfrac{P(AB)}{P(A)}$ 为在事件 $A$ 发生的条件下事件 $B$ 发生的**条件概率**。\n\n### 〔提示〕\n\n==条件概率本质上仍是概率==，满足概率的三条公理（非负性、规范性、可列可加性），因此普通概率的一切性质（加法公式、德摩根律等）对条件概率同样成立。\n",
-      tags: ["条件概率", "定义"]
-    },
-    {
-      id: "prob-basics-thm-multiplication",
-      chapterId: "probability-basics",
-      type: "theorem",
-      title: "乘法公式",
-      md: "### 〔定理〕\n\n- 若 $P(A)>0$，则 $P(AB)=P(A)P(B\\mid A)$；\n- 一般地，若 $P(A_1A_2\\cdots A_{n-1})>0$，则 $P(A_1A_2\\cdots A_n)=P(A_1)P(A_2\\mid A_1)P(A_3\\mid A_1A_2)\\cdots P(A_n\\mid A_1A_2\\cdots A_{n-1})$。\n\n### 〔提示〕\n\n乘法公式常用于把多阶段随机试验（如不放回摸球）的联合概率分解为**逐步条件概率的乘积**，是全概率公式推导的基础。\n",
-      tags: ["乘法公式", "多阶段试验"]
-    },
-    {
-      id: "prob-basics-def-partition",
-      chapterId: "probability-basics",
-      type: "definition",
-      title: "样本空间的划分",
-      md: "### 〔定义〕\n\n设 $\\Omega$ 为试验 $E$ 的样本空间，$B_1,B_2,\\cdots,B_n$ 为 $E$ 的一组事件，若\n\n- $B_iB_j=\\varnothing\\ (i\\neq j)$；\n- $B_1\\cup B_2\\cup\\cdots\\cup B_n=\\Omega$；\n\n则称 $B_1,B_2,\\cdots,B_n$ 为样本空间 $\\Omega$ 的一个**划分**（完备事件组）。\n\n### 〔提示〕\n\n每次试验中，事件组 $B_1,\\cdots,B_n$ 中==必有且只有一个发生==，这是全概率公式与贝叶斯公式成立的前提条件。\n",
-      tags: ["划分", "完备事件组"]
-    },
-    {
-      id: "prob-basics-thm-total-probability",
-      chapterId: "probability-basics",
-      type: "theorem",
-      title: "全概率公式",
-      md: "### 〔定理〕\n\n设 $B_1,B_2,\\cdots,B_n$ 为样本空间 $\\Omega$ 的一个划分，且 $P(B_i)>0\\ (i=1,2,\\cdots,n)$，则对任一事件 $A$ 有 $P(A)=\\sum\\limits_{i=1}^{n}P(B_i)P(A\\mid B_i)$。\n\n### 〔提示〕\n\n- 全概率公式用于**\"由因求果\"**：把复杂事件 $A$ 按导致其发生的不同原因（途径）$B_i$ 分类，分别求条件概率再加权求和。\n- 关键是正确划分完备事件组。\n",
-      diagram: `<svg viewBox="0 0 300 180" xmlns="http://www.w3.org/2000/svg">
-        <rect x="20" y="20" width="260" height="140" rx="10" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
-        <line x1="90" y1="20" x2="90" y2="160" stroke="currentColor" stroke-width="1" opacity="0.4"/>
-        <line x1="150" y1="20" x2="150" y2="160" stroke="currentColor" stroke-width="1" opacity="0.4"/>
-        <line x1="210" y1="20" x2="210" y2="160" stroke="currentColor" stroke-width="1" opacity="0.4"/>
-        <ellipse cx="150" cy="95" rx="95" ry="38" fill="#3b82f6" opacity="0.18" stroke="#3b82f6" stroke-width="1.8"/>
-        <text x="30" y="35" font-size="11" fill="currentColor" opacity="0.7">B₁</text>
-        <text x="100" y="35" font-size="11" fill="currentColor" opacity="0.7">B₂</text>
-        <text x="160" y="35" font-size="11" fill="currentColor" opacity="0.7">B₃</text>
-        <text x="220" y="35" font-size="11" fill="currentColor" opacity="0.7">B₄</text>
-        <text x="143" y="99" font-size="12" fill="#3b82f6" font-weight="700">A</text>
-        <text x="130" y="15" font-size="11" fill="currentColor" opacity="0.6">Ω</text>
-      </svg>`,
-      diagramCaption: "B₁…B₄ 把样本空间 Ω 划分成互不相交的几块，事件 A（蓝色区域）分别与每一块相交",
-      tags: ["全概率公式", "由因求果"]
-    },
-    {
-      id: "prob-basics-thm-bayes",
-      chapterId: "probability-basics",
-      type: "theorem",
-      title: "贝叶斯公式",
-      md: "### 〔定理〕\n\n设 $B_1,B_2,\\cdots,B_n$ 为样本空间 $\\Omega$ 的一个划分，且 $P(A)>0$，$P(B_i)>0$，则 $P(B_i\\mid A)=\\dfrac{P(B_i)P(A\\mid B_i)}{\\sum\\limits_{j=1}^{n}P(B_j)P(A\\mid B_j)}\\ (i=1,2,\\cdots,n)$。\n\n### 〔提示〕\n\n- 贝叶斯公式用于**\"由果溯因\"**：已知结果 $A$ 发生，反推是由原因 $B_i$ 引起的概率。\n- 分母恰为全概率公式，$P(B_i)$ 称为**先验概率**，$P(B_i\\mid A)$ 称为**后验概率**。\n",
-      tags: ["贝叶斯公式", "由果溯因", "先验后验"]
-    },
-    {
-      id: "prob-basics-def-independence",
-      chapterId: "probability-basics",
-      type: "definition",
-      title: "事件的独立性",
-      md: "### 〔定义〕\n\n- 设 $A,B$ 是两事件，若 $P(AB)=P(A)P(B)$，则称事件 $A,B$ **相互独立**。\n- 若 $A,B$ 相互独立且 $P(A)>0$，则 $P(B\\mid A)=P(B)$。\n\n### 〔提示〕\n\n- 独立性描述的是概率上的无关性，与**互斥**是完全不同的概念：若 $P(A)>0,P(B)>0$，则 $A,B$ 独立与 $A,B$ 互斥不能同时成立。\n- ==若 $A,B$ 独立，则 $A$ 与 $\\overline{B}$、$\\overline{A}$ 与 $B$、$\\overline{A}$ 与 $\\overline{B}$ 也都相互独立==。\n",
-      tags: ["独立性", "定义", "易混淆点"]
-    },
-    {
-      id: "prob-basics-def-mutual-independence",
-      chapterId: "probability-basics",
-      type: "definition",
-      title: "多个事件的相互独立性",
-      md: "### 〔定义〕\n\n设 $A_1,A_2,\\cdots,A_n$ 是 $n$ 个事件，若对任意 $k\\ (2\\leqslant k\\leqslant n)$ 个事件 $A_{i_1},\\cdots,A_{i_k}$，都有 $P(A_{i_1}A_{i_2}\\cdots A_{i_k})=P(A_{i_1})P(A_{i_2})\\cdots P(A_{i_k})$ 成立，则称 $A_1,A_2,\\cdots,A_n$ **相互独立**。\n\n### 〔提示〕\n\n$n$ 个事件相互独立需要 $2^n-n-1$ 个等式全部成立，==两两独立（只要求任意两个乘法式成立）不能推出相互独立==，这是常考的反例题型。\n",
-      tags: ["相互独立", "两两独立"]
-    },
-    {
-      id: "prob-basics-prop-independent-trials",
-      chapterId: "probability-basics",
-      type: "property",
-      title: "独立重复试验与伯努利概型",
-      md: "### 〔性质〕\n\n- 将同一试验在相同条件下独立重复进行 $n$ 次称为 **$n$ 重独立重复试验**；\n- 若每次试验只有两个可能结果 $A$ 与 $\\overline{A}$，且 $P(A)=p$ 保持不变，则称为 **$n$ 重伯努利试验**。\n- 设 $X$ 为 $n$ 次试验中 $A$ 发生的次数，则 $P(X=k)=\\dbinom{n}{k}p^k(1-p)^{n-k},\\ k=0,1,\\cdots,n$。\n\n### 〔提示〕\n\n这是二项分布的概率来源，**各次试验相互独立**是使用该公式的前提，考试中常需先判断是否满足伯努利概型的条件（结果二元、概率不变、独立）。\n",
-      tags: ["伯努利概型", "独立重复试验", "二项分布来源"]
-    },
-    {
-      id: "prob-rv-def-rv",
+      id: "prob-rv-cdf",
       chapterId: "random-variable",
       type: "definition",
+      types: ["definition", "property"],
+      module: 1,
+      card: "①",
       title: "随机变量与分布函数",
-      md: "### 〔定义〕\n\n- 设随机试验的样本空间为 $\\Omega$，若对每一个样本点 $\\omega\\in\\Omega$，都有唯一实数 $X(\\omega)$ 与之对应，则称 $X=X(\\omega)$ 为**随机变量**。\n- 设 $X$ 是一个随机变量，称函数 $F(x)=P\\{X\\leqslant x\\},\\ -\\infty<x<+\\infty$ 为 $X$ 的**分布函数**。\n\n### 〔提示〕\n\n- 分布函数完整刻画了随机变量取值的概率规律，$P\\{a<X\\leqslant b\\}=F(b)-F(a)$。\n- 分布函数具有**单调不减**、**右连续**、$F(-\\infty)=0$、$F(+\\infty)=1$ 四条基本性质，==这四条是判定一个函数能否作为分布函数的充要条件==。\n",
-      tags: ["随机变量", "分布函数"]
+      md: "### 〔定义〕随机变量\n\n设随机试验的样本空间为 $\\Omega$，若对每个样本点 $\\omega \\in \\Omega$，都有唯一的实数 $X(\\omega)$ 与之对应，则称实值函数 $X = X(\\omega)$ 为==随机变量==。\n\n---\n\n### 〔定义〕分布函数\n\n设 $X$ 为随机变量，称\n$$F(x) = P\\{X \\le x\\}, \\quad -\\infty < x < +\\infty$$\n\n为 $X$ 的==分布函数==。\n\n---\n\n### 〔性质〕分布函数的充要条件\n\n函数 $F(x)$ 是某个随机变量的分布函数 $\\iff$ 同时满足：\n1. **单调不减**：$x_1 < x_2$ 时 $F(x_1) \\le F(x_2)$；\n2. **两端极限**：$0 \\le F(x) \\le 1$，且 $F(-\\infty) = 0$，$F(+\\infty) = 1$；\n3. **右连续**：$F(x + 0) = F(x)$。\n\n---\n\n### 〔性质〕用分布函数求概率\n\n- **不超过与小于**：$P\\{X \\le a\\} = F(a)$，$P\\{X < a\\} = F(a - 0)$；\n- **单点**：$P\\{X = a\\} = F(a) - F(a - 0)$；\n- **区间**：$P\\{a < X \\le b\\} = F(b) - F(a)$；\n- **大于**：$P\\{X > a\\} = 1 - F(a)$。",
+      tags: ["随机变量", "分布函数", "右连续", "单调不减", "定义", "性质"]
     },
     {
-      id: "prob-rv-prop-distribution-function",
+      id: "prob-rv-discrete",
+      chapterId: "random-variable",
+      type: "definition",
+      types: ["definition", "theorem"],
+      module: 2,
+      card: "②",
+      title: "离散型随机变量及常见分布",
+      md: "### 〔定义〕离散型随机变量与分布律\n\n若 $X$ 的全部可能取值为有限个或可列无限个 $x_1, x_2, \\cdots$，则称 $X$ 为==离散型随机变量==，称\n$$P\\{X = x_k\\} = p_k, \\quad k = 1, 2, \\cdots$$\n\n为 $X$ 的==分布律==。\n- **充要条件**：$p_k \\ge 0$，且 $\\sum\\limits_k p_k = 1$；\n- **分布函数**：$F(x) = \\sum\\limits_{x_k \\le x} p_k$，是右连续的阶梯函数，在 $x_k$ 处跳跃 $p_k$。\n\n---\n\n### 〔定义〕0-1 分布与二项分布\n\n- **0-1 分布**：$P\\{X = k\\} = p^k(1 - p)^{1-k}$，$k = 0, 1$（$0 < p < 1$），记作 $X \\sim B(1, p)$；\n- **二项分布**：$P\\{X = k\\} = \\mathrm{C}_n^k\\, p^k(1 - p)^{n-k}$，$k = 0, 1, \\cdots, n$，记作 $X \\sim B(n, p)$；它是 $n$ 重伯努利试验中事件 $A$ 发生次数的分布（第1章卡⑤）。\n\n---\n\n### 〔定义〕泊松分布\n\n$$P\\{X = k\\} = \\dfrac{\\lambda^k}{k!}e^{-\\lambda}, \\quad k = 0, 1, 2, \\cdots \\ (\\lambda > 0)$$\n\n记作 $X \\sim P(\\lambda)$。\n\n---\n\n### 〔定理〕泊松定理\n\n设 $np_n = \\lambda$（$\\lambda > 0$ 为常数），则对任意固定的非负整数 $k$，\n$$\\lim\\limits_{n \\to \\infty} \\mathrm{C}_n^k\\, p_n^k(1 - p_n)^{n-k} = \\dfrac{\\lambda^k}{k!}e^{-\\lambda}$$\n\n- **近似计算**：$n$ 很大、$p$ 很小时，$B(n, p)$ 可用 $P(\\lambda)$ 近似，$\\lambda = np$。\n\n---\n\n### 〔定义〕几何分布\n\n在伯努利试验中，设 $X$ 为事件 $A$ 首次发生时的试验次数，则\n$$P\\{X = k\\} = (1 - p)^{k-1}p, \\quad k = 1, 2, \\cdots$$\n\n记作 $X \\sim G(p)$。\n- **无记忆性**：$P\\{X > m + n \\mid X > m\\} = P\\{X > n\\}$（$m, n$ 为正整数）。\n\n---\n\n### 〔定义〕超几何分布\n\n$N$ 件产品中有 $M$ 件次品，==不放回==地任取 $n$ 件，其中的次品数 $X$ 的分布律为\n$$P\\{X = k\\} = \\dfrac{\\mathrm{C}_M^k\\,\\mathrm{C}_{N-M}^{n-k}}{\\mathrm{C}_N^n}$$\n\n$k$ 取 $\\max\\{0, n - N + M\\}$ 到 $\\min\\{n, M\\}$ 之间的整数。\n- **与二项分布的关系**：$N$ 很大而 $n$ 相对很小时，近似于 $B\\left(n, \\dfrac{M}{N}\\right)$。",
+      tags: ["离散型随机变量", "分布律", "0-1分布", "二项分布", "泊松分布", "泊松定理", "几何分布", "超几何分布", "定义", "定理"]
+    },
+    {
+      id: "prob-rv-continuous",
+      chapterId: "random-variable",
+      type: "definition",
+      types: ["definition", "theorem", "property"],
+      module: 2,
+      card: "③",
+      title: "连续型随机变量及常见分布",
+      md: "### 〔定义〕连续型随机变量与概率密度\n\n若存在非负可积函数 $f(x)$，使对任意实数 $x$，\n$$F(x) = \\int_{-\\infty}^{x} f(t)\\,\\mathrm{d}t$$\n\n则称 $X$ 为==连续型随机变量==，$f(x)$ 称为 $X$ 的==概率密度==。\n\n---\n\n### 〔性质〕概率密度的性质\n\n- **充要条件**：$f(x) \\ge 0$，且 $\\displaystyle\\int_{-\\infty}^{+\\infty} f(x)\\,\\mathrm{d}x = 1$；\n- **与分布函数**：$F(x)$ 是连续函数；在 $f(x)$ 的连续点处 $F'(x) = f(x)$；\n- **区间概率**：$P\\{a < X \\le b\\} = \\displaystyle\\int_a^b f(x)\\,\\mathrm{d}x$；\n- **单点概率为零**：$P\\{X = a\\} = 0$，因而区间端点取不取等号不影响概率。\n\n---\n\n### 〔定义〕均匀分布\n\n$$f(x) = \\begin{cases} \\dfrac{1}{b - a}, & a < x < b \\\\ 0, & \\text{其他} \\end{cases}$$\n\n记作 $X \\sim U(a, b)$。\n\n---\n\n### 〔定义〕指数分布\n\n$$f(x) = \\begin{cases} \\lambda e^{-\\lambda x}, & x > 0 \\\\ 0, & x \\le 0 \\end{cases} \\quad (\\lambda > 0)$$\n\n记作 $X \\sim E(\\lambda)$。\n- **分布函数**：$x > 0$ 时 $F(x) = 1 - e^{-\\lambda x}$，$x \\le 0$ 时 $F(x) = 0$；\n- **无记忆性**：$P\\{X > s + t \\mid X > s\\} = P\\{X > t\\}$（$s, t > 0$）。\n\n---\n\n### 〔定义〕正态分布\n\n$$f(x) = \\dfrac{1}{\\sqrt{2\\pi}\\,\\sigma}e^{-\\frac{(x - \\mu)^2}{2\\sigma^2}}$$\n\n（$-\\infty < x < +\\infty$，$\\sigma > 0$），记作 $X \\sim N(\\mu, \\sigma^2)$。\n- **图形**：关于 $x = \\mu$ 对称，在 $x = \\mu$ 处取最大值 $\\dfrac{1}{\\sqrt{2\\pi}\\,\\sigma}$，在 $x = \\mu \\pm \\sigma$ 处有拐点。\n\n---\n\n### 〔定义〕标准正态分布\n\n$\\mu = 0$，$\\sigma = 1$ 的正态分布 $N(0, 1)$ 称为==标准正态分布==，其密度与分布函数记作\n$$\\varphi(x) = \\dfrac{1}{\\sqrt{2\\pi}}e^{-\\frac{x^2}{2}}, \\qquad \\Phi(x) = \\int_{-\\infty}^{x} \\varphi(t)\\,\\mathrm{d}t$$\n\n- **对称性**：$\\Phi(-x) = 1 - \\Phi(x)$，$\\Phi(0) = \\dfrac{1}{2}$。\n\n---\n\n### 〔定理〕正态分布的标准化\n\n若 $X \\sim N(\\mu, \\sigma^2)$，则 $\\dfrac{X - \\mu}{\\sigma} \\sim N(0, 1)$，从而：\n- **分布函数**：$F(x) = \\Phi\\left(\\dfrac{x - \\mu}{\\sigma}\\right)$；\n- **区间概率**：$P\\{a < X \\le b\\} = \\Phi\\left(\\dfrac{b - \\mu}{\\sigma}\\right) - \\Phi\\left(\\dfrac{a - \\mu}{\\sigma}\\right)$。",
+      tags: ["连续型随机变量", "概率密度", "均匀分布", "指数分布", "正态分布", "标准正态分布", "标准化", "定义", "定理", "性质"]
+    },
+    {
+      id: "prob-rv-function",
       chapterId: "random-variable",
       type: "property",
-      title: "分布函数的基本性质",
-      md: "### 〔性质〕\n\n- **单调不减：**$x_1<x_2\\Rightarrow F(x_1)\\leqslant F(x_2)$。\n- **有界性：**$0\\leqslant F(x)\\leqslant 1$，且 $F(-\\infty)=\\lim\\limits_{x\\to-\\infty}F(x)=0$，$F(+\\infty)=\\lim\\limits_{x\\to+\\infty}F(x)=1$。\n- **右连续：**$F(x+0)=F(x)$。\n\n### 〔提示〕\n\n- ==反之，任何满足这三条性质的函数都可以作为某个随机变量的分布函数==（这是判定题的常考点）。\n- 离散型随机变量的分布函数是阶梯形右连续函数，连续型是连续函数。\n",
-      tags: ["分布函数", "性质", "判定"]
+      types: ["theorem", "property"],
+      module: 3,
+      card: "④",
+      title: "一维随机变量函数的分布",
+      md: "### 〔方法〕离散型随机变量的函数\n\n已知 $X$ 的分布律，求 $Y = g(X)$ 的分布律：\n1. **列出取值**：写出 $Y$ 的全部取值 $g(x_k)$；\n2. **合并概率**：$g(x_k)$ 相同的，把对应的概率相加。\n\n---\n\n### 〔方法〕分布函数法\n\n已知 $X$ 的概率密度 $f_X(x)$，求 $Y = g(X)$ 的概率密度：\n1. **求分布函数**：\n   $$F_Y(y) = P\\{g(X) \\le y\\} = \\int_{g(x) \\le y} f_X(x)\\,\\mathrm{d}x$$\n2. **求导**：$f_Y(y) = F_Y'(y)$。\n\n---\n\n### 〔定理〕单调函数的公式法\n\n设 $X$ 的概率密度为 $f_X(x)$，$y = g(x)$ 处处可导且严格单调，其反函数为 $x = h(y)$，则 $Y = g(X)$ 的概率密度为\n$$f_Y(y) = \\begin{cases} f_X[h(y)]\\,|h'(y)|, & \\alpha < y < \\beta \\\\ 0, & \\text{其他} \\end{cases}$$\n\n其中 $(\\alpha, \\beta)$ 为 $g(x)$ 的值域。\n\n---\n\n### 〔推论〕正态分布的线性函数\n\n若 $X \\sim N(\\mu, \\sigma^2)$，则\n$$aX + b \\sim N(a\\mu + b,\\ a^2\\sigma^2) \\quad (a \\neq 0)$$",
+      tags: ["随机变量函数的分布", "分布函数法", "公式法", "正态分布的线性函数", "定理", "性质"]
     },
     {
-      id: "prob-rv-def-discrete",
-      chapterId: "random-variable",
-      type: "definition",
-      title: "离散型随机变量及其分布律",
-      md: "### 〔定义〕\n\n- 若随机变量 $X$ 只能取有限个或可列无限个值，则称 $X$ 为**离散型随机变量**。\n- 设 $X$ 所有可能取值为 $x_k\\ (k=1,2,\\cdots)$，称 $P\\{X=x_k\\}=p_k,\\ k=1,2,\\cdots$ 为 $X$ 的**分布律**，满足 $p_k\\geqslant 0$ 且 $\\sum\\limits_{k}p_k=1$。\n\n### 〔提示〕\n\n分布律常用表格表示，判定题常考\"某数列能否作为分布律\"，关键就检验**非负性**和**归一性**两条。\n",
-      tags: ["离散型", "分布律", "归一性"]
-    },
-    {
-      id: "prob-rv-def-01-distribution",
-      chapterId: "random-variable",
-      type: "definition",
-      title: "0-1分布",
-      md: "### 〔定义〕\n\n若随机变量 $X$ 只取 $0$ 和 $1$ 两个值，其分布律为 $P\\{X=k\\}=p^k(1-p)^{1-k},\\ k=0,1\\ (0<p<1)$，则称 $X$ 服从参数为 $p$ 的**0-1 分布（两点分布）**，记作 $X\\sim B(1,p)$。\n\n### 〔提示〕\n\n0-1 分布是描述\"只有两种结果\"的伯努利试验的最基本模型，是二项分布 **$n=1$ 时的特例**。\n",
-      tags: ["0-1分布", "两点分布"]
-    },
-    {
-      id: "prob-rv-def-binomial",
-      chapterId: "random-variable",
-      type: "definition",
-      title: "二项分布",
-      md: "### 〔定义〕\n\n若随机变量 $X$ 的分布律为 $P\\{X=k\\}=\\dbinom{n}{k}p^k(1-p)^{n-k},\\ k=0,1,\\cdots,n\\ (0<p<1)$，则称 $X$ 服从参数为 $n,p$ 的**二项分布**，记作 $X\\sim B(n,p)$。\n\n### 〔提示〕\n\n- 二项分布是 $n$ 重伯努利试验中事件 $A$ 发生次数的分布，$E(X)=np$，$D(X)=np(1-p)$。\n- ==当 $n=1$ 时退化为 0-1 分布==。\n",
-      tags: ["二项分布", "伯努利试验"]
-    },
-    {
-      id: "prob-rv-def-poisson",
-      chapterId: "random-variable",
-      type: "definition",
-      title: "泊松分布",
-      md: "### 〔定义〕\n\n若随机变量 $X$ 的分布律为 $P\\{X=k\\}=\\dfrac{\\lambda^{k}e^{-\\lambda}}{k!},\\ k=0,1,2,\\cdots\\ (\\lambda>0)$，则称 $X$ 服从参数为 $\\lambda$ 的**泊松分布**，记作 $X\\sim P(\\lambda)$。\n\n### 〔提示〕\n\n泊松分布常用于描述单位时间（或空间）内随机事件发生次数，如电话呼叫数、事故次数等，其==显著特点是 $E(X)=D(X)=\\lambda$==。\n",
-      tags: ["泊松分布", "计数过程"]
-    },
-    {
-      id: "prob-rv-thm-poisson-approx",
-      chapterId: "random-variable",
-      type: "theorem",
-      title: "泊松定理（二项分布的泊松近似）",
-      md: "### 〔定理〕\n\n设 $\\lambda>0$ 为常数，$n$ 为正整数，$np_n=\\lambda$（即 $p_n=\\lambda/n$），则对任意固定的非负整数 $k$，有 $\\lim\\limits_{n\\to\\infty}\\dbinom{n}{k}p_n^{k}(1-p_n)^{n-k}=\\dfrac{\\lambda^{k}e^{-\\lambda}}{k!}$。\n\n### 〔提示〕\n\n实际应用中，当 **$n$ 很大、$p$ 很小** 而 $np$ 大小适中时，可用参数 $\\lambda=np$ 的泊松分布近似二项分布 $B(n,p)$，即**\"二项分布的泊松近似\"**，常用于稀有事件的概率计算。\n",
-      tags: ["泊松定理", "二项分布近似"]
-    },
-    {
-      id: "prob-rv-def-geometric",
-      chapterId: "random-variable",
-      type: "definition",
-      title: "几何分布",
-      md: "### 〔定义〕\n\n在伯努利试验中，事件 $A$ 发生的概率为 $p\\ (0<p<1)$，设 $X$ 为首次事件 $A$ 发生时所需的试验次数，则 $X$ 的分布律为 $P\\{X=k\\}=(1-p)^{k-1}p,\\ k=1,2,\\cdots$，称 $X$ 服从参数为 $p$ 的**几何分布**。\n\n### 〔提示〕\n\n几何分布具有**无记忆性**：$P\\{X>m+n\\mid X>m\\}=P\\{X>n\\}$，==是离散型分布中唯一具有无记忆性的分布==，$E(X)=1/p$。\n",
-      tags: ["几何分布", "无记忆性"]
-    },
-    {
-      id: "prob-rv-def-continuous",
-      chapterId: "random-variable",
-      type: "definition",
-      title: "连续型随机变量及其概率密度",
-      md: "### 〔定义〕\n\n设随机变量 $X$ 的分布函数为 $F(x)$，若存在非负可积函数 $f(x)$，使对任意实数 $x$ 有 $F(x)=\\displaystyle\\int_{-\\infty}^{x}f(t)\\,\\mathrm{d}t$，则称 $X$ 为**连续型随机变量**，$f(x)$ 称为 $X$ 的**概率密度函数**，满足 $f(x)\\geqslant 0$ 且 $\\displaystyle\\int_{-\\infty}^{+\\infty}f(x)\\,\\mathrm{d}x=1$。\n\n### 〔提示〕\n\n==连续型随机变量取任一确定值的概率为零==：$P\\{X=a\\}=0$，因此 $P\\{a\\leqslant X\\leqslant b\\}=P\\{a<X<b\\}=P\\{a\\leqslant X<b\\}=P\\{a<X\\leqslant b\\}=\\displaystyle\\int_a^b f(x)\\,\\mathrm{d}x$，端点是否取等号不影响概率。\n",
-      tags: ["连续型", "概率密度", "定义"]
-    },
-    {
-      id: "prob-rv-prop-density",
-      chapterId: "random-variable",
-      type: "property",
-      title: "概率密度的性质",
-      md: "### 〔性质〕\n\n- **非负性：**$f(x)\\geqslant 0$。\n- **归一性：**$\\displaystyle\\int_{-\\infty}^{+\\infty}f(x)\\,\\mathrm{d}x=1$。\n- 在 $f(x)$ 的连续点处，$F'(x)=f(x)$。\n- 对任意 $a\\leqslant b$，$P\\{a<X\\leqslant b\\}=F(b)-F(a)=\\displaystyle\\int_a^b f(x)\\,\\mathrm{d}x$。\n\n### 〔提示〕\n\n- 判定一个函数能否作为概率密度，只需检验非负性和积分为 1 两条；\n- ==$f(x)$ 本身不是概率，可以大于 1，只有曲线下面积才代表概率==。\n",
-      tags: ["概率密度", "性质", "判定"]
-    },
-    {
-      id: "prob-rv-def-uniform",
-      chapterId: "random-variable",
-      type: "definition",
-      title: "均匀分布",
-      md: "### 〔定义〕\n\n若随机变量 $X$ 的概率密度为 $f(x)=\\begin{cases}\\dfrac{1}{b-a}, & a<x<b,\\\\[4pt] 0, & \\text{其他},\\end{cases}$ 则称 $X$ 在区间 $(a,b)$ 上服从**均匀分布**，记作 $X\\sim U(a,b)$。\n\n### 〔提示〕\n\n均匀分布描述**\"等可能性\"**，其分布函数在 $[a,b]$ 上是线性函数，$E(X)=\\dfrac{a+b}{2}$，$D(X)=\\dfrac{(b-a)^2}{12}$。\n",
-      tags: ["均匀分布", "等可能"]
-    },
-    {
-      id: "prob-rv-def-exponential",
-      chapterId: "random-variable",
-      type: "definition",
-      title: "指数分布",
-      md: "### 〔定义〕\n\n若随机变量 $X$ 的概率密度为 $f(x)=\\begin{cases}\\lambda e^{-\\lambda x}, & x>0,\\\\ 0, & x\\leqslant 0,\\end{cases}\\ (\\lambda>0)$，则称 $X$ 服从参数为 $\\lambda$ 的**指数分布**，其分布函数为 $F(x)=\\begin{cases}1-e^{-\\lambda x}, & x>0,\\\\ 0, & x\\leqslant 0.\\end{cases}$\n\n### 〔提示〕\n\n指数分布常用于描述元件寿命、等待时间，具有与几何分布类似的**无记忆性**：$P\\{X>s+t\\mid X>s\\}=P\\{X>t\\}$，==是连续型分布中唯一具有无记忆性的分布==，$E(X)=1/\\lambda$。\n",
-      tags: ["指数分布", "无记忆性", "寿命分布"]
-    },
-    {
-      id: "prob-rv-def-normal",
-      chapterId: "random-variable",
-      type: "definition",
-      title: "正态分布",
-      md: "### 〔定义〕\n\n若随机变量 $X$ 的概率密度为 $f(x)=\\dfrac{1}{\\sqrt{2\\pi}\\sigma}e^{-\\frac{(x-\\mu)^2}{2\\sigma^2}},\\ -\\infty<x<+\\infty$（$\\mu,\\sigma$ 为常数，$\\sigma>0$），则称 $X$ 服从参数为 $\\mu,\\sigma^2$ 的**正态分布**，记作 $X\\sim N(\\mu,\\sigma^2)$，此时 $E(X)=\\mu$，$D(X)=\\sigma^2$。\n\n### 〔提示〕\n\n密度曲线关于 $x=\\mu$ 对称，在 $x=\\mu$ 处取最大值，在 $x=\\mu\\pm\\sigma$ 处有拐点，是自然界和社会现象中最常见的分布，==中心极限定理保证了大量独立随机因素叠加近似服从正态分布==。\n",
-      diagram: `<svg viewBox="0 0 320 170" xmlns="http://www.w3.org/2000/svg">
-        <line x1="20" y1="150" x2="300" y2="150" stroke="currentColor" stroke-width="1.5"/>
-        <path d="M30,150 C70,150 90,40 160,40 C230,40 250,150 290,150" fill="none" stroke="#3b82f6" stroke-width="2"/>
-        <line x1="160" y1="150" x2="160" y2="40" stroke="currentColor" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"/>
-        <text x="155" y="166" font-size="11" fill="currentColor">μ</text>
-        <line x1="120" y1="150" x2="120" y2="95" stroke="currentColor" stroke-width="1" stroke-dasharray="2 2" opacity="0.4"/>
-        <line x1="200" y1="150" x2="200" y2="95" stroke="currentColor" stroke-width="1" stroke-dasharray="2 2" opacity="0.4"/>
-        <text x="105" y="166" font-size="10" fill="currentColor" opacity="0.7">μ-σ</text>
-        <text x="192" y="166" font-size="10" fill="currentColor" opacity="0.7">μ+σ</text>
-      </svg>`,
-      diagramCaption: "正态分布密度曲线关于 x=μ 对称的钟形曲线，μ±σ 处是曲线的拐点",
-      tags: ["正态分布", "高斯分布"]
-    },
-    {
-      id: "prob-rv-def-standard-normal",
-      chapterId: "random-variable",
-      type: "definition",
-      title: "标准正态分布及标准化",
-      md: "### 〔定义〕\n\n- $\\mu=0,\\sigma=1$ 时的正态分布称为**标准正态分布**，记作 $N(0,1)$，其密度记为 $\\varphi(x)=\\dfrac{1}{\\sqrt{2\\pi}}e^{-\\frac{x^2}{2}}$，分布函数记为 $\\Phi(x)$。\n- 若 $X\\sim N(\\mu,\\sigma^2)$，则 $Z=\\dfrac{X-\\mu}{\\sigma}\\sim N(0,1)$，且 $F(x)=\\Phi\\left(\\dfrac{x-\\mu}{\\sigma}\\right)$。\n\n### 〔提示〕\n\n- **标准化**是求一般正态分布概率的核心方法：==任何正态分布问题都通过 $Z=(X-\\mu)/\\sigma$ 转化为查标准正态分布表==。\n- $\\Phi(-x)=1-\\Phi(x)$，$\\Phi(0)=0.5$。\n",
-      tags: ["标准正态分布", "标准化", "Φ函数"]
-    },
-    {
-      id: "prob-rv-thm-function-of-rv",
-      chapterId: "random-variable",
-      type: "theorem",
-      title: "随机变量函数的分布（一维）",
-      md: "### 〔定理〕\n\n- 设 $X$ 是连续型随机变量，密度为 $f_X(x)$，$Y=g(X)$。\n- 若 $g(x)$ **严格单调**、可导且反函数 $h(y)=g^{-1}(y)$ 存在连续导数，则 $Y$ 的概率密度为 $f_Y(y)=f_X(h(y))\\,|h'(y)|$（在 $y$ 的相应取值范围内，否则为 $0$）。\n\n### 〔提示〕\n\n非单调情形（如 $Y=X^2$）需先用**分布函数法**：$F_Y(y)=P\\{g(X)\\leqslant y\\}$，通过求 $X$ 满足条件的区域再对 $x$ 积分，最后对 $y$ 求导得到 $f_Y(y)$，==这是处理非单调函数的通用方法==。\n",
-      tags: ["随机变量函数", "分布函数法", "公式法"]
-    },
-    {
-      id: "prob-mrv-def-joint-distribution",
+      id: "prob-mrv-joint-cdf",
       chapterId: "multivariate-rv",
       type: "definition",
-      title: "二维随机变量及联合分布函数",
-      md: "### 〔定义〕\n\n- 设 $X,Y$ 是定义在同一样本空间上的两个随机变量，称 $(X,Y)$ 为**二维随机变量**。\n- 对任意实数 $x,y$，称 $F(x,y)=P\\{X\\leqslant x, Y\\leqslant y\\}$ 为 $(X,Y)$ 的**联合分布函数**。\n\n### 〔提示〕\n\n$F(x,y)$ 表示随机点 $(X,Y)$ 落在以 $(x,y)$ 为右上顶点的左下无穷矩形区域内的概率，$P\\{x_1<X\\leqslant x_2, y_1<Y\\leqslant y_2\\}=F(x_2,y_2)-F(x_1,y_2)-F(x_2,y_1)+F(x_1,y_1)$。\n",
-      tags: ["联合分布函数", "二维随机变量"]
+      types: ["definition", "property"],
+      module: 1,
+      card: "①",
+      title: "二维随机变量与联合分布函数",
+      md: "### 〔定义〕二维随机变量与联合分布函数\n\n设 $X, Y$ 是定义在同一样本空间上的两个随机变量，称 $(X, Y)$ 为==二维随机变量==，称\n$$F(x, y) = P\\{X \\le x,\\ Y \\le y\\}$$\n\n为 $(X, Y)$ 的==联合分布函数==。\n\n---\n\n### 〔性质〕联合分布函数的性质\n\n- **单调不减**：$F(x, y)$ 对 $x$、对 $y$ 分别单调不减；\n- **两端极限**：$0 \\le F(x, y) \\le 1$，$F(-\\infty, y) = F(x, -\\infty) = 0$，$F(+\\infty, +\\infty) = 1$；\n- **右连续**：$F(x, y)$ 对 $x$、对 $y$ 分别右连续；\n- **矩形概率**：\n  $$\\begin{aligned} & P\\{x_1 < X \\le x_2,\\ y_1 < Y \\le y_2\\} \\\\ = {} & F(x_2, y_2) - F(x_1, y_2) \\\\ & - F(x_2, y_1) + F(x_1, y_1) \\end{aligned}$$\n\n---\n\n### 〔定义〕边缘分布函数\n\n$$F_X(x) = F(x, +\\infty), \\qquad F_Y(y) = F(+\\infty, y)$$\n\n分别称为 $X$ 与 $Y$ 的==边缘分布函数==。联合分布决定边缘分布；反之，边缘分布一般不能决定联合分布。",
+      tags: ["二维随机变量", "联合分布函数", "边缘分布函数", "定义", "性质"]
     },
     {
-      id: "prob-mrv-def-joint-discrete",
+      id: "prob-mrv-discrete",
       chapterId: "multivariate-rv",
       type: "definition",
-      title: "二维离散型随机变量的联合分布律",
-      md: "### 〔定义〕\n\n- 若二维随机变量 $(X,Y)$ 所有可能取值为有限对或可列无限多对，称 $(X,Y)$ 为**离散型**。\n- 称 $P\\{X=x_i, Y=y_j\\}=p_{ij},\\ i,j=1,2,\\cdots$ 为 $(X,Y)$ 的**联合分布律**，满足 $p_{ij}\\geqslant 0$ 且 $\\sum\\limits_{i}\\sum\\limits_{j}p_{ij}=1$。\n\n### 〔提示〕\n\n通常用二维表格表示联合分布律，==横向、纵向求和分别得到 $Y,X$ 的边缘分布律==，这是求边缘分布最直观的方法。\n",
-      tags: ["联合分布律", "离散型", "二维"]
+      types: ["definition", "theorem"],
+      module: 1,
+      card: "②",
+      title: "二维离散型随机变量",
+      md: "### 〔定义〕联合分布律\n\n若 $(X, Y)$ 的全部可能取值为有限对或可列无限对 $(x_i, y_j)$，称\n$$P\\{X = x_i,\\ Y = y_j\\} = p_{ij}, \\quad i, j = 1, 2, \\cdots$$\n\n为 $(X, Y)$ 的==联合分布律==，其充要条件为 $p_{ij} \\ge 0$，$\\sum\\limits_i \\sum\\limits_j p_{ij} = 1$。\n\n---\n\n### 〔定理〕边缘分布律\n\n- **$X$ 的边缘分布律**：$p_{i\\cdot} = P\\{X = x_i\\} = \\sum\\limits_j p_{ij}$；\n- **$Y$ 的边缘分布律**：$p_{\\cdot j} = P\\{Y = y_j\\} = \\sum\\limits_i p_{ij}$。\n\n---\n\n### 〔定义〕条件分布律\n\n- **$Y = y_j$ 条件下 $X$ 的分布律**（$p_{\\cdot j} > 0$）：$P\\{X = x_i \\mid Y = y_j\\} = \\dfrac{p_{ij}}{p_{\\cdot j}}$，$i = 1, 2, \\cdots$；\n- **$X = x_i$ 条件下 $Y$ 的分布律**（$p_{i\\cdot} > 0$）：$P\\{Y = y_j \\mid X = x_i\\} = \\dfrac{p_{ij}}{p_{i\\cdot}}$，$j = 1, 2, \\cdots$。",
+      tags: ["联合分布律", "边缘分布律", "条件分布律", "定义", "定理"]
     },
     {
-      id: "prob-mrv-def-joint-density",
+      id: "prob-mrv-continuous",
       chapterId: "multivariate-rv",
       type: "definition",
-      title: "二维连续型随机变量的联合概率密度",
-      md: "### 〔定义〕\n\n若存在非负可积函数 $f(x,y)$，使对任意 $x,y$ 有 $F(x,y)=\\displaystyle\\int_{-\\infty}^{x}\\int_{-\\infty}^{y}f(u,v)\\,\\mathrm{d}u\\,\\mathrm{d}v$，则称 $(X,Y)$ 为**二维连续型随机变量**，$f(x,y)$ 为其**联合概率密度**，满足 $f(x,y)\\geqslant 0$ 且 $\\displaystyle\\iint_{\\mathbb{R}^2}f(x,y)\\,\\mathrm{d}x\\,\\mathrm{d}y=1$。\n\n### 〔提示〕\n\n对平面区域 $D$，$P\\{(X,Y)\\in D\\}=\\displaystyle\\iint_D f(x,y)\\,\\mathrm{d}x\\,\\mathrm{d}y$，在 $f(x,y)$ 连续点处 $\\dfrac{\\partial^2 F}{\\partial x\\partial y}=f(x,y)$。\n",
-      tags: ["联合概率密度", "连续型", "二维"]
+      types: ["definition", "theorem"],
+      module: 1,
+      card: "③",
+      title: "二维连续型随机变量",
+      md: "### 〔定义〕联合概率密度\n\n若存在非负可积函数 $f(x, y)$，使对任意 $x, y$，\n$$F(x, y) = \\int_{-\\infty}^{x}\\int_{-\\infty}^{y} f(u, v)\\,\\mathrm{d}u\\,\\mathrm{d}v$$\n\n则称 $(X, Y)$ 为==二维连续型随机变量==，$f(x, y)$ 称为==联合概率密度==。\n- **充要条件**：$f(x, y) \\ge 0$，且 $\\displaystyle\\iint_{\\mathbb{R}^2} f(x, y)\\,\\mathrm{d}x\\,\\mathrm{d}y = 1$；\n- **区域概率**：$P\\{(X, Y) \\in D\\} = \\displaystyle\\iint_D f(x, y)\\,\\mathrm{d}x\\,\\mathrm{d}y$；\n- **与分布函数**：在 $f(x, y)$ 的连续点处，$\\dfrac{\\partial^2 F}{\\partial x\\,\\partial y} = f(x, y)$。\n\n---\n\n### 〔定理〕边缘概率密度\n\n$$f_X(x) = \\int_{-\\infty}^{+\\infty} f(x, y)\\,\\mathrm{d}y$$\n$$f_Y(y) = \\int_{-\\infty}^{+\\infty} f(x, y)\\,\\mathrm{d}x$$\n\n---\n\n### 〔定义〕条件概率密度\n\n- **$Y = y$ 条件下 $X$ 的密度**（$f_Y(y) > 0$）：$f_{X \\mid Y}(x \\mid y) = \\dfrac{f(x, y)}{f_Y(y)}$；\n- **$X = x$ 条件下 $Y$ 的密度**（$f_X(x) > 0$）：$f_{Y \\mid X}(y \\mid x) = \\dfrac{f(x, y)}{f_X(x)}$；\n- **乘法公式**：$f(x, y) = f_X(x)f_{Y \\mid X}(y \\mid x) = f_Y(y)f_{X \\mid Y}(x \\mid y)$。",
+      tags: ["联合概率密度", "边缘概率密度", "条件概率密度", "定义", "定理"]
     },
     {
-      id: "prob-mrv-def-marginal-distribution",
+      id: "prob-mrv-independence",
       chapterId: "multivariate-rv",
       type: "definition",
-      title: "边缘分布函数",
-      md: "### 〔定义〕\n\n设 $(X,Y)$ 的联合分布函数为 $F(x,y)$，则 $X$ 的**边缘分布函数** $F_X(x)=P\\{X\\leqslant x\\}=F(x,+\\infty)$，$Y$ 的边缘分布函数 $F_Y(y)=P\\{Y\\leqslant y\\}=F(+\\infty,y)$。\n\n### 〔提示〕\n\n边缘分布反映单个随机变量自身的分布规律，是从联合分布中\"退化\"得到的，可以由联合分布唯一确定，但==反过来一般不能由边缘分布确定联合分布（除非独立）==。\n",
-      tags: ["边缘分布函数", "定义"]
-    },
-    {
-      id: "prob-mrv-thm-marginal-density",
-      chapterId: "multivariate-rv",
-      type: "theorem",
-      title: "边缘分布律与边缘密度的计算",
-      md: "### 〔定理〕\n\n- **离散型：**$p_{i\\cdot}=P\\{X=x_i\\}=\\sum\\limits_{j}p_{ij}$，$p_{\\cdot j}=P\\{Y=y_j\\}=\\sum\\limits_{i}p_{ij}$。\n- **连续型：**$f_X(x)=\\displaystyle\\int_{-\\infty}^{+\\infty}f(x,y)\\,\\mathrm{d}y$，$f_Y(y)=\\displaystyle\\int_{-\\infty}^{+\\infty}f(x,y)\\,\\mathrm{d}x$。\n\n### 〔提示〕\n\n==求边缘密度时要特别注意积分限==——需根据 $(x,y)$ 使 $f(x,y)\\neq 0$ 的区域确定关于另一变量的积分范围，这是求边缘密度最容易出错的地方。\n",
-      tags: ["边缘分布律", "边缘密度", "计算公式"]
-    },
-    {
-      id: "prob-mrv-def-conditional-distribution",
-      chapterId: "multivariate-rv",
-      type: "definition",
-      title: "条件分布",
-      md: "### 〔定义〕\n\n- **离散型：**当 $P\\{Y=y_j\\}>0$ 时，$P\\{X=x_i\\mid Y=y_j\\}=\\dfrac{p_{ij}}{p_{\\cdot j}}$。\n- **连续型：**当 $f_Y(y)>0$ 时，$X$ 在 $Y=y$ 条件下的条件密度为 $f_{X\\mid Y}(x\\mid y)=\\dfrac{f(x,y)}{f_Y(y)}$。\n\n### 〔提示〕\n\n- 条件密度公式形式上与条件概率公式 $P(A\\mid B)=P(AB)/P(B)$ 完全类似，只是把概率换成了密度。\n- 使用连续型条件密度公式时**要求分母 $f_Y(y)>0$**。\n",
-      tags: ["条件分布", "条件密度"]
-    },
-    {
-      id: "prob-mrv-def-independence",
-      chapterId: "multivariate-rv",
-      type: "definition",
+      types: ["definition", "theorem", "property"],
+      module: 2,
+      card: "④",
       title: "随机变量的独立性",
-      md: "### 〔定义〕\n\n设 $F(x,y)$、$F_X(x)$、$F_Y(y)$ 分别为 $(X,Y)$ 的联合分布函数和边缘分布函数，若对任意 $x,y$ 都有 $F(x,y)=F_X(x)F_Y(y)$，则称 $X$ 与 $Y$ **相互独立**。\n\n- 离散型等价于对一切 $i,j$ 有 $p_{ij}=p_{i\\cdot}\\,p_{\\cdot j}$；\n- 连续型等价于在 $f(x,y)$ 的连续点处 $f(x,y)=f_X(x)f_Y(y)$。\n\n### 〔提示〕\n\n判断连续型独立性的常用**充要条件**：==密度函数 $f(x,y)$ 可以分离变量为 $g(x)h(y)$ 的乘积形式，且 $(X,Y)$ 的取值区域是矩形==（可分离为 $x$、$y$ 各自的区间），二者缺一不可。\n",
-      tags: ["独立性", "二维随机变量", "充要条件"]
+      md: "### 〔定义〕随机变量的相互独立\n\n若对任意实数 $x, y$，\n$$F(x, y) = F_X(x)F_Y(y)$$\n\n则称 $X$ 与 $Y$ ==相互独立==。\n\n---\n\n### 〔定理〕独立性的判别\n\n- **离散型**：$X$ 与 $Y$ 独立 $\\iff$ 对一切 $i, j$ 有 $p_{ij} = p_{i\\cdot}\\,p_{\\cdot j}$；\n- **连续型**：$X$ 与 $Y$ 独立 $\\iff$ 在 $f(x, y)$、$f_X(x)$、$f_Y(y)$ 的公共连续点处 $f(x, y) = f_X(x)f_Y(y)$；\n- **分离变量**：若联合密度对一切 $(x, y)$ 可写成 $f(x, y) = g(x)h(y)$，则 $X$ 与 $Y$ 独立。\n\n---\n\n### 〔定义〕$n$ 个随机变量的相互独立\n\n若对任意实数 $x_1, \\cdots, x_n$，\n$$F(x_1, \\cdots, x_n) = F_{X_1}(x_1)F_{X_2}(x_2) \\cdots F_{X_n}(x_n)$$\n\n则称 $X_1, \\cdots, X_n$ ==相互独立==。\n\n---\n\n### 〔性质〕独立随机变量的函数\n\n- **函数仍独立**：若 $X$ 与 $Y$ 独立，$g, h$ 为连续函数，则 $g(X)$ 与 $h(Y)$ 独立；\n- **分组后仍独立**：若 $X_1, \\cdots, X_n$ 相互独立，则 $g(X_1, \\cdots, X_m)$ 与 $h(X_{m+1}, \\cdots, X_n)$ 独立。",
+      tags: ["相互独立", "独立性的判别", "n个随机变量的独立性", "定义", "定理", "性质"]
     },
     {
-      id: "prob-mrv-def-binormal",
+      id: "prob-mrv-common",
       chapterId: "multivariate-rv",
       type: "definition",
-      title: "二维正态分布",
-      md: "### 〔定义〕\n\n若 $(X,Y)$ 的联合概率密度为 $f(x,y)=\\dfrac{1}{2\\pi\\sigma_1\\sigma_2\\sqrt{1-\\rho^2}}\\exp\\left\\{-\\dfrac{1}{2(1-\\rho^2)}\\left[\\dfrac{(x-\\mu_1)^2}{\\sigma_1^2}-2\\rho\\dfrac{(x-\\mu_1)(y-\\mu_2)}{\\sigma_1\\sigma_2}+\\dfrac{(y-\\mu_2)^2}{\\sigma_2^2}\\right]\\right\\}$，则称 $(X,Y)$ 服从参数为 $\\mu_1,\\mu_2,\\sigma_1^2,\\sigma_2^2,\\rho$ 的**二维正态分布**，记作 $(X,Y)\\sim N(\\mu_1,\\mu_2,\\sigma_1^2,\\sigma_2^2,\\rho)$。\n\n### 〔提示〕\n\n- 二维正态分布的两个边缘分布分别为 $X\\sim N(\\mu_1,\\sigma_1^2)$，$Y\\sim N(\\mu_2,\\sigma_2^2)$，且 $\\rho$ 就是 $X,Y$ 的相关系数。\n- 二维正态分布中，$X$ 与 $Y$ 相互独立的**充要条件**是 $\\rho=0$（==不相关等价于独立，这是正态分布独有的性质==）。\n",
-      tags: ["二维正态分布", "相关系数", "独立性"]
+      types: ["definition", "property"],
+      module: 2,
+      card: "⑤",
+      title: "二维均匀分布与二维正态分布",
+      md: "### 〔定义〕二维均匀分布\n\n设 $G$ 是面积为 $S_G$ 的平面有界区域，若 $(X, Y)$ 的联合密度为\n$$f(x, y) = \\begin{cases} \\dfrac{1}{S_G}, & (x, y) \\in G \\\\ 0, & \\text{其他} \\end{cases}$$\n\n则称 $(X, Y)$ 在 $G$ 上服从==二维均匀分布==。\n- **子区域概率**：$D \\subset G$ 时，$P\\{(X, Y) \\in D\\} = \\dfrac{S_D}{S_G}$。\n\n---\n\n### 〔定义〕二维正态分布\n\n若 $(X, Y)$ 的联合密度为\n$$f(x, y) = \\dfrac{1}{2\\pi\\sigma_1\\sigma_2\\sqrt{1 - \\rho^2}}\\,e^{-\\frac{Q}{2(1 - \\rho^2)}}$$\n\n其中\n$$\\begin{aligned} Q = {} & \\dfrac{(x - \\mu_1)^2}{\\sigma_1^2} + \\dfrac{(y - \\mu_2)^2}{\\sigma_2^2} \\\\ & - 2\\rho\\dfrac{(x - \\mu_1)(y - \\mu_2)}{\\sigma_1\\sigma_2} \\end{aligned}$$\n\n（$\\sigma_1, \\sigma_2 > 0$，$|\\rho| < 1$），则称 $(X, Y)$ 服从==二维正态分布==，记作 $(X, Y) \\sim N(\\mu_1, \\mu_2; \\sigma_1^2, \\sigma_2^2; \\rho)$。\n\n---\n\n### 〔性质〕二维正态分布的性质\n\n设 $(X, Y) \\sim N(\\mu_1, \\mu_2; \\sigma_1^2, \\sigma_2^2; \\rho)$：\n- **边缘分布**：$X \\sim N(\\mu_1, \\sigma_1^2)$，$Y \\sim N(\\mu_2, \\sigma_2^2)$；\n- **独立的充要条件**：$X$ 与 $Y$ 相互独立 $\\iff$ ==$\\rho = 0$==；\n- **线性组合**：$aX + bY$（$a, b$ 不全为零）服从一维正态分布。",
+      tags: ["二维均匀分布", "二维正态分布", "边缘分布", "线性组合", "定义", "性质"]
     },
     {
-      id: "prob-mrv-thm-binormal-linear",
-      chapterId: "multivariate-rv",
-      type: "theorem",
-      title: "二维正态分布的线性组合",
-      md: "### 〔定理〕\n\n- 若 $(X,Y)\\sim N(\\mu_1,\\mu_2,\\sigma_1^2,\\sigma_2^2,\\rho)$，则 $X,Y$ 的任意线性组合 $aX+bY$（$a,b$ 不同时为零）**仍服从一维正态分布**；\n- 且当 $X,Y$ 相互独立且均为正态分布时，$aX+bY\\sim N(a\\mu_1+b\\mu_2,\\ a^2\\sigma_1^2+b^2\\sigma_2^2)$。\n\n### 〔提示〕\n\n==\"正态分布的线性组合仍是正态分布\"==是正态分布的**可加性**，是数理统计中抽样分布（如样本均值的分布）推导的理论基础。\n",
-      tags: ["二维正态", "线性组合", "正态可加性"]
-    },
-    {
-      id: "prob-mrv-thm-sum-of-independent",
-      chapterId: "multivariate-rv",
-      type: "theorem",
-      title: "两个独立随机变量之和的分布（卷积公式）",
-      md: "### 〔定理〕\n\n设 $X,Y$ 相互独立，概率密度分别为 $f_X(x),f_Y(y)$，则 $Z=X+Y$ 的概率密度为 $f_Z(z)=\\displaystyle\\int_{-\\infty}^{+\\infty}f_X(x)f_Y(z-x)\\,\\mathrm{d}x=\\displaystyle\\int_{-\\infty}^{+\\infty}f_Y(y)f_X(z-y)\\,\\mathrm{d}y$。\n\n### 〔提示〕\n\n- 该公式称为**卷积公式**，是求两独立随机变量之和分布的通用方法。\n- 特别地：\n\n- 独立正态变量之和仍为正态（可加性）\n- 独立同参数指数/伽马变量之和有类似可加性\n- 独立泊松变量之和仍为泊松（$\\lambda$ 相加）\n- 独立二项变量（相同 $p$）之和仍为二项（$n$ 相加）\n",
-      tags: ["卷积公式", "和的分布", "分布可加性"]
-    },
-    {
-      id: "prob-mrv-thm-max-min",
-      chapterId: "multivariate-rv",
-      type: "theorem",
-      title: "多个独立随机变量最大值与最小值的分布",
-      md: "### 〔定理〕\n\n- 设 $X_1,X_2,\\cdots,X_n$ 相互独立，$X_i$ 的分布函数为 $F_{X_i}(x)$，令 $M=\\max\\{X_1,\\cdots,X_n\\}$，$N=\\min\\{X_1,\\cdots,X_n\\}$，则 $F_M(x)=\\prod\\limits_{i=1}^{n}F_{X_i}(x)$，$F_N(x)=1-\\prod\\limits_{i=1}^{n}[1-F_{X_i}(x)]$。\n- 特别当 $X_1,\\cdots,X_n$ 独立同分布，分布函数均为 $F(x)$ 时，$F_M(x)=[F(x)]^n$，$F_N(x)=1-[1-F(x)]^n$。\n\n### 〔提示〕\n\n- 推导关键：$\\{M\\leqslant x\\}=\\{X_1\\leqslant x,\\cdots,X_n\\leqslant x\\}$（各事件独立取乘积），$\\{N> x\\}=\\{X_1>x,\\cdots,X_n>x\\}$。\n- ==这是数理统计中样本极值分布、次序统计量问题的基础==。\n",
-      tags: ["最大值分布", "最小值分布", "次序统计量"]
-    },
-    {
-      id: "prob-mrv-def-uniform2d",
-      chapterId: "multivariate-rv",
-      type: "definition",
-      title: "二维均匀分布",
-      md: "### 〔定义〕\n\n设 $G$ 是平面上的有界区域，其面积为 $S_G$，若二维随机变量 $(X,Y)$ 的概率密度为 $f(x,y)=\\begin{cases}\\dfrac{1}{S_G}, & (x,y)\\in G,\\\\ 0, & (x,y)\\notin G,\\end{cases}$ 则称 $(X,Y)$ 在区域 $G$ 上服从**均匀分布**。\n\n### 〔提示〕\n\n二维均匀分布下，$(X,Y)$ 落在 $G$ 内任一子区域 $D$ 的概率只与 $D$ 的面积成正比，$P\\{(X,Y)\\in D\\}=\\dfrac{S_D}{S_G}\\ (D\\subset G)$，这是几何概型在二维情形的推广，==边缘分布一般不再是均匀分布（除非 $G$ 为矩形）==。\n",
-      tags: ["二维均匀分布", "几何概型"]
-    },
-    {
-      id: "prob-mrv-def-conditional-distribution-function",
-      chapterId: "multivariate-rv",
-      type: "definition",
-      title: "条件分布函数",
-      md: "### 〔定义〕\n\n- 设 $(X,Y)$ 为二维离散型随机变量，对于固定的 $j$，若 $P\\{Y=y_j\\}>0$，则称 $F_{X\\mid Y}(x\\mid y_j)=P\\{X\\leqslant x\\mid Y=y_j\\}=\\sum\\limits_{x_i\\leqslant x}P\\{X=x_i\\mid Y=y_j\\}$ 为在 $Y=y_j$ 条件下 $X$ 的**条件分布函数**；\n- 类似地可定义 $F_{Y\\mid X}(y\\mid x_i)$。\n\n### 〔提示〕\n\n条件分布函数与条件分布律满足普通分布函数与分布律之间同样的关系，用于研究\"给定一个变量取值后另一变量的分布规律\"，是条件密度概念在离散场合的对应。\n",
-      tags: ["条件分布函数", "离散型"]
-    },
-    {
-      id: "prob-mrv-def-n-independence",
-      chapterId: "multivariate-rv",
-      type: "definition",
-      title: "n个随机变量的相互独立性",
-      md: "### 〔定义〕\n\n设 $X_1,X_2,\\cdots,X_n$ 是 $n$ 个随机变量，若它们的联合分布函数等于各自边缘分布函数的乘积，即对任意实数 $x_1,\\cdots,x_n$ 有 $F(x_1,x_2,\\cdots,x_n)=F_{X_1}(x_1)F_{X_2}(x_2)\\cdots F_{X_n}(x_n)$，则称 $X_1,X_2,\\cdots,X_n$ **相互独立**。\n\n### 〔提示〕\n\n- 若 $X_1,\\cdots,X_n$ 相互独立，则**其中任意 $k\\ (2\\leqslant k\\leqslant n)$ 个也相互独立**；\n- 若把它们分成两组，则由各组变量构成的函数（如 $g(X_1,\\cdots,X_m)$ 与 $h(X_{m+1},\\cdots,X_n)$）也相互独立。\n",
-      tags: ["多个随机变量独立", "相互独立"]
-    },
-    {
-      id: "prob-mrv-prop-function-independence",
+      id: "prob-mrv-function",
       chapterId: "multivariate-rv",
       type: "property",
-      title: "随机变量函数的独立性",
-      md: "### 〔性质〕\n\n设 $X$ 与 $Y$ 相互独立，$g(\\cdot),h(\\cdot)$ 为连续函数，则 $g(X)$ 与 $h(Y)$ **也相互独立**。\n\n### 〔提示〕\n\n该性质说明==独立性在取函数变换下具有传递性==，是判断复杂随机变量函数（如 $X^2$ 与 $\\sin Y$）独立性的常用依据，也是理解正态总体中 $\\bar X$ 与 $S^2$ 独立性证明思路的直观基础。\n",
-      tags: ["独立性", "函数独立性"]
+      types: ["theorem", "property"],
+      module: 3,
+      card: "⑥",
+      title: "两个随机变量函数的分布",
+      md: "### 〔方法〕离散型\n\n已知 $(X, Y)$ 的联合分布律，求 $Z = g(X, Y)$ 的分布律：列出 $Z$ 的全部取值，取值相同的把概率相加，即\n$$P\\{Z = z_k\\} = \\sum_{g(x_i, y_j) = z_k} p_{ij}$$\n\n---\n\n### 〔方法〕分布函数法\n\n已知 $(X, Y)$ 的联合密度 $f(x, y)$：\n1. **求分布函数**：\n   $$\\begin{aligned} F_Z(z) &= P\\{g(X, Y) \\le z\\} \\\\ &= \\iint_{g(x, y) \\le z} f(x, y)\\,\\mathrm{d}x\\,\\mathrm{d}y \\end{aligned}$$\n2. **求导**：$f_Z(z) = F_Z'(z)$。\n\n---\n\n### 〔定理〕和的分布（卷积公式）\n\n设 $(X, Y)$ 的联合密度为 $f(x, y)$，则 $Z = X + Y$ 的概率密度为\n$$\\begin{aligned} f_Z(z) &= \\int_{-\\infty}^{+\\infty} f(x, z - x)\\,\\mathrm{d}x \\\\ &= \\int_{-\\infty}^{+\\infty} f(z - y, y)\\,\\mathrm{d}y \\end{aligned}$$\n\n- **独立时**：$f_Z(z) = \\displaystyle\\int_{-\\infty}^{+\\infty} f_X(x)f_Y(z - x)\\,\\mathrm{d}x$。\n\n---\n\n### 〔定理〕最大值与最小值的分布\n\n设 $X_1, \\cdots, X_n$ 相互独立，分布函数分别为 $F_1(x), \\cdots, F_n(x)$：\n- **最大值** $M = \\max\\{X_1, \\cdots, X_n\\}$：$F_M(z) = F_1(z)F_2(z) \\cdots F_n(z)$；\n- **最小值** $N = \\min\\{X_1, \\cdots, X_n\\}$：$F_N(z) = 1 - [1 - F_1(z)] \\cdots [1 - F_n(z)]$；\n- **同分布时**：$F_M(z) = [F(z)]^n$，$F_N(z) = 1 - [1 - F(z)]^n$。\n\n---\n\n### 〔性质〕常见分布的可加性\n\n设 $X$ 与 $Y$ 相互独立：\n- **二项分布**：$X \\sim B(n_1, p)$，$Y \\sim B(n_2, p)$ $\\implies X + Y \\sim B(n_1 + n_2, p)$；\n- **泊松分布**：$X \\sim P(\\lambda_1)$，$Y \\sim P(\\lambda_2)$ $\\implies X + Y \\sim P(\\lambda_1 + \\lambda_2)$；\n- **正态分布**：$X \\sim N(\\mu_1, \\sigma_1^2)$，$Y \\sim N(\\mu_2, \\sigma_2^2)$ $\\implies$\n  $$aX + bY \\sim N(a\\mu_1 + b\\mu_2,\\ a^2\\sigma_1^2 + b^2\\sigma_2^2)$$\n  （$a, b$ 不全为零）。",
+      tags: ["随机变量函数的分布", "卷积公式", "最大值", "最小值", "可加性", "定理", "性质"]
     },
     {
-      id: "prob-nc-def-expectation-discrete",
+      id: "prob-nc-expectation",
       chapterId: "numerical-characteristics",
       type: "definition",
-      title: "数学期望（离散型）",
-      md: "### 〔定义〕\n\n设离散型随机变量 $X$ 的分布律为 $P\\{X=x_k\\}=p_k,\\ k=1,2,\\cdots$，若级数 $\\sum\\limits_{k=1}^{\\infty}x_kp_k$ **绝对收敛**，则称其和为 $X$ 的**数学期望**，记作 $E(X)=\\sum\\limits_{k=1}^{\\infty}x_kp_k$。\n\n### 〔提示〕\n\n- 要求级数绝对收敛（即 $\\sum|x_k|p_k$ 收敛）是为了保证期望值不依赖于求和顺序，若不满足绝对收敛则称期望不存在。\n- 数学期望是随机变量取值的**\"概率加权平均\"**，反映其集中位置。\n",
-      tags: ["数学期望", "离散型", "绝对收敛"]
+      types: ["definition", "theorem", "property"],
+      module: 1,
+      card: "①",
+      title: "数学期望",
+      md: "### 〔定义〕数学期望\n\n- **离散型**：若级数 $\\sum\\limits_k x_k p_k$ ==绝对收敛==，则 $E(X) = \\sum\\limits_k x_k p_k$；\n- **连续型**：若积分 $\\displaystyle\\int_{-\\infty}^{+\\infty} xf(x)\\,\\mathrm{d}x$ ==绝对收敛==，则 $E(X) = \\displaystyle\\int_{-\\infty}^{+\\infty} xf(x)\\,\\mathrm{d}x$。\n\n级数（积分）不绝对收敛时，称 $X$ 的数学期望不存在。\n\n---\n\n### 〔定理〕随机变量函数的数学期望\n\n不必先求出函数的分布，直接用原分布计算（级数、积分绝对收敛时）：\n- **一维**：$Y = g(X)$，$E(Y) = \\sum\\limits_k g(x_k)p_k$ 或 $E(Y) = \\displaystyle\\int_{-\\infty}^{+\\infty} g(x)f(x)\\,\\mathrm{d}x$；\n- **二维**：$Z = g(X, Y)$，$E(Z) = \\sum\\limits_i \\sum\\limits_j g(x_i, y_j)p_{ij}$ 或\n  $$E(Z) = \\iint_{\\mathbb{R}^2} g(x, y)f(x, y)\\,\\mathrm{d}x\\,\\mathrm{d}y$$\n\n---\n\n### 〔性质〕数学期望的性质\n\n- **常数**：$E(C) = C$；\n- **线性**：$E(aX + b) = aE(X) + b$，$E(X + Y) = E(X) + E(Y)$（==不要求独立==）；\n- **独立时的乘积**：若 $X$ 与 $Y$ 独立，则 $E(XY) = E(X)E(Y)$。",
+      tags: ["数学期望", "绝对收敛", "随机变量函数的期望", "期望的性质", "定义", "定理", "性质"]
     },
     {
-      id: "prob-nc-def-expectation-continuous",
+      id: "prob-nc-variance",
       chapterId: "numerical-characteristics",
       type: "definition",
-      title: "数学期望（连续型）",
-      md: "### 〔定义〕\n\n设连续型随机变量 $X$ 的概率密度为 $f(x)$，若积分 $\\displaystyle\\int_{-\\infty}^{+\\infty}xf(x)\\,\\mathrm{d}x$ **绝对收敛**，则称其值为 $X$ 的**数学期望**，记作 $E(X)=\\displaystyle\\int_{-\\infty}^{+\\infty}xf(x)\\,\\mathrm{d}x$。\n\n### 〔提示〕\n\n- 同样要求绝对收敛，例如标准柯西分布的期望就不存在。\n- 数学期望是连续型分布密度曲线的**\"质心\"**横坐标。\n",
-      tags: ["数学期望", "连续型"]
+      types: ["definition", "theorem", "property"],
+      module: 1,
+      card: "②",
+      title: "方差",
+      md: "### 〔定义〕方差与标准差\n\n若 $E\\{[X - E(X)]^2\\}$ 存在，则称它为 $X$ 的==方差==，记作 $D(X)$；$\\sqrt{D(X)}$ 称为==标准差==。\n\n---\n\n### 〔定理〕方差的计算公式\n\n$$D(X) = E(X^2) - [E(X)]^2$$\n\n---\n\n### 〔性质〕方差的性质\n\n- **常数**：$D(C) = 0$；\n- **线性变换**：$D(aX + b) = a^2 D(X)$；\n- **独立时的和差**：若 $X$ 与 $Y$ 独立，则 $D(X \\pm Y) = D(X) + D(Y)$（一般情形见卡④）；\n- **方差为零**：$D(X) = 0 \\iff P\\{X = C\\} = 1$，其中 $C = E(X)$。\n\n---\n\n### 〔定义〕标准化随机变量\n\n设 $D(X) > 0$，称\n$$X^* = \\dfrac{X - E(X)}{\\sqrt{D(X)}}$$\n\n为 $X$ 的==标准化随机变量==，$E(X^*) = 0$，$D(X^*) = 1$。",
+      tags: ["方差", "标准差", "方差的计算公式", "方差的性质", "标准化随机变量", "定义", "定理", "性质"]
     },
     {
-      id: "prob-nc-thm-expectation-function",
-      chapterId: "numerical-characteristics",
-      type: "theorem",
-      title: "随机变量函数的数学期望",
-      md: "### 〔定理〕\n\n设 $Y=g(X)$：\n\n- **$X$ 离散：**分布律为 $p_k$，则 $E(Y)=\\sum\\limits_{k}g(x_k)p_k$。\n- **$X$ 连续：**密度为 $f(x)$，则 $E(Y)=\\displaystyle\\int_{-\\infty}^{+\\infty}g(x)f(x)\\,\\mathrm{d}x$（级数或积分绝对收敛时成立）。\n- **二维情形：**$Z=g(X,Y)$ 时 $E(Z)=\\sum\\limits_i\\sum\\limits_j g(x_i,y_j)p_{ij}$ 或 $E(Z)=\\displaystyle\\iint_{\\mathbb{R}^2}g(x,y)f(x,y)\\,\\mathrm{d}x\\,\\mathrm{d}y$。\n\n### 〔提示〕\n\n这条定理（有时称为**\"无需求出 $Y$ 分布的公式\"**）是求随机变量函数期望最重要的工具，==避免了先求 $Y=g(X)$ 的分布再求期望的繁琐步骤==，考研中求 $E(X^2)$、$E(XY)$ 等几乎都靠它。\n",
-      tags: ["期望的计算", "随机变量函数", "核心公式"]
-    },
-    {
-      id: "prob-nc-prop-expectation",
-      chapterId: "numerical-characteristics",
-      type: "property",
-      title: "数学期望的性质",
-      md: "### 〔性质〕\n\n设 $a,b,c$ 为常数：\n\n- $E(c)=c$。\n- $E(aX+b)=aE(X)+b$。\n- **线性可加性：**$E(X+Y)=E(X)+E(Y)$（对任意 $X,Y$，无需独立）。\n- 若 $X,Y$ **相互独立**，则 $E(XY)=E(X)E(Y)$。\n\n### 〔提示〕\n\n- 性质（3）线性可加性对任意随机变量都成立，是求复杂随机变量期望（如超几何分布期望）时**\"拆分为若干简单变量之和\"**技巧的理论依据；\n- 而性质（4）的乘积可分离性则==必须要求独立==。\n",
-      tags: ["期望性质", "线性性", "独立性"]
-    },
-    {
-      id: "prob-nc-def-variance",
-      chapterId: "numerical-characteristics",
-      type: "definition",
-      title: "方差与标准差",
-      md: "### 〔定义〕\n\n- 设 $X$ 是随机变量，若 $E\\{[X-E(X)]^2\\}$ 存在，则称其为 $X$ 的**方差**，记作 $D(X)$ 或 $\\mathrm{Var}(X)$，即 $D(X)=E\\{[X-E(X)]^2\\}$；\n- 称 $\\sqrt{D(X)}$ 为 $X$ 的**标准差（均方差）**，记作 $\\sigma(X)$。\n- 常用计算公式：$D(X)=E(X^2)-[E(X)]^2$。\n\n### 〔提示〕\n\n- 方差衡量随机变量取值相对于其期望的离散程度，方差越小取值越集中。\n- ==计算公式 $D(X)=E(X^2)-[E(X)]^2$ 是考试中求方差的最常用方法==，比按定义直接计算更简便。\n",
-      tags: ["方差", "标准差", "计算公式"]
-    },
-    {
-      id: "prob-nc-prop-variance",
+      id: "prob-nc-common-distributions",
       chapterId: "numerical-characteristics",
       type: "property",
-      title: "方差的性质",
-      md: "### 〔性质〕\n\n设 $a,b,c$ 为常数：\n\n- $D(c)=0$。\n- $D(aX+b)=a^2D(X)$。\n- $D(X)=0\\iff P\\{X=E(X)\\}=1$。\n- $D(X+Y)=D(X)+D(Y)+2\\mathrm{Cov}(X,Y)$；特别地，若 $X,Y$ **相互独立**（或不相关），则 $D(X+Y)=D(X)+D(Y)$。\n\n### 〔提示〕\n\n性质（2）中**平移不改变方差**（$b$ 不出现），伸缩按平方倍变化，这与期望的线性变化 $E(aX+b)=aE(X)+b$ 形成对照，是==极易混淆、常考的辨析点==。\n",
-      tags: ["方差性质", "独立", "常考辨析"]
+      types: ["property"],
+      module: 1,
+      card: "③",
+      title: "常用分布的数字特征",
+      md: "### 〔性质〕常用分布的数学期望与方差\n\n| 分布 | 记号 | 期望 | 方差 |\n| :--- | :--- | :--- | :--- |\n| 0-1 分布 | $B(1, p)$ | $p$ | $p(1 - p)$ |\n| 二项分布 | $B(n, p)$ | $np$ | $np(1 - p)$ |\n| 泊松分布 | $P(\\lambda)$ | $\\lambda$ | $\\lambda$ |\n| 几何分布 | $G(p)$ | $\\frac{1}{p}$ | $\\frac{1 - p}{p^2}$ |\n| 均匀分布 | $U(a, b)$ | $\\frac{a + b}{2}$ | $\\frac{(b - a)^2}{12}$ |\n| 指数分布 | $E(\\lambda)$ | $\\frac{1}{\\lambda}$ | $\\frac{1}{\\lambda^2}$ |\n| 正态分布 | $N(\\mu, \\sigma^2)$ | $\\mu$ | $\\sigma^2$ |\n\n- **超几何分布**：$E(X) = \\dfrac{nM}{N}$。",
+      tags: ["常用分布", "数学期望", "方差", "二项分布", "泊松分布", "几何分布", "均匀分布", "指数分布", "正态分布", "性质"]
     },
     {
-      id: "prob-nc-def-moments",
+      id: "prob-nc-covariance",
       chapterId: "numerical-characteristics",
       type: "definition",
-      title: "矩：原点矩与中心矩",
-      md: "### 〔定义〕\n\n- 设 $X$ 为随机变量，若 $E(X^k)\\ (k=1,2,\\cdots)$ 存在，称其为 $X$ 的 $k$ 阶**原点矩**；\n- 若 $E\\{[X-E(X)]^k\\}$ 存在，称其为 $X$ 的 $k$ 阶**中心矩**。\n- 类似地可定义 $(X,Y)$ 的 $k+l$ 阶混合矩 $E(X^kY^l)$ 和 $k+l$ 阶混合中心矩 $E\\{[X-E(X)]^k[Y-E(Y)]^l\\}$。\n\n### 〔提示〕\n\n- ==一阶原点矩即数学期望 $E(X)$，二阶中心矩即方差 $D(X)$，二阶混合中心矩（$k=l=1$）即协方差 $\\mathrm{Cov}(X,Y)$==。\n- 矩估计法正是用样本矩估计总体矩的思想来源。\n",
-      tags: ["矩", "原点矩", "中心矩"]
+      types: ["definition", "theorem", "property"],
+      module: 2,
+      card: "④",
+      title: "矩与协方差",
+      md: "### 〔定义〕矩\n\n- **$k$ 阶原点矩**：$E(X^k)$；\n- **$k$ 阶中心矩**：$E\\{[X - E(X)]^k\\}$；\n- **$k + l$ 阶混合矩**：$E(X^k Y^l)$；\n- **$k + l$ 阶混合中心矩**：$E\\{[X - E(X)]^k[Y - E(Y)]^l\\}$。\n\n$E(X)$ 是一阶原点矩，$D(X)$ 是二阶中心矩。\n\n---\n\n### 〔定义〕协方差\n\n$$\\operatorname{Cov}(X, Y) = E\\{[X - E(X)][Y - E(Y)]\\}$$\n\n称为 $X$ 与 $Y$ 的==协方差==，即 $1 + 1$ 阶混合中心矩。\n\n---\n\n### 〔定理〕协方差的计算公式\n\n$$\\operatorname{Cov}(X, Y) = E(XY) - E(X)E(Y)$$\n\n---\n\n### 〔性质〕协方差的性质\n\n- **对称**：$\\operatorname{Cov}(X, Y) = \\operatorname{Cov}(Y, X)$；\n- **与方差**：$\\operatorname{Cov}(X, X) = D(X)$；\n- **常数**：$\\operatorname{Cov}(X, C) = 0$；\n- **线性**：$\\operatorname{Cov}(aX + b, cY + d) = ac\\operatorname{Cov}(X, Y)$，$\\operatorname{Cov}(X_1 + X_2, Y) = \\operatorname{Cov}(X_1, Y) + \\operatorname{Cov}(X_2, Y)$；\n- **独立**：若 $X$ 与 $Y$ 独立，则 $\\operatorname{Cov}(X, Y) = 0$。\n\n---\n\n### 〔定理〕和的方差\n\n- **两个**：$D(X \\pm Y) = D(X) + D(Y) \\pm 2\\operatorname{Cov}(X, Y)$；\n- **$n$ 个**：\n  $$\\begin{aligned} & D\\left(\\sum_{i=1}^{n} a_i X_i\\right) \\\\ = {} & \\sum_{i=1}^{n} a_i^2 D(X_i) \\\\ & + 2\\sum_{1 \\le i < j \\le n} a_i a_j \\operatorname{Cov}(X_i, X_j) \\end{aligned}$$",
+      tags: ["原点矩", "中心矩", "混合矩", "协方差", "协方差的性质", "和的方差", "定义", "定理", "性质"]
     },
     {
-      id: "prob-nc-def-covariance",
+      id: "prob-nc-correlation",
       chapterId: "numerical-characteristics",
       type: "definition",
-      title: "协方差",
-      md: "### 〔定义〕\n\n- 设 $(X,Y)$ 是二维随机变量，称 $E\\{[X-E(X)][Y-E(Y)]\\}$ 为 $X$ 与 $Y$ 的**协方差**，记作 $\\mathrm{Cov}(X,Y)$。\n- 常用计算公式：$\\mathrm{Cov}(X,Y)=E(XY)-E(X)E(Y)$。\n\n### 〔提示〕\n\n- 协方差衡量两个随机变量的线性相关程度及方向：$\\mathrm{Cov}(X,Y)>0$ 表明 $X,Y$ 有同向变化趋势，$<0$ 表明反向。\n- 若 $X,Y$ 独立，则 $\\mathrm{Cov}(X,Y)=0$，但==反之不一定成立==。\n",
-      tags: ["协方差", "计算公式"]
+      types: ["definition", "theorem", "property"],
+      module: 2,
+      card: "⑤",
+      title: "相关系数与不相关性",
+      md: "### 〔定义〕相关系数\n\n设 $D(X) > 0$，$D(Y) > 0$，称\n$$\\rho_{XY} = \\dfrac{\\operatorname{Cov}(X, Y)}{\\sqrt{D(X)}\\sqrt{D(Y)}}$$\n\n为 $X$ 与 $Y$ 的==相关系数==；$\\rho_{XY} = 0$ 时称 $X$ 与 $Y$ ==不相关==。\n\n---\n\n### 〔性质〕相关系数的性质\n\n- **有界**：$|\\rho_{XY}| \\le 1$（由 $[\\operatorname{Cov}(X, Y)]^2 \\le D(X)D(Y)$ 得到）；\n- **线性关系**：$|\\rho_{XY}| = 1 \\iff$ 存在常数 $a \\neq 0$、$b$，使 $P\\{Y = aX + b\\} = 1$；$a > 0$ 时 $\\rho_{XY} = 1$，$a < 0$ 时 $\\rho_{XY} = -1$。\n\n---\n\n### 〔定理〕不相关的等价条件\n\n设 $D(X) > 0$，$D(Y) > 0$，以下条件等价：\n1. $\\rho_{XY} = 0$；\n2. $\\operatorname{Cov}(X, Y) = 0$；\n3. $E(XY) = E(X)E(Y)$；\n4. $D(X + Y) = D(X) + D(Y)$。\n\n---\n\n### 〔性质〕独立与不相关\n\n- **独立必不相关**：$X$ 与 $Y$ 独立 $\\implies$ 不相关，==反之不成立==；\n- **二维正态**：若 $(X, Y) \\sim N(\\mu_1, \\mu_2; \\sigma_1^2, \\sigma_2^2; \\rho)$，则参数 $\\rho$ 就是相关系数 $\\rho_{XY}$，此时 $X$ 与 $Y$ 独立 $\\iff$ 不相关（第3章卡⑤）。",
+      tags: ["相关系数", "不相关", "不相关的等价条件", "独立与不相关", "二维正态分布", "定义", "定理", "性质"]
     },
     {
-      id: "prob-nc-prop-covariance",
-      chapterId: "numerical-characteristics",
-      type: "property",
-      title: "协方差的性质",
-      md: "### 〔性质〕\n\n- $\\mathrm{Cov}(X,Y)=\\mathrm{Cov}(Y,X)$。\n- $\\mathrm{Cov}(aX,bY)=ab\\,\\mathrm{Cov}(X,Y)$（$a,b$ 为常数）。\n- $\\mathrm{Cov}(X_1+X_2,Y)=\\mathrm{Cov}(X_1,Y)+\\mathrm{Cov}(X_2,Y)$。\n- $\\mathrm{Cov}(X,X)=D(X)$。\n- $\\mathrm{Cov}(X,c)=0$（$c$ 为常数）。\n\n### 〔提示〕\n\n由这些性质可推出一般公式 $D(X\\pm Y)=D(X)+D(Y)\\pm 2\\mathrm{Cov}(X,Y)$，==协方差的双线性性质是计算多个变量线性组合方差的关键工具==。\n",
-      tags: ["协方差性质", "双线性"]
-    },
-    {
-      id: "prob-nc-def-correlation",
-      chapterId: "numerical-characteristics",
-      type: "definition",
-      title: "相关系数",
-      md: "### 〔定义〕\n\n- 设 $D(X)>0,D(Y)>0$，称 $\\rho_{XY}=\\dfrac{\\mathrm{Cov}(X,Y)}{\\sqrt{D(X)}\\sqrt{D(Y)}}$ 为 $X$ 与 $Y$ 的（线性）**相关系数**。\n- 若 $\\rho_{XY}=0$，称 $X,Y$ **不相关**。\n\n### 〔提示〕\n\n- 相关系数是协方差的标准化（消除量纲影响），$|\\rho_{XY}|$ 越接近 1，$X,Y$ 之间的线性关系越强；\n- $\\rho_{XY}=0$ 只说明二者没有线性关系，不代表没有其他函数关系（**不相关不能推出独立**），但==若 $(X,Y)$ 服从二维正态分布，则不相关与独立等价==。\n",
-      tags: ["相关系数", "不相关", "独立性对比"]
-    },
-    {
-      id: "prob-nc-prop-correlation",
-      chapterId: "numerical-characteristics",
-      type: "property",
-      title: "相关系数的性质与不相关的等价条件",
-      md: "### 〔性质〕\n\n- （1）$|\\rho_{XY}|\\leqslant 1$；\n- （2）$|\\rho_{XY}|=1$ 的**充要条件**是 $X,Y$ 之间几乎处处存在线性关系，即存在常数 $a\\neq 0,b$，使 $P\\{Y=aX+b\\}=1$。\n- 下列四个命题相互等价：\n\n- $\\rho_{XY}=0$\n- $\\mathrm{Cov}(X,Y)=0$\n- $E(XY)=E(X)E(Y)$\n- $D(X+Y)=D(X)+D(Y)$\n\n### 〔提示〕\n\n- 这四个等价命题是判断\"不相关\"的常用切入口，考试中常要求证明或利用其一推出其余。\n- 切记==\"不相关\"是比\"独立\"更弱的条件：独立必不相关，不相关未必独立==。\n",
-      tags: ["相关系数性质", "不相关等价条件"]
-    },
-    {
-      id: "prob-nc-thm-linear-combination-variance",
-      chapterId: "numerical-characteristics",
-      type: "theorem",
-      title: "多个随机变量线性组合的方差公式",
-      md: "### 〔定理〕\n\n- 设 $X_1,X_2,\\cdots,X_n$ 为随机变量，$a_1,a_2,\\cdots,a_n$ 为常数，则 $D\\left(\\sum\\limits_{i=1}^{n}a_iX_i\\right)=\\sum\\limits_{i=1}^{n}a_i^2D(X_i)+2\\sum\\limits_{1\\leqslant i<j\\leqslant n}a_ia_j\\mathrm{Cov}(X_i,X_j)$。\n- 特别地，若 $X_1,\\cdots,X_n$ 两两不相关，则 $D\\left(\\sum\\limits_{i=1}^{n}a_iX_i\\right)=\\sum\\limits_{i=1}^{n}a_i^2D(X_i)$。\n\n### 〔提示〕\n\n该公式是 $D(X\\pm Y)=D(X)+D(Y)\\pm2\\mathrm{Cov}(X,Y)$ 在多变量情形下的推广，==是求样本方差、多元线性组合方差的通用工具==，常结合独立同分布条件化简交叉项。\n",
-      tags: ["方差公式", "线性组合", "协方差"]
-    },
-    {
-      id: "prob-nc-def-standardized-variable",
-      chapterId: "numerical-characteristics",
-      type: "definition",
-      title: "标准化随机变量",
-      md: "### 〔定义〕\n\n设随机变量 $X$ 的期望 $E(X)$、方差 $D(X)>0$ 存在，称 $X^{*}=\\dfrac{X-E(X)}{\\sqrt{D(X)}}$ 为 $X$ 的**标准化随机变量**，此时 $E(X^{*})=0$，$D(X^{*})=1$。\n\n### 〔提示〕\n\n- 标准化消除了量纲和数值大小的影响，便于不同随机变量之间的比较；\n- 正态分布的标准化 $Z=(X-\\mu)/\\sigma\\sim N(0,1)$ 是其最典型的应用。\n",
-      tags: ["标准化", "期望", "方差"]
-    },
-    {
-      id: "prob-nc-thm-cauchy-schwarz",
-      chapterId: "numerical-characteristics",
-      type: "theorem",
-      title: "柯西-施瓦茨不等式（协方差形式）",
-      md: "### 〔定理〕\n\n对任意随机变量 $X,Y$（方差存在），有 $[\\mathrm{Cov}(X,Y)]^2\\leqslant D(X)D(Y)$，**等号成立当且仅当** $X$ 与 $Y$ 之间几乎处处存在线性关系。\n\n### 〔提示〕\n\n==该不等式是相关系数 $|\\rho_{XY}|\\leqslant 1$ 的直接来源==（两边同除以 $D(X)D(Y)$ 再开方即得），本质上是概率空间中的柯西-施瓦茨不等式。\n",
-      tags: ["柯西-施瓦茨不等式", "协方差", "相关系数"]
-    },
-    {
-      id: "prob-nc-prop-binormal-independence",
-      chapterId: "numerical-characteristics",
-      type: "property",
-      title: "二维正态分布中不相关与独立的等价性",
-      md: "### 〔性质〕\n\n- 若 $(X,Y)\\sim N(\\mu_1,\\mu_2,\\sigma_1^2,\\sigma_2^2,\\rho)$，则 $X$ 与 $Y$ 的相关系数就是参数 $\\rho$，即 $\\rho_{XY}=\\rho$；\n- 且 $X$ 与 $Y$ 相互独立的**充要条件**是 $\\rho=0$，即在二维正态分布场合下，==\"不相关\"与\"独立\"是等价的==。\n\n### 〔提示〕\n\n这是二维正态分布的特有性质，一般随机变量不相关不能推出独立，但正态分布的联合密度形式使得 $\\rho=0$ 时联合密度恰好可分离为两个边缘密度的乘积，因此二者等价，是**考研中的高频考点**。\n",
-      tags: ["二维正态", "不相关", "独立性", "常考"]
-    },
-    {
-      id: "prob-lt-thm-markov-inequality",
+      id: "prob-lt-lln",
       chapterId: "limit-theorems",
       type: "theorem",
-      title: "马尔可夫不等式",
-      md: "### 〔定理〕\n\n设随机变量 $X$ 只取**非负值**，且 $E(X)$ 存在，则对任意 $\\varepsilon>0$，有 $P\\{X\\geqslant\\varepsilon\\}\\leqslant\\dfrac{E(X)}{\\varepsilon}$。\n\n### 〔提示〕\n\n- 马尔可夫不等式只需 $X\\geqslant 0$ 且期望存在即可使用，==条件比切比雪夫不等式更弱==；\n- 对 $Y=(X-\\mu)^2$ 应用马尔可夫不等式即可导出切比雪夫不等式，二者一脉相承。\n",
-      tags: ["马尔可夫不等式", "概率估计"]
+      types: ["definition", "theorem", "property"],
+      module: 1,
+      card: "①",
+      title: "切比雪夫不等式与大数定律",
+      md: "### 〔定理〕切比雪夫不等式\n\n设 $E(X) = \\mu$，$D(X) = \\sigma^2$ 存在，则对任意 $\\varepsilon > 0$，\n$$P\\{|X - \\mu| \\ge \\varepsilon\\} \\le \\dfrac{\\sigma^2}{\\varepsilon^2}$$\n\n等价地，$P\\{|X - \\mu| < \\varepsilon\\} \\ge 1 - \\dfrac{\\sigma^2}{\\varepsilon^2}$。\n\n---\n\n### 〔定义〕依概率收敛\n\n设 $Y_1, Y_2, \\cdots$ 为随机变量序列，$a$ 为常数，若对任意 $\\varepsilon > 0$，\n$$\\lim\\limits_{n \\to \\infty} P\\{|Y_n - a| < \\varepsilon\\} = 1$$\n\n则称 $Y_n$ ==依概率收敛==于 $a$，记作 $Y_n \\xrightarrow{P} a$。\n\n---\n\n### 〔性质〕依概率收敛的运算\n\n若 $X_n \\xrightarrow{P} a$，$Y_n \\xrightarrow{P} b$，函数 $g(x, y)$ 在点 $(a, b)$ 连续，则 $g(X_n, Y_n) \\xrightarrow{P} g(a, b)$。\n\n---\n\n### 〔定理〕切比雪夫大数定律\n\n设 $X_1, X_2, \\cdots$ 相互独立，方差都存在且有公共上界（$D(X_i) \\le C$），则\n$$\\dfrac{1}{n}\\sum_{i=1}^{n} X_i - \\dfrac{1}{n}\\sum_{i=1}^{n} E(X_i) \\xrightarrow{P} 0$$\n\n- **期望相同时**：若 $E(X_i) = \\mu$，则 $\\dfrac{1}{n}\\displaystyle\\sum_{i=1}^{n} X_i \\xrightarrow{P} \\mu$。\n\n---\n\n### 〔定理〕伯努利大数定律\n\n设 $n_A$ 是 $n$ 重伯努利试验中事件 $A$ 发生的次数，$p = P(A)$，则\n$$\\dfrac{n_A}{n} \\xrightarrow{P} p$$\n\n---\n\n### 〔定理〕辛钦大数定律\n\n设 $X_1, X_2, \\cdots$ ==独立同分布==，且 $E(X_i) = \\mu$ 存在（不要求方差存在），则\n$$\\dfrac{1}{n}\\sum_{i=1}^{n} X_i \\xrightarrow{P} \\mu$$\n\n- **推论**：若 $E(X_i^k)$ 存在，则 $\\dfrac{1}{n}\\displaystyle\\sum_{i=1}^{n} X_i^k \\xrightarrow{P} E(X_1^k)$。",
+      tags: ["切比雪夫不等式", "依概率收敛", "切比雪夫大数定律", "伯努利大数定律", "辛钦大数定律", "定义", "定理", "性质"]
     },
     {
-      id: "prob-lt-thm-chebyshev-inequality",
+      id: "prob-lt-clt",
       chapterId: "limit-theorems",
       type: "theorem",
-      title: "切比雪夫不等式",
-      md: "### 〔定理〕\n\n设随机变量 $X$ 具有数学期望 $E(X)=\\mu$，方差 $D(X)=\\sigma^2$，则对任意 $\\varepsilon>0$，有 $P\\{|X-\\mu|\\geqslant\\varepsilon\\}\\leqslant\\dfrac{\\sigma^2}{\\varepsilon^2}$，等价地 $P\\{|X-\\mu|<\\varepsilon\\}\\geqslant 1-\\dfrac{\\sigma^2}{\\varepsilon^2}$。\n\n### 〔提示〕\n\n切比雪夫不等式只需知道 $X$ 的期望和方差，**不依赖具体分布形式**，就能给出概率的上（下）界估计，是证明大数定律的核心工具，也是理解==\"方差越小，取值越集中于均值附近\"==的定量表述。\n",
-      tags: ["切比雪夫不等式", "概率估计"]
+      types: ["theorem"],
+      module: 2,
+      card: "②",
+      title: "中心极限定理",
+      md: "### 〔定理〕列维-林德伯格中心极限定理\n\n设 $X_1, X_2, \\cdots$ ==独立同分布==，$E(X_i) = \\mu$，$D(X_i) = \\sigma^2 > 0$，则对任意实数 $x$，\n$$\\lim\\limits_{n \\to \\infty} P\\left\\{\\dfrac{\\sum\\limits_{i=1}^{n} X_i - n\\mu}{\\sqrt{n}\\,\\sigma} \\le x\\right\\} = \\Phi(x)$$\n\n---\n\n### 〔推论〕和与均值的近似分布\n\n在上述条件下，$n$ 充分大时：\n- **和**：$\\sum\\limits_{i=1}^{n} X_i$ 近似服从 $N(n\\mu,\\ n\\sigma^2)$；\n- **均值**：$\\bar{X} = \\dfrac{1}{n}\\sum\\limits_{i=1}^{n} X_i$ 近似服从 $N\\left(\\mu,\\ \\dfrac{\\sigma^2}{n}\\right)$。\n\n---\n\n### 〔定理〕棣莫弗-拉普拉斯中心极限定理\n\n设 $\\eta_n \\sim B(n, p)$（$0 < p < 1$），则对任意实数 $x$，\n$$\\lim\\limits_{n \\to \\infty} P\\left\\{\\dfrac{\\eta_n - np}{\\sqrt{np(1 - p)}} \\le x\\right\\} = \\Phi(x)$$\n\n- **近似计算**：$n$ 很大时，$B(n, p)$ 可用 $N(np,\\ np(1 - p))$ 近似。",
+      tags: ["中心极限定理", "列维-林德伯格定理", "棣莫弗-拉普拉斯定理", "正态近似", "定理"]
     },
     {
-      id: "prob-lt-def-convergence-in-probability",
-      chapterId: "limit-theorems",
-      type: "definition",
-      title: "依概率收敛",
-      md: "### 〔定义〕\n\n设 $Y_1,Y_2,\\cdots,Y_n,\\cdots$ 为一随机变量序列，$a$ 为常数，若对任意 $\\varepsilon>0$，有 $\\lim\\limits_{n\\to\\infty}P\\{|Y_n-a|<\\varepsilon\\}=1$（等价地 $\\lim\\limits_{n\\to\\infty}P\\{|Y_n-a|\\geqslant\\varepsilon\\}=0$），则称序列 $Y_1,Y_2,\\cdots$ **依概率收敛**于 $a$，记作 $Y_n\\xrightarrow{P}a$。\n\n### 〔提示〕\n\n- 依概率收敛是概率论中比高等数学\"数列收敛\"更弱的收敛概念：==并非要求 $Y_n$ 一定趋于 $a$，而是 $Y_n$ 与 $a$ 偏差超过任意小正数的概率趋于 0==。\n- 这是各大数定律结论的统一表述形式。\n",
-      tags: ["依概率收敛", "定义"]
-    },
-    {
-      id: "prob-lt-thm-chebyshev-lln",
-      chapterId: "limit-theorems",
-      type: "theorem",
-      title: "切比雪夫大数定律",
-      md: "### 〔定理〕\n\n设随机变量 $X_1,X_2,\\cdots$ **相互独立**（不要求同分布），且**方差存在并有共同上界**（即存在常数 $C$，使 $D(X_i)\\leqslant C,\\ i=1,2,\\cdots$），则对任意 $\\varepsilon>0$，有 $\\lim\\limits_{n\\to\\infty}P\\left\\{\\left|\\dfrac{1}{n}\\sum\\limits_{i=1}^{n}X_i-\\dfrac{1}{n}\\sum\\limits_{i=1}^{n}E(X_i)\\right|<\\varepsilon\\right\\}=1$，即 $\\dfrac{1}{n}\\sum\\limits_{i=1}^{n}X_i\\xrightarrow{P}\\dfrac{1}{n}\\sum\\limits_{i=1}^{n}E(X_i)$。\n\n### 〔提示〕\n\n- 该定理说明大量相互独立、方差有界的随机变量的算术平均值，会依概率收敛于其数学期望的算术平均值，这是==\"平均值的稳定性\"==的理论依据。\n- 证明利用切比雪夫不等式对 $\\bar X_n$ 取极限即可得到。\n",
-      tags: ["切比雪夫大数定律", "大数定律"]
-    },
-    {
-      id: "prob-lt-thm-bernoulli-lln",
-      chapterId: "limit-theorems",
-      type: "theorem",
-      title: "伯努利大数定律",
-      md: "### 〔定理〕\n\n设 $n_A$ 是 $n$ 次独立重复试验中事件 $A$ 发生的次数，$p$ 是事件 $A$ 在每次试验中发生的概率，则对任意 $\\varepsilon>0$，有 $\\lim\\limits_{n\\to\\infty}P\\left\\{\\left|\\dfrac{n_A}{n}-p\\right|<\\varepsilon\\right\\}=1$，即 $\\dfrac{n_A}{n}\\xrightarrow{P}p$。\n\n### 〔提示〕\n\n伯努利大数定律是切比雪夫大数定律的特例（把 $n_A$ 看成 $n$ 个独立同分布的 0-1 分布之和），它从理论上证明了**频率的稳定性**，==是用频率估计概率这一实际做法的数学基础==。\n",
-      tags: ["伯努利大数定律", "频率稳定性"]
-    },
-    {
-      id: "prob-lt-thm-khinchin-lln",
-      chapterId: "limit-theorems",
-      type: "theorem",
-      title: "辛钦大数定律",
-      md: "### 〔定理〕\n\n设随机变量 $X_1,X_2,\\cdots$ **相互独立、服从同一分布**，且数学期望 $E(X_i)=\\mu$ 存在（**不要求方差存在**），则对任意 $\\varepsilon>0$，有 $\\dfrac{1}{n}\\sum\\limits_{i=1}^{n}X_i\\xrightarrow{P}\\mu$。\n\n### 〔提示〕\n\n- ==辛钦大数定律的条件比切比雪夫大数定律更弱==（只需独立同分布且期望存在，不要求方差存在），是应用最广泛的一种大数定律；\n- 伯努利大数定律也可看作辛钦大数定律的特例。\n",
-      tags: ["辛钦大数定律", "独立同分布"]
-    },
-    {
-      id: "prob-lt-thm-levy-lindeberg-clt",
-      chapterId: "limit-theorems",
-      type: "theorem",
-      title: "林德伯格-列维中心极限定理（独立同分布）",
-      md: "### 〔定理〕\n\n设随机变量 $X_1,X_2,\\cdots$ 独立同分布，且 $E(X_i)=\\mu$，$D(X_i)=\\sigma^2>0$ 存在，记 $Y_n=\\dfrac{\\sum\\limits_{i=1}^{n}X_i-n\\mu}{\\sqrt{n}\\sigma}$，则对任意实数 $x$，有 $\\lim\\limits_{n\\to\\infty}P\\{Y_n\\leqslant x\\}=\\Phi(x)=\\dfrac{1}{\\sqrt{2\\pi}}\\displaystyle\\int_{-\\infty}^{x}e^{-t^2/2}\\,\\mathrm{d}t$。\n\n### 〔提示〕\n\n- 该定理说明：==大量独立同分布、期望方差都有限的随机变量之和，经标准化后近似服从标准正态分布==，即 $\\sum X_i\\overset{\\text{近似}}{\\sim}N(n\\mu,n\\sigma^2)$。\n- 这是考研中处理**\"大量独立随机变量之和的近似概率\"**问题的核心定理。\n",
-      tags: ["中心极限定理", "独立同分布", "林德伯格-列维"]
-    },
-    {
-      id: "prob-lt-thm-demoivre-laplace-clt",
-      chapterId: "limit-theorems",
-      type: "theorem",
-      title: "棣莫弗-拉普拉斯中心极限定理（二项分布的正态近似）",
-      md: "### 〔定理〕\n\n设随机变量 $X_n\\sim B(n,p)\\ (0<p<1,\\ n=1,2,\\cdots)$，则对任意实数 $x$，有 $\\lim\\limits_{n\\to\\infty}P\\left\\{\\dfrac{X_n-np}{\\sqrt{np(1-p)}}\\leqslant x\\right\\}=\\Phi(x)$。\n\n### 〔提示〕\n\n该定理是林德伯格-列维中心极限定理在 $X_i$ 为 0-1 分布时的特例（$X_n=\\sum X_i$），说明当 $n$ 较大时可用正态分布 $N(np,\\,np(1-p))$ 近似二项分布 $B(n,p)$，是**二项分布正态近似**（而非泊松近似）的理论依据，==注意与泊松定理适用条件的区别==：泊松近似要求 $p$ 很小，正态近似要求 $n$ 很大且 $np(1-p)$ 不太小。\n",
-      tags: ["棣莫弗-拉普拉斯定理", "二项分布正态近似"]
-    },
-    {
-      id: "prob-lt-def-convergence-in-distribution",
-      chapterId: "limit-theorems",
-      type: "definition",
-      title: "依分布收敛",
-      md: "### 〔定义〕\n\n设随机变量 $X,X_1,X_2,\\cdots$ 的分布函数分别为 $F(x),F_1(x),F_2(x),\\cdots$，若在 $F(x)$ 的每一个连续点 $x$ 处都有 $\\lim\\limits_{n\\to\\infty}F_n(x)=F(x)$，则称 $X_n$ **依分布收敛**于 $X$，记作 $X_n\\xrightarrow{L}X$。\n\n### 〔提示〕\n\n- 中心极限定理的严格表述正是标准化和 $Y_n$ 依分布收敛于标准正态变量：$Y_n\\xrightarrow{L}N(0,1)$。\n- ==依分布收敛只涉及分布函数的逐点收敛，是比依概率收敛更弱的一种收敛性==。\n",
-      tags: ["依分布收敛", "弱收敛"]
-    },
-    {
-      id: "prob-lt-def-general-lln",
-      chapterId: "limit-theorems",
-      type: "definition",
-      title: "大数定律的一般形式",
-      md: "### 〔定义〕\n\n- 设 $Y_1,Y_2,\\cdots,Y_n,\\cdots$ 是随机变量序列，若存在常数序列 $a_n$，使当 $n\\to\\infty$ 时 $Y_n-a_n\\xrightarrow{P}0$，即对任意 $\\varepsilon>0$ 有 $\\lim\\limits_{n\\to\\infty}P\\{|Y_n-a_n|<\\varepsilon\\}=1$，则称 $\\{Y_n\\}$ 服从大数定律。\n- 通常取 $Y_n=\\dfrac{1}{n}\\sum\\limits_{i=1}^{n}X_i$，$a_n=\\dfrac{1}{n}\\sum\\limits_{i=1}^{n}E(X_i)$。\n\n### 〔提示〕\n\n==这是大数定律的统一定义==，切比雪夫大数定律、伯努利大数定律、辛钦大数定律都是在不同条件假设下、验证该一般形式成立的具体结论。\n",
-      tags: ["大数定律", "一般定义"]
-    },
-    {
-      id: "prob-stat-def-population-sample",
+      id: "prob-st-sample",
       chapterId: "statistics-basics",
       type: "definition",
-      title: "总体、个体与简单随机样本",
-      md: "### 〔定义〕\n\n研究对象的全体称为**总体**，组成总体的每个单元称为**个体**。\n\n- 设 $X_1,X_2,\\cdots,X_n$ 是来自总体 $X$、相互独立且与 $X$ 同分布的随机变量，则称 $X_1,\\cdots,X_n$ 为容量为 $n$ 的**简单随机样本**，简称样本；\n- 样本的一次观测结果 $x_1,\\cdots,x_n$ 称为样本值。\n\n### 〔提示〕\n\n- 简单随机样本必须同时满足**\"独立性\"**与**\"同分布性\"**两个条件，这是后续推导抽样分布（如 $\\chi^2$、$t$、$F$ 分布）的前提假设。\n- 总体的分布常记为 $X$ 的分布，样本 $X_1,\\cdots,X_n$ 的联合分布由此分布的 $n$ 次独立乘积给出。\n",
-      tags: ["总体", "样本", "简单随机样本"]
+      types: ["definition", "property"],
+      module: 1,
+      card: "①",
+      title: "总体、样本与统计量",
+      md: "### 〔定义〕总体与个体\n\n研究对象的全体称为==总体==，组成总体的每个元素称为==个体==；总体用一个随机变量 $X$ 表示，$X$ 的分布称为总体的分布。\n\n---\n\n### 〔定义〕简单随机样本\n\n若 $X_1, X_2, \\cdots, X_n$ ==相互独立==，且都与总体 $X$ ==同分布==，则称它们为来自总体 $X$、容量为 $n$ 的==简单随机样本==（简称样本），其观测值 $x_1, \\cdots, x_n$ 称为样本值。\n- **联合分布**：总体的分布函数为 $F(x)$ 时，样本的联合分布函数为 $F(x_1)F(x_2) \\cdots F(x_n)$；有密度 $f(x)$ 时，联合密度为 $\\prod\\limits_{i=1}^{n} f(x_i)$。\n\n---\n\n### 〔定义〕统计量\n\n样本 $X_1, \\cdots, X_n$ 的函数 $g(X_1, \\cdots, X_n)$ 若==不含任何未知参数==，则称为==统计量==。\n\n---\n\n### 〔定义〕常用统计量\n\n- **样本均值**：$\\bar{X} = \\dfrac{1}{n}\\sum\\limits_{i=1}^{n} X_i$；\n- **样本方差**：$S^2 = \\dfrac{1}{n - 1}\\sum\\limits_{i=1}^{n} (X_i - \\bar{X})^2$，样本标准差 $S = \\sqrt{S^2}$；\n- **样本 $k$ 阶原点矩**：$A_k = \\dfrac{1}{n}\\sum\\limits_{i=1}^{n} X_i^k$；\n- **样本 $k$ 阶中心矩**：$B_k = \\dfrac{1}{n}\\sum\\limits_{i=1}^{n} (X_i - \\bar{X})^k$。\n\n---\n\n### 〔性质〕样本均值与样本方差的数字特征\n\n设总体的 $E(X) = \\mu$，$D(X) = \\sigma^2$，则\n$$E(\\bar{X}) = \\mu, \\quad D(\\bar{X}) = \\dfrac{\\sigma^2}{n}, \\quad E(S^2) = \\sigma^2$$",
+      tags: ["总体", "个体", "简单随机样本", "统计量", "样本均值", "样本方差", "样本矩", "定义", "性质"]
     },
     {
-      id: "prob-stat-def-statistic",
+      id: "prob-st-sampling-distributions",
       chapterId: "statistics-basics",
       type: "definition",
-      title: "统计量",
-      md: "### 〔定义〕\n\n设 $X_1,X_2,\\cdots,X_n$ 是来自总体 $X$ 的样本，若 $g(X_1,\\cdots,X_n)$ 是**不含任何未知参数**的样本的函数，则称 $g(X_1,\\cdots,X_n)$ 为**统计量**。\n\n### 〔提示〕\n\n统计量必须是**可计算的（不含未知参数）**，常见统计量包括样本均值、样本方差、样本矩等，==统计量本身仍是随机变量，其分布称为抽样分布==。\n",
-      tags: ["统计量", "定义", "不含未知参数"]
+      types: ["definition"],
+      module: 2,
+      card: "②",
+      title: "分位点与三大抽样分布",
+      md: "### 〔定义〕上 $\\alpha$ 分位点\n\n对给定的 $\\alpha\\ (0 < \\alpha < 1)$，满足 $P\\{X > x_\\alpha\\} = \\alpha$ 的点 $x_\\alpha$ 称为 $X$ 的分布的==上 $\\alpha$ 分位点==。\n- **标准正态分布**：上 $\\alpha$ 分位点记作 $z_\\alpha$，$\\Phi(z_\\alpha) = 1 - \\alpha$，且 $z_{1-\\alpha} = -z_\\alpha$。\n\n---\n\n### 〔定义〕$\\chi^2$ 分布\n\n设 $X_1, \\cdots, X_n$ 相互独立，都服从 $N(0, 1)$，则\n$$\\chi^2 = X_1^2 + X_2^2 + \\cdots + X_n^2$$\n\n服从自由度为 $n$ 的 ==$\\chi^2$ 分布==，记作 $\\chi^2 \\sim \\chi^2(n)$，上 $\\alpha$ 分位点记作 $\\chi^2_\\alpha(n)$。\n- **可加性**：$\\chi_1^2 \\sim \\chi^2(n_1)$，$\\chi_2^2 \\sim \\chi^2(n_2)$ 且相互独立，则 $\\chi_1^2 + \\chi_2^2 \\sim \\chi^2(n_1 + n_2)$；\n- **数字特征**：$E(\\chi^2) = n$，$D(\\chi^2) = 2n$。\n\n---\n\n### 〔定义〕$t$ 分布\n\n设 $X \\sim N(0, 1)$，$Y \\sim \\chi^2(n)$，且 $X$ 与 $Y$ 相互独立，则\n$$T = \\dfrac{X}{\\sqrt{Y/n}}$$\n\n服从自由度为 $n$ 的 ==$t$ 分布==，记作 $T \\sim t(n)$，上 $\\alpha$ 分位点记作 $t_\\alpha(n)$。\n- **对称**：密度关于 $0$ 对称，$t_{1-\\alpha}(n) = -t_\\alpha(n)$；\n- **极限**：$n \\to \\infty$ 时，$t(n)$ 趋于 $N(0, 1)$。\n\n---\n\n### 〔定义〕$F$ 分布\n\n设 $U \\sim \\chi^2(n_1)$，$V \\sim \\chi^2(n_2)$，且 $U$ 与 $V$ 相互独立，则\n$$F = \\dfrac{U/n_1}{V/n_2}$$\n\n服从自由度为 $(n_1, n_2)$ 的 ==$F$ 分布==，记作 $F \\sim F(n_1, n_2)$，上 $\\alpha$ 分位点记作 $F_\\alpha(n_1, n_2)$。\n- **倒数**：$F \\sim F(n_1, n_2) \\implies \\dfrac{1}{F} \\sim F(n_2, n_1)$；\n- **分位点**：$F_{1-\\alpha}(n_1, n_2) = \\dfrac{1}{F_\\alpha(n_2, n_1)}$；\n- **与 $t$ 分布**：$T \\sim t(n) \\implies T^2 \\sim F(1, n)$。",
+      tags: ["上α分位点", "χ²分布", "t分布", "F分布", "定义"]
     },
     {
-      id: "prob-stat-def-sample-mean-variance",
-      chapterId: "statistics-basics",
-      type: "definition",
-      title: "样本均值、样本方差与样本矩",
-      md: "### 〔定义〕\n\n- **样本均值：**$\\bar X=\\dfrac{1}{n}\\sum\\limits_{i=1}^{n}X_i$。\n- **样本方差：**$S^2=\\dfrac{1}{n-1}\\sum\\limits_{i=1}^{n}(X_i-\\bar X)^2$。\n- **样本标准差：**$S=\\sqrt{S^2}$。\n- **样本 $k$ 阶原点矩：**$A_k=\\dfrac{1}{n}\\sum\\limits_{i=1}^{n}X_i^k$。\n- **样本 $k$ 阶中心矩：**$B_k=\\dfrac{1}{n}\\sum\\limits_{i=1}^{n}(X_i-\\bar X)^k$。\n\n### 〔提示〕\n\n==样本方差 $S^2$ 的分母是 $n-1$ 而不是 $n$==（$n-1$ 称为**自由度**），这是为了保证 $E(S^2)=\\sigma^2$（无偏性），与样本二阶中心矩 $B_2$（分母为 $n$）要区分开，$B_2$ 是有偏估计。\n",
-      tags: ["样本均值", "样本方差", "自由度"]
-    },
-    {
-      id: "prob-stat-prop-sample-mean-variance",
-      chapterId: "statistics-basics",
-      type: "property",
-      title: "样本均值与样本方差的数字特征",
-      md: "### 〔性质〕\n\n设总体 $X$ 的 $E(X)=\\mu$，$D(X)=\\sigma^2$，样本容量为 $n$，则 $E(\\bar X)=\\mu$，$D(\\bar X)=\\dfrac{\\sigma^2}{n}$，$E(S^2)=\\sigma^2$。\n\n### 〔提示〕\n\n- $D(\\bar X)=\\sigma^2/n$ 表明==样本容量越大，样本均值围绕总体均值的波动就越小==，这是\"大样本更可靠\"的定量体现；\n- $E(S^2)=\\sigma^2$ 说明样本方差是总体方差的**无偏估计**。\n",
-      tags: ["样本均值方差", "无偏性", "数字特征"]
-    },
-    {
-      id: "prob-stat-def-chi-square",
-      chapterId: "statistics-basics",
-      type: "definition",
-      title: "χ²分布",
-      md: "### 〔定义〕\n\n设 $X_1,X_2,\\cdots,X_n$ **相互独立**，且都服从标准正态分布 $N(0,1)$，则称随机变量 $\\chi^2=X_1^2+X_2^2+\\cdots+X_n^2$ 所服从的分布为自由度为 $n$ 的 **$\\chi^2$ 分布**，记作 $\\chi^2\\sim\\chi^2(n)$。\n\n### 〔提示〕\n\n$\\chi^2$ 分布的**可加性**：\n\n- 若 $\\chi_1^2\\sim\\chi^2(n_1)$，$\\chi_2^2\\sim\\chi^2(n_2)$ 且相互独立，则 $\\chi_1^2+\\chi_2^2\\sim\\chi^2(n_1+n_2)$；\n- 数字特征：$E(\\chi^2)=n$，$D(\\chi^2)=2n$。\n",
-      tags: ["卡方分布", "抽样分布", "可加性"]
-    },
-    {
-      id: "prob-stat-def-t-distribution",
-      chapterId: "statistics-basics",
-      type: "definition",
-      title: "t分布",
-      md: "### 〔定义〕\n\n设 $X\\sim N(0,1)$，$Y\\sim\\chi^2(n)$，且 $X,Y$ 相互独立，则称随机变量 $T=\\dfrac{X}{\\sqrt{Y/n}}$ 所服从的分布为自由度为 $n$ 的 **$t$ 分布（学生氏分布）**，记作 $T\\sim t(n)$。\n\n### 〔提示〕\n\n$t$ 分布的密度函数关于 $0$ 对称，形状与标准正态分布相似但**尾部更\"厚\"（方差更大）**，==当自由度 $n\\to\\infty$ 时 $t$ 分布的极限分布趋于标准正态分布 $N(0,1)$==。\n",
-      tags: ["t分布", "学生氏分布", "抽样分布"]
-    },
-    {
-      id: "prob-stat-def-f-distribution",
-      chapterId: "statistics-basics",
-      type: "definition",
-      title: "F分布",
-      md: "### 〔定义〕\n\n设 $U\\sim\\chi^2(n_1)$，$V\\sim\\chi^2(n_2)$，且 $U,V$ 相互独立，则称随机变量 $F=\\dfrac{U/n_1}{V/n_2}$ 所服从的分布为自由度为 $(n_1,n_2)$ 的 **$F$ 分布**，记作 $F\\sim F(n_1,n_2)$，其中 $n_1$ 称为**第一自由度**，$n_2$ 称为**第二自由度**。\n\n### 〔提示〕\n\n重要性质：\n\n- ==若 $F\\sim F(n_1,n_2)$，则 $\\dfrac{1}{F}\\sim F(n_2,n_1)$==（分子分母自由度互换）；\n- 且 $F$ 分布的上 $\\alpha$ 分位点满足 $F_{1-\\alpha}(n_1,n_2)=\\dfrac{1}{F_\\alpha(n_2,n_1)}$，用于查表时将下侧分位点转化为上侧分位点。\n",
-      tags: ["F分布", "抽样分布", "分位点关系"]
-    },
-    {
-      id: "prob-stat-def-quantile",
-      chapterId: "statistics-basics",
-      type: "definition",
-      title: "上α分位点",
-      md: "### 〔定义〕\n\n设随机变量 $X$ 的分布函数为连续函数，对给定的 $\\alpha\\ (0<\\alpha<1)$，称满足 $P\\{X>x_\\alpha\\}=\\alpha$ 的点 $x_\\alpha$ 为 $X$ 分布的**上 $\\alpha$ 分位点**。\n\n- 标准正态分布记作 $z_\\alpha$，满足 $\\Phi(z_\\alpha)=1-\\alpha$；\n- $\\chi^2(n)$、$t(n)$、$F(n_1,n_2)$ 分布分别记作 $\\chi_\\alpha^2(n)$、$t_\\alpha(n)$、$F_\\alpha(n_1,n_2)$。\n\n### 〔提示〕\n\n- ==由标准正态分布的对称性可得 $z_{1-\\alpha}=-z_\\alpha$；由 $t$ 分布密度关于 0 对称可得 $t_{1-\\alpha}(n)=-t_\\alpha(n)$==。\n- 这些分位点是构造置信区间、假设检验拒绝域的基本工具。\n",
-      tags: ["分位点", "查表", "对称性"]
-    },
-    {
-      id: "prob-stat-thm-normal-sampling",
+      id: "prob-st-normal-sampling",
       chapterId: "statistics-basics",
       type: "theorem",
-      title: "正态总体样本均值与样本方差的抽样分布",
-      md: "### 〔定理〕\n\n设 $X_1,\\cdots,X_n$ 是来自正态总体 $N(\\mu,\\sigma^2)$ 的样本，$\\bar X,S^2$ 分别为样本均值、样本方差，则：\n\n- $\\bar X\\sim N\\left(\\mu,\\dfrac{\\sigma^2}{n}\\right)$。\n- $\\dfrac{(n-1)S^2}{\\sigma^2}\\sim\\chi^2(n-1)$。\n- **$\\bar X$ 与 $S^2$ 相互独立**。\n- $\\dfrac{\\bar X-\\mu}{S/\\sqrt{n}}\\sim t(n-1)$。\n\n### 〔提示〕\n\n- 这是数理统计中最重要的一组定理，是后续单个正态总体参数区间估计和假设检验的直接理论依据。\n- 特别注意（2）中**自由度为 $n-1$**（因为估计 $\\mu$ 用掉了一个自由度），==（3）$\\bar X$ 与 $S^2$ 相互独立是正态总体特有的性质，一般总体不成立==。\n",
-      tags: ["正态总体抽样分布", "核心定理", "独立性"]
+      types: ["theorem"],
+      module: 2,
+      card: "③",
+      title: "正态总体的抽样分布",
+      md: "### 〔定理〕单个正态总体的抽样分布\n\n设 $X_1, \\cdots, X_n$ 是来自 $N(\\mu, \\sigma^2)$ 的样本，则：\n1. **样本均值**：$\\bar{X} \\sim N\\left(\\mu, \\dfrac{\\sigma^2}{n}\\right)$，即 $\\dfrac{\\bar{X} - \\mu}{\\sigma/\\sqrt{n}} \\sim N(0, 1)$；\n2. **样本方差**：$\\dfrac{(n - 1)S^2}{\\sigma^2} \\sim \\chi^2(n - 1)$；\n3. **独立性**：$\\bar{X}$ 与 $S^2$ ==相互独立==；\n4. **用 $S$ 代替 $\\sigma$**：$\\dfrac{\\bar{X} - \\mu}{S/\\sqrt{n}} \\sim t(n - 1)$。\n\n另有：$\\dfrac{1}{\\sigma^2}\\sum\\limits_{i=1}^{n} (X_i - \\mu)^2 \\sim \\chi^2(n)$。\n\n---\n\n### 〔定理〕两个正态总体的抽样分布\n\n设 $X_1, \\cdots, X_{n_1}$ 来自 $N(\\mu_1, \\sigma_1^2)$，$Y_1, \\cdots, Y_{n_2}$ 来自 $N(\\mu_2, \\sigma_2^2)$，两样本相互独立，样本方差分别为 $S_1^2$、$S_2^2$：\n1. **方差已知**：\n   $$\\dfrac{(\\bar{X} - \\bar{Y}) - (\\mu_1 - \\mu_2)}{\\sqrt{\\sigma_1^2/n_1 + \\sigma_2^2/n_2}} \\sim N(0, 1)$$\n2. **方差相等但未知**（$\\sigma_1^2 = \\sigma_2^2$）：\n   $$\\dfrac{(\\bar{X} - \\bar{Y}) - (\\mu_1 - \\mu_2)}{S_w\\sqrt{1/n_1 + 1/n_2}} \\sim t(n_1 + n_2 - 2)$$\n   其中 $S_w^2 = \\dfrac{(n_1 - 1)S_1^2 + (n_2 - 1)S_2^2}{n_1 + n_2 - 2}$；\n3. **方差比**：\n   $$\\dfrac{S_1^2/S_2^2}{\\sigma_1^2/\\sigma_2^2} \\sim F(n_1 - 1,\\ n_2 - 1)$$",
+      tags: ["正态总体", "抽样分布", "样本均值的分布", "样本方差的分布", "两个正态总体", "定理"]
     },
     {
-      id: "prob-stat-thm-two-sample-normal",
-      chapterId: "statistics-basics",
-      type: "theorem",
-      title: "两个正态总体样本均值差的抽样分布",
-      md: "### 〔定理〕\n\n设 $X_1,\\cdots,X_{n_1}$ 与 $Y_1,\\cdots,Y_{n_2}$ 分别是来自 $N(\\mu_1,\\sigma_1^2)$ 和 $N(\\mu_2,\\sigma_2^2)$ 的相互独立样本：\n\n- **方差已知：**$\\dfrac{(\\bar X-\\bar Y)-(\\mu_1-\\mu_2)}{\\sqrt{\\sigma_1^2/n_1+\\sigma_2^2/n_2}}\\sim N(0,1)$。\n- **方差相等但未知（$\\sigma_1^2=\\sigma_2^2=\\sigma^2$）：**$\\dfrac{(\\bar X-\\bar Y)-(\\mu_1-\\mu_2)}{S_w\\sqrt{1/n_1+1/n_2}}\\sim t(n_1+n_2-2)$，其中 $S_w^2=\\dfrac{(n_1-1)S_1^2+(n_2-1)S_2^2}{n_1+n_2-2}$。\n\n### 〔提示〕\n\n这是两正态总体均值差假设检验（如比较两组数据均值是否相等）的理论基础，**$S_w^2$ 称为混合（合并）样本方差**，用于两方差相等但未知的情形。\n",
-      tags: ["双正态总体", "抽样分布", "混合方差"]
-    },
-    {
-      id: "prob-pe-def-point-estimation",
+      id: "prob-pe-point",
       chapterId: "parameter-estimation",
       type: "definition",
-      title: "点估计",
-      md: "### 〔定义〕\n\n设总体 $X$ 的分布中含未知参数 $\\theta$，$X_1,\\cdots,X_n$ 为样本，用统计量 $\\hat\\theta=\\hat\\theta(X_1,\\cdots,X_n)$ 作为 $\\theta$ 的估计，称 $\\hat\\theta$ 为 $\\theta$ 的**点估计量**，代入样本值后得到的具体数值称为**点估计值**。\n\n### 〔提示〕\n\n点估计是用一个具体的数（统计量的取值）去估计未知参数，与给出区间范围的区间估计相对，常用方法有**矩估计法**和**极大似然估计法**。\n",
-      tags: ["点估计", "估计量", "定义"]
+      types: ["definition", "property"],
+      module: 1,
+      card: "①",
+      title: "矩估计与最大似然估计",
+      md: "### 〔定义〕点估计\n\n设总体的分布含未知参数 $\\theta$，用统计量 $\\hat{\\theta} = \\hat{\\theta}(X_1, \\cdots, X_n)$ 估计 $\\theta$，称 $\\hat{\\theta}$ 为 $\\theta$ 的==估计量==，代入样本值得到的数值称为==估计值==。\n\n---\n\n### 〔方法〕矩估计法\n\n设总体含 $k$ 个未知参数 $\\theta_1, \\cdots, \\theta_k$，且前 $k$ 阶原点矩存在：\n1. **求总体矩**：$\\mu_l = E(X^l)$，它是 $\\theta_1, \\cdots, \\theta_k$ 的函数（$l = 1, \\cdots, k$）；\n2. **令样本矩等于总体矩**：$\\mu_l(\\theta_1, \\cdots, \\theta_k) = A_l = \\dfrac{1}{n}\\sum\\limits_{i=1}^{n} X_i^l$；\n3. **解方程组**：解出的 $\\hat{\\theta}_1, \\cdots, \\hat{\\theta}_k$ 即为==矩估计量==。\n\n---\n\n### 〔定义〕似然函数\n\n设样本值为 $x_1, \\cdots, x_n$：\n- **离散型总体**：$L(\\theta) = \\prod\\limits_{i=1}^{n} P\\{X = x_i;\\ \\theta\\}$；\n- **连续型总体**：$L(\\theta) = \\prod\\limits_{i=1}^{n} f(x_i;\\ \\theta)$。\n\n使 $L(\\theta)$ 达到最大的 $\\hat{\\theta}$ 称为 $\\theta$ 的==最大似然估计==。\n\n---\n\n### 〔方法〕最大似然估计法\n\n1. **写似然函数**：$L(\\theta)$；\n2. **取对数求导**：令 $\\dfrac{\\mathrm{d}\\ln L(\\theta)}{\\mathrm{d}\\theta} = 0$（多个参数时令各偏导数为零），解出 $\\hat{\\theta}$；\n3. **无驻点时**：若似然方程无解（如 $L(\\theta)$ 关于 $\\theta$ 单调），由 $L(\\theta)$ 的单调性和参数的取值范围直接确定使 $L$ 最大的 $\\hat{\\theta}$。\n\n---\n\n### 〔性质〕最大似然估计的不变性\n\n若 $\\hat{\\theta}$ 是 $\\theta$ 的最大似然估计，$u = u(\\theta)$ 具有单值反函数，则 $u(\\hat{\\theta})$ 是 $u(\\theta)$ 的最大似然估计。",
+      tags: ["点估计", "估计量", "矩估计法", "似然函数", "最大似然估计", "不变性", "定义", "性质"]
     },
     {
-      id: "prob-pe-thm-moment-method",
-      chapterId: "parameter-estimation",
-      type: "theorem",
-      title: "矩估计法",
-      md: "### 〔定理〕\n\n- 设总体 $X$ 含 $k$ 个未知参数 $\\theta_1,\\cdots,\\theta_k$，且总体的前 $k$ 阶原点矩 $\\mu_l=E(X^l)\\ (l=1,\\cdots,k)$ 存在。\n- **令总体矩等于样本矩**：$\\mu_l(\\theta_1,\\cdots,\\theta_k)=A_l=\\dfrac{1}{n}\\sum\\limits_{i=1}^{n}X_i^l,\\ l=1,\\cdots,k$，解出的 $\\hat\\theta_1,\\cdots,\\hat\\theta_k$（表示为样本矩的函数）即为 $\\theta_1,\\cdots,\\theta_k$ 的**矩估计量**。\n\n### 〔提示〕\n\n- 矩估计法的思想是==\"用样本矩替代总体矩\"==，依据是辛钦大数定律保证样本矩依概率收敛于总体矩。\n- 方法直观、计算通常较简单，但可能不唯一或效率不如极大似然估计。\n",
-      tags: ["矩估计法", "点估计方法"]
-    },
-    {
-      id: "prob-pe-thm-mle",
-      chapterId: "parameter-estimation",
-      type: "theorem",
-      title: "极大似然估计法",
-      md: "### 〔定理〕\n\n- 设总体 $X$ 的分布律（或密度）为 $p(x;\\theta)$（$\\theta$ 为待估参数），样本值为 $x_1,\\cdots,x_n$，则**似然函数**为 $L(\\theta)=\\prod\\limits_{i=1}^{n}p(x_i;\\theta)$。\n- 若存在 $\\hat\\theta$ 使 $L(\\hat\\theta)=\\max\\limits_{\\theta}L(\\theta)$，则称 $\\hat\\theta$ 为 $\\theta$ 的**极大似然估计值**。\n\n### 〔提示〕\n\n求解步骤：\n\n- 写出似然函数 $L(\\theta)$\n- 取对数得对数似然函数 $\\ln L(\\theta)=\\sum\\ln p(x_i;\\theta)$（连乘化为连加便于求导）\n- 令 $\\dfrac{\\mathrm{d}\\ln L(\\theta)}{\\mathrm{d}\\theta}=0$（似然方程）解出 $\\hat\\theta$\n\n==当似然方程不可导或无驻点时（如均匀分布参数估计），需根据 $L(\\theta)$ 的单调性直接判断最大值点==。\n",
-      tags: ["极大似然估计", "似然函数", "对数似然方程"]
-    },
-    {
-      id: "prob-pe-thm-invariance-mle",
-      chapterId: "parameter-estimation",
-      type: "property",
-      title: "极大似然估计的不变性",
-      md: "### 〔性质〕\n\n设 $\\hat\\theta$ 是参数 $\\theta$ 的极大似然估计，$g(\\theta)$ 是 $\\theta$ 的**严格单调函数**（或更一般地，具有单值反函数），则 $g(\\hat\\theta)$ 是 $g(\\theta)$ 的**极大似然估计**。\n\n### 〔提示〕\n\n该性质使得极大似然估计的应用更加灵活：例如已知 $\\hat\\sigma^2$ 是 $\\sigma^2$ 的 MLE，则 $\\sqrt{\\hat\\sigma^2}$ 就是 $\\sigma$ 的 MLE，无需重新构造似然函数求解。\n",
-      tags: ["MLE不变性", "点估计性质"]
-    },
-    {
-      id: "prob-pe-def-unbiasedness",
+      id: "prob-pe-criteria",
       chapterId: "parameter-estimation",
       type: "definition",
-      title: "估计量的无偏性",
-      md: "### 〔定义〕\n\n- 设 $\\hat\\theta=\\hat\\theta(X_1,\\cdots,X_n)$ 是未知参数 $\\theta$ 的估计量，若 $E(\\hat\\theta)=\\theta$ 对一切 $\\theta$ 成立，则称 $\\hat\\theta$ 为 $\\theta$ 的**无偏估计量**；\n- 若 $\\lim\\limits_{n\\to\\infty}E(\\hat\\theta)=\\theta$，则称 $\\hat\\theta$ 为 $\\theta$ 的**渐近无偏估计量**。\n\n### 〔提示〕\n\n无偏性要求估计量**没有系统性偏差**，是评价估计量优劣最基本的标准之一。典型例子：\n\n- 样本均值 $\\bar X$ 是总体期望 $\\mu$ 的无偏估计；\n- 样本方差 $S^2$（分母 $n-1$）是总体方差 $\\sigma^2$ 的无偏估计，而==二阶样本中心矩 $B_2$（分母 $n$）是有偏的==。\n",
-      tags: ["无偏性", "估计量评价标准"]
+      types: ["definition", "property"],
+      module: 1,
+      card: "②",
+      title: "估计量的评选标准",
+      md: "### 〔定义〕无偏性\n\n若 $E(\\hat{\\theta}) = \\theta$，则称 $\\hat{\\theta}$ 为 $\\theta$ 的==无偏估计量==。\n\n---\n\n### 〔定义〕有效性\n\n设 $\\hat{\\theta}_1$、$\\hat{\\theta}_2$ 都是 $\\theta$ 的无偏估计量，若 $D(\\hat{\\theta}_1) \\le D(\\hat{\\theta}_2)$，则称 $\\hat{\\theta}_1$ 比 $\\hat{\\theta}_2$ ==有效==。\n\n---\n\n### 〔定义〕一致性（相合性）\n\n若 $n \\to \\infty$ 时 $\\hat{\\theta} \\xrightarrow{P} \\theta$，则称 $\\hat{\\theta}$ 为 $\\theta$ 的==一致估计量==（相合估计量）。\n\n---\n\n### 〔性质〕常见结论\n\n- **均值与方差**：$\\bar{X}$ 是 $\\mu$ 的无偏估计，$S^2$ 是 $\\sigma^2$ 的无偏估计；$B_2 = \\dfrac{n - 1}{n}S^2$ 是 $\\sigma^2$ 的有偏估计；\n- **样本矩的一致性**：样本 $k$ 阶原点矩 $A_k$ 是总体 $k$ 阶原点矩 $E(X^k)$ 的一致估计（由辛钦大数定律，第5章卡①）。",
+      tags: ["无偏性", "有效性", "一致性", "相合性", "无偏估计", "定义", "性质"]
     },
     {
-      id: "prob-pe-def-efficiency",
+      id: "prob-pe-interval",
       chapterId: "parameter-estimation",
       type: "definition",
-      title: "估计量的有效性",
-      md: "### 〔定义〕\n\n设 $\\hat\\theta_1=\\hat\\theta_1(X_1,\\cdots,X_n)$ 与 $\\hat\\theta_2=\\hat\\theta_2(X_1,\\cdots,X_n)$ 都是 $\\theta$ 的无偏估计量，若 $D(\\hat\\theta_1)\\leqslant D(\\hat\\theta_2)$ 对一切 $\\theta$ 成立，且至少有一个 $\\theta$ 使不等号严格成立，则称 $\\hat\\theta_1$ 比 $\\hat\\theta_2$ **有效**。\n\n### 〔提示〕\n\n- 有效性是在无偏性基础上进一步比较方差大小：在同为无偏估计的前提下，方差越小的估计量越**\"稳定\"**、越优。\n- ==比较有效性的前提是两个估计量都必须先满足无偏性==，这是常考的比较题型。\n",
-      tags: ["有效性", "估计量评价标准", "方差比较"]
+      types: ["definition", "theorem", "property"],
+      module: 2,
+      card: "③",
+      title: "置信区间与单个正态总体",
+      md: "### 〔定义〕置信区间\n\n对给定的 $\\alpha\\ (0 < \\alpha < 1)$，若统计量 $\\hat{\\theta}_1 < \\hat{\\theta}_2$ 满足\n$$P\\{\\hat{\\theta}_1 < \\theta < \\hat{\\theta}_2\\} = 1 - \\alpha$$\n\n则称 $(\\hat{\\theta}_1, \\hat{\\theta}_2)$ 为 $\\theta$ 的置信水平为 $1 - \\alpha$ 的==置信区间==。\n- **单侧置信限**：若 $P\\{\\theta > \\hat{\\theta}_1\\} = 1 - \\alpha$，称 $\\hat{\\theta}_1$ 为==单侧置信下限==；若 $P\\{\\theta < \\hat{\\theta}_2\\} = 1 - \\alpha$，称 $\\hat{\\theta}_2$ 为==单侧置信上限==。\n\n---\n\n### 〔方法〕枢轴量法\n\n1. **找枢轴量**：找一个含 $\\theta$、不含其他未知参数、且分布已知的样本函数 $W(X_1, \\cdots, X_n;\\ \\theta)$；\n2. **定分位点**：取 $a, b$ 使 $P\\{a < W < b\\} = 1 - \\alpha$（通常两侧各占 $\\frac{\\alpha}{2}$）；\n3. **解不等式**：由 $a < W < b$ 解出 $\\hat{\\theta}_1 < \\theta < \\hat{\\theta}_2$。\n\n---\n\n### 〔定理〕正态总体均值的置信区间\n\n设样本来自 $N(\\mu, \\sigma^2)$，$\\mu$ 的置信水平为 $1 - \\alpha$ 的置信区间（写成「中心 $\\pm$ 半径」的形式）：\n- **$\\sigma^2$ 已知**：\n  $$\\bar{X} \\pm \\dfrac{\\sigma}{\\sqrt{n}}z_{\\alpha/2}$$\n- **$\\sigma^2$ 未知**：\n  $$\\bar{X} \\pm \\dfrac{S}{\\sqrt{n}}t_{\\alpha/2}(n - 1)$$\n\n---\n\n### 〔定理〕正态总体方差的置信区间\n\n设样本来自 $N(\\mu, \\sigma^2)$，$\\mu$ 未知，$\\sigma^2$ 的置信水平为 $1 - \\alpha$ 的置信区间为\n$$\\left(\\dfrac{(n - 1)S^2}{\\chi^2_{\\alpha/2}(n - 1)},\\ \\ \\dfrac{(n - 1)S^2}{\\chi^2_{1-\\alpha/2}(n - 1)}\\right)$$",
+      tags: ["置信区间", "置信水平", "单侧置信限", "枢轴量", "正态总体均值", "正态总体方差", "定义", "定理", "性质"]
     },
     {
-      id: "prob-pe-def-consistency",
-      chapterId: "parameter-estimation",
-      type: "definition",
-      title: "估计量的一致性（相合性）",
-      md: "### 〔定义〕\n\n设 $\\hat\\theta_n=\\hat\\theta_n(X_1,\\cdots,X_n)$ 是 $\\theta$ 的估计量，若对任意 $\\theta$，当 $n\\to\\infty$ 时 $\\hat\\theta_n$ 依概率收敛于 $\\theta$，即对任意 $\\varepsilon>0$，$\\lim\\limits_{n\\to\\infty}P\\{|\\hat\\theta_n-\\theta|<\\varepsilon\\}=1$，则称 $\\hat\\theta_n$ 为 $\\theta$ 的**一致估计量（相合估计量）**。\n\n### 〔提示〕\n\n- 一致性描述的是**大样本性质**：样本容量越大，估计量越接近真值。\n- 矩估计量在总体矩存在的条件下一般都具有一致性（依据辛钦大数定律）。\n",
-      tags: ["一致性", "相合估计", "估计量评价标准"]
-    },
-    {
-      id: "prob-pe-def-interval-estimation",
-      chapterId: "parameter-estimation",
-      type: "definition",
-      title: "区间估计与置信区间",
-      md: "### 〔定义〕\n\n设总体 $X$ 的分布中含未知参数 $\\theta$，对给定的 $\\alpha\\ (0<\\alpha<1)$，若存在统计量 $\\hat\\theta_1=\\hat\\theta_1(X_1,\\cdots,X_n)$、$\\hat\\theta_2=\\hat\\theta_2(X_1,\\cdots,X_n)$，使 $P\\{\\hat\\theta_1<\\theta<\\hat\\theta_2\\}=1-\\alpha$，则称区间 $(\\hat\\theta_1,\\hat\\theta_2)$ 为 $\\theta$ 的置信度为 $1-\\alpha$ 的**置信区间**，$\\hat\\theta_1,\\hat\\theta_2$ 分别称为**置信下限**与**置信上限**，$1-\\alpha$ 称为**置信度（置信水平）**。\n\n### 〔提示〕\n\n- 置信区间的正确理解：==反复抽样多次构造区间，大约有 $1-\\alpha$ 比例的区间会包含真值 $\\theta$==，而不是\"$\\theta$ 落在某个具体区间内的概率是 $1-\\alpha$\"（$\\theta$ 是常数，具体区间要么包含要么不包含）。\n- 构造方法一般是找到一个含 $\\theta$ 且分布已知的**枢轴量**，再由分位点解出不等式。\n",
-      diagram: `<svg viewBox="0 0 320 100" xmlns="http://www.w3.org/2000/svg">
-        <line x1="20" y1="60" x2="300" y2="60" stroke="currentColor" stroke-width="1.5"/>
-        <line x1="90" y1="45" x2="90" y2="75" stroke="#3b82f6" stroke-width="2"/>
-        <line x1="230" y1="45" x2="230" y2="75" stroke="#3b82f6" stroke-width="2"/>
-        <line x1="90" y1="60" x2="230" y2="60" stroke="#3b82f6" stroke-width="3"/>
-        <circle cx="160" cy="60" r="4" fill="#b5490f"/>
-        <text x="152" y="40" font-size="11" fill="#b5490f">θ̂</text>
-        <text x="78" y="90" font-size="10" fill="currentColor" opacity="0.7">下限</text>
-        <text x="218" y="90" font-size="10" fill="currentColor" opacity="0.7">上限</text>
-      </svg>`,
-      diagramCaption: "以点估计 θ̂ 为中心划出一段区间，反复抽样时约有 1-α 比例的区间能覆盖真值 θ",
-      tags: ["区间估计", "置信区间", "置信度"]
-    },
-    {
-      id: "prob-pe-thm-ci-normal-mean",
+      id: "prob-pe-two-populations",
       chapterId: "parameter-estimation",
       type: "theorem",
-      title: "正态总体均值的置信区间",
-      md: "### 〔定理〕\n\n设 $X_1,\\cdots,X_n$ 来自 $N(\\mu,\\sigma^2)$：\n\n- **$\\sigma^2$ 已知：**$\\mu$ 的置信度为 $1-\\alpha$ 的置信区间为 $\\left(\\bar X-\\dfrac{\\sigma}{\\sqrt{n}}z_{\\alpha/2},\\ \\bar X+\\dfrac{\\sigma}{\\sqrt{n}}z_{\\alpha/2}\\right)$。\n- **$\\sigma^2$ 未知：**置信区间为 $\\left(\\bar X-\\dfrac{S}{\\sqrt{n}}t_{\\alpha/2}(n-1),\\ \\bar X+\\dfrac{S}{\\sqrt{n}}t_{\\alpha/2}(n-1)\\right)$。\n\n### 〔提示〕\n\n$\\sigma^2$ 已知时用枢轴量 $\\dfrac{\\bar X-\\mu}{\\sigma/\\sqrt{n}}\\sim N(0,1)$，$\\sigma^2$ 未知时用 $\\dfrac{\\bar X-\\mu}{S/\\sqrt{n}}\\sim t(n-1)$（用 $S$ 替代未知的 $\\sigma$），这是最基础也是最常考的置信区间构造情形，==二者的区分依据是方差是否已知==。\n",
-      tags: ["置信区间", "正态总体均值", "z分位点", "t分位点"]
+      types: ["theorem"],
+      module: 2,
+      card: "④",
+      title: "两个正态总体的置信区间",
+      md: "### 〔定理〕均值差的置信区间\n\n设两样本分别来自 $N(\\mu_1, \\sigma_1^2)$、$N(\\mu_2, \\sigma_2^2)$ 且相互独立，$\\mu_1 - \\mu_2$ 的置信水平为 $1 - \\alpha$ 的置信区间：\n- **$\\sigma_1^2, \\sigma_2^2$ 已知**：\n  $$(\\bar{X} - \\bar{Y}) \\pm z_{\\alpha/2}\\sqrt{\\dfrac{\\sigma_1^2}{n_1} + \\dfrac{\\sigma_2^2}{n_2}}$$\n- **$\\sigma_1^2 = \\sigma_2^2$ 未知**：\n  $$(\\bar{X} - \\bar{Y}) \\pm t_{\\alpha/2}(n_1 + n_2 - 2)\\,S_w\\sqrt{\\dfrac{1}{n_1} + \\dfrac{1}{n_2}}$$\n  其中 $S_w$ 见第6章卡③。\n\n---\n\n### 〔定理〕方差比的置信区间\n\n$\\mu_1, \\mu_2$ 未知时，$\\dfrac{\\sigma_1^2}{\\sigma_2^2}$ 的置信水平为 $1 - \\alpha$ 的置信区间：\n- **下限**：$\\dfrac{S_1^2/S_2^2}{F_{\\alpha/2}(n_1 - 1, n_2 - 1)}$；\n- **上限**：$\\dfrac{S_1^2/S_2^2}{F_{1-\\alpha/2}(n_1 - 1, n_2 - 1)}$。",
+      tags: ["两个正态总体", "均值差的置信区间", "方差比的置信区间", "定理"]
     },
     {
-      id: "prob-pe-thm-ci-normal-variance",
-      chapterId: "parameter-estimation",
-      type: "theorem",
-      title: "正态总体方差的置信区间",
-      md: "### 〔定理〕\n\n设 $X_1,\\cdots,X_n$ 来自 $N(\\mu,\\sigma^2)$，$\\mu$ 未知，则 $\\sigma^2$ 的置信度为 $1-\\alpha$ 的置信区间为 $\\left(\\dfrac{(n-1)S^2}{\\chi_{\\alpha/2}^2(n-1)},\\ \\dfrac{(n-1)S^2}{\\chi_{1-\\alpha/2}^2(n-1)}\\right)$。\n\n### 〔提示〕\n\n- 构造依据是枢轴量 $\\dfrac{(n-1)S^2}{\\sigma^2}\\sim\\chi^2(n-1)$；\n- ==由于 $\\chi^2$ 分布不对称，置信区间的上下限分别用 $\\chi_{\\alpha/2}^2(n-1)$ 与 $\\chi_{1-\\alpha/2}^2(n-1)$ 两个不同的分位点==，不能像正态分布那样直接取相反数。\n",
-      tags: ["置信区间", "正态总体方差", "卡方分位点"]
-    },
-    {
-      id: "prob-pe-def-one-sided-ci",
-      chapterId: "parameter-estimation",
-      type: "definition",
-      title: "单侧置信区间",
-      md: "### 〔定义〕\n\n设总体参数为 $\\theta$：\n\n- 若统计量 $\\hat\\theta_1=\\hat\\theta_1(X_1,\\cdots,X_n)$ 满足 $P\\{\\theta>\\hat\\theta_1\\}=1-\\alpha$，则称 $\\hat\\theta_1$ 为 $\\theta$ 的置信度为 $1-\\alpha$ 的**单侧置信下限**，$(\\hat\\theta_1,+\\infty)$ 称为单侧置信区间。\n- 类似地可定义满足 $P\\{\\theta<\\hat\\theta_2\\}=1-\\alpha$ 的**单侧置信上限** $\\hat\\theta_2$。\n\n### 〔提示〕\n\n当只关心参数不小于（或不大于）某个界限时（如产品寿命下限、误差上限），==采用单侧置信区间比双侧区间更贴合实际需求==，构造方法与双侧区间类似，只是把显著性水平 $\\alpha$ 全部分配到一侧的分位点上。\n",
-      tags: ["单侧置信区间", "置信下限", "置信上限"]
-    },
-    {
-      id: "prob-ht-def-basic-idea",
+      id: "prob-ht-basics",
       chapterId: "hypothesis-testing",
       type: "definition",
-      title: "假设检验的基本思想",
-      md: "### 〔定义〕\n\n根据样本对关于总体分布（或参数）的某个假设 $H_0$（**原假设/零假设**）作出接受或拒绝的判断的统计推断方法称为**假设检验**。其基本原则是**小概率反证法**思想：\n\n- 先假定 $H_0$ 成立，若由此导致样本观测值落入某个概率很小的区域（小概率事件在一次试验中几乎不发生），则认为出现了矛盾，从而拒绝 $H_0$；\n- 否则没有充分理由拒绝 $H_0$。\n\n### 〔提示〕\n\n假设检验通常同时提出原假设 $H_0$ 与**备择假设 $H_1$（对立假设）**，根据样本构造合适的检验统计量，在 $H_0$ 成立的前提下确定其分布，再依据显著性水平 $\\alpha$ 划定拒绝域。\n",
-      tags: ["假设检验", "小概率反证法", "原假设"]
+      types: ["definition", "property"],
+      module: 1,
+      card: "①",
+      title: "假设检验的基本思想与两类错误",
+      md: "### 〔定义〕原假设与备择假设\n\n- **原假设与备择假设**：待检验的假设称为==原假设==，记作 $H_0$；与之对立的假设称为==备择假设==，记作 $H_1$；\n- **双侧与单侧**：$H_1: \\theta \\neq \\theta_0$ 为双侧检验；$H_1: \\theta > \\theta_0$（右侧）或 $H_1: \\theta < \\theta_0$（左侧）为单侧检验。\n\n---\n\n### 〔方法〕假设检验的基本思想\n\n依据==小概率原理==（小概率事件在一次试验中几乎不会发生）作反证：\n1. **先假定 $H_0$ 成立**；\n2. **看是否矛盾**：若在 $H_0$ 成立的条件下，一个概率很小（不超过 $\\alpha$）的事件在一次抽样中发生了，则拒绝 $H_0$；否则接受 $H_0$。\n\n---\n\n### 〔定义〕检验统计量与拒绝域\n\n- **检验统计量**：用于判断是否拒绝 $H_0$ 的统计量；\n- **拒绝域**：使 $H_0$ 被拒绝的检验统计量取值的范围，记作 $W$；\n- **临界点**：拒绝域的边界点。\n\n---\n\n### 〔定义〕两类错误\n\n- **第一类错误（弃真）**：$H_0$ 为真而拒绝 $H_0$，要求 $P\\{\\text{拒绝 } H_0 \\mid H_0 \\text{ 为真}\\} \\le \\alpha$，$\\alpha$ 称为==显著性水平==；\n- **第二类错误（取伪）**：$H_0$ 不真而接受 $H_0$，其概率记作 $\\beta$；\n- **二者关系**：样本容量 $n$ 固定时，$\\alpha$ 减小则 $\\beta$ 增大；只控制第一类错误的检验称为==显著性检验==。\n\n---\n\n### 〔方法〕假设检验的一般步骤\n\n1. **提出假设**：写出 $H_0$ 与 $H_1$；\n2. **选统计量**：选取检验统计量，写出 $H_0$ 为真时它的分布；\n3. **定拒绝域**：按显著性水平 $\\alpha$ 与 $H_1$ 的方向（双侧或单侧）确定拒绝域；\n4. **下结论**：计算统计量的观测值，落入拒绝域则拒绝 $H_0$，否则接受 $H_0$。\n\n---\n\n### 〔性质〕假设检验与置信区间的关系\n\n对双侧检验 $H_0: \\theta = \\theta_0$，$H_1: \\theta \\neq \\theta_0$：在显著性水平 $\\alpha$ 下接受 $H_0$ $\\iff$ $\\theta_0$ 落在 $\\theta$ 的置信水平为 $1 - \\alpha$ 的置信区间内（第7章卡③）。",
+      tags: ["原假设", "备择假设", "小概率原理", "检验统计量", "拒绝域", "两类错误", "显著性水平", "定义", "性质"]
     },
     {
-      id: "prob-ht-def-two-errors",
-      chapterId: "hypothesis-testing",
-      type: "definition",
-      title: "两类错误与显著性水平",
-      md: "### 〔定义〕\n\n- **第一类错误（弃真错误）：**当 $H_0$ 为真时，却拒绝了 $H_0$，其概率记作 $\\alpha=P\\{\\text{拒绝}H_0\\mid H_0\\text{为真}\\}$，称为**显著性水平**。\n- **第二类错误（取伪错误）：**当 $H_0$ 不真时，却接受了 $H_0$，其概率记作 $\\beta=P\\{\\text{接受}H_0\\mid H_0\\text{不真}\\}$。\n\n### 〔提示〕\n\n- 在样本容量 $n$ 固定的情况下，==$\\alpha$ 与 $\\beta$ 通常不能同时减小==（此消彼长），假设检验的一般原则是控制第一类错误概率不超过给定的显著性水平 $\\alpha$（如 0.05），在此前提下尽量使第二类错误概率 $\\beta$ 小。\n- 要增大样本容量 $n$ 才能同时降低两类错误的概率。\n",
-      tags: ["两类错误", "显著性水平", "弃真取伪"]
-    },
-    {
-      id: "prob-ht-def-rejection-region",
-      chapterId: "hypothesis-testing",
-      type: "definition",
-      title: "检验统计量与拒绝域",
-      md: "### 〔定义〕\n\n- 由样本构造的、用于确定是否拒绝 $H_0$ 的统计量称为**检验统计量**。\n- 使原假设 $H_0$ 被拒绝的样本观测值所在区域称为**拒绝域**，其边界点称为**临界点**。\n\n### 〔提示〕\n\n构造检验统计量的一般方法：==找一个在 $H_0$ 成立下分布已知的量（通常与相应的置信区间枢轴量一致）==，根据备择假设的方向（双侧/左侧/右侧）和显著性水平 $\\alpha$ 结合分位点确定拒绝域的形式。\n",
-      tags: ["检验统计量", "拒绝域", "临界点"]
-    },
-    {
-      id: "prob-ht-thm-z-test",
+      id: "prob-ht-one-population",
       chapterId: "hypothesis-testing",
       type: "theorem",
-      title: "单个正态总体均值的检验（方差已知，Z检验）",
-      md: "### 〔定理〕\n\n设总体 $X\\sim N(\\mu,\\sigma^2)$，$\\sigma^2$ **已知**，检验假设 $H_0:\\mu=\\mu_0$ vs $H_1:\\mu\\neq\\mu_0$。\n\n- 取检验统计量 $Z=\\dfrac{\\bar X-\\mu_0}{\\sigma/\\sqrt{n}}$，在 $H_0$ 成立时 $Z\\sim N(0,1)$。\n- 给定显著性水平 $\\alpha$，拒绝域为 $|Z|\\geqslant z_{\\alpha/2}$。\n\n### 〔提示〕\n\n该检验称为 **Z 检验（U 检验）**。\n\n- 对单侧备择假设 $H_1:\\mu>\\mu_0$，拒绝域为 $Z\\geqslant z_\\alpha$；\n- 对 $H_1:\\mu<\\mu_0$，拒绝域为 $Z\\leqslant -z_\\alpha$。\n- ==检验统计量与相应置信区间的枢轴量形式完全一致==，这是区间估计与假设检验内在联系的体现。\n",
-      tags: ["Z检验", "均值检验", "方差已知"]
+      types: ["theorem"],
+      module: 2,
+      card: "②",
+      title: "单个正态总体的检验",
+      md: "### 〔定理〕均值的检验（$\\sigma^2$ 已知，$Z$ 检验）\n\n$H_0: \\mu = \\mu_0$。检验统计量\n$$Z = \\dfrac{\\bar{X} - \\mu_0}{\\sigma/\\sqrt{n}}$$\n\n$H_0$ 为真时 $Z \\sim N(0, 1)$，拒绝域：\n- **双侧**（$H_1: \\mu \\neq \\mu_0$）：$|Z| \\ge z_{\\alpha/2}$；\n- **右侧**（$H_1: \\mu > \\mu_0$）：$Z \\ge z_\\alpha$；\n- **左侧**（$H_1: \\mu < \\mu_0$）：$Z \\le -z_\\alpha$。\n\n---\n\n### 〔定理〕均值的检验（$\\sigma^2$ 未知，$t$ 检验）\n\n$H_0: \\mu = \\mu_0$。检验统计量\n$$T = \\dfrac{\\bar{X} - \\mu_0}{S/\\sqrt{n}}$$\n\n$H_0$ 为真时 $T \\sim t(n - 1)$，拒绝域：\n- **双侧**：$|T| \\ge t_{\\alpha/2}(n - 1)$；\n- **右侧**：$T \\ge t_\\alpha(n - 1)$；\n- **左侧**：$T \\le -t_\\alpha(n - 1)$。\n\n---\n\n### 〔定理〕方差的检验（$\\chi^2$ 检验）\n\n$\\mu$ 未知，$H_0: \\sigma^2 = \\sigma_0^2$。检验统计量\n$$\\chi^2 = \\dfrac{(n - 1)S^2}{\\sigma_0^2}$$\n\n$H_0$ 为真时 $\\chi^2 \\sim \\chi^2(n - 1)$，拒绝域：\n- **双侧**（$H_1: \\sigma^2 \\neq \\sigma_0^2$）：$\\chi^2 \\ge \\chi^2_{\\alpha/2}(n - 1)$ 或 $\\chi^2 \\le \\chi^2_{1-\\alpha/2}(n - 1)$；\n- **右侧**（$H_1: \\sigma^2 > \\sigma_0^2$）：$\\chi^2 \\ge \\chi^2_\\alpha(n - 1)$；\n- **左侧**（$H_1: \\sigma^2 < \\sigma_0^2$）：$\\chi^2 \\le \\chi^2_{1-\\alpha}(n - 1)$。",
+      tags: ["Z检验", "t检验", "χ²检验", "均值的检验", "方差的检验", "定理"]
     },
     {
-      id: "prob-ht-thm-t-test",
+      id: "prob-ht-two-populations",
       chapterId: "hypothesis-testing",
       type: "theorem",
-      title: "单个正态总体均值的检验（方差未知，t检验）",
-      md: "### 〔定理〕\n\n设总体 $X\\sim N(\\mu,\\sigma^2)$，$\\sigma^2$ **未知**，检验假设 $H_0:\\mu=\\mu_0$ vs $H_1:\\mu\\neq\\mu_0$。\n\n- 取检验统计量 $T=\\dfrac{\\bar X-\\mu_0}{S/\\sqrt{n}}$，在 $H_0$ 成立时 $T\\sim t(n-1)$。\n- 给定显著性水平 $\\alpha$，拒绝域为 $|T|\\geqslant t_{\\alpha/2}(n-1)$。\n\n### 〔提示〕\n\n- 该检验称为 **$t$ 检验**，用样本标准差 $S$ 替代未知的 $\\sigma$。\n- 单侧检验时同理将拒绝域改为单侧形式并把分位点由 $t_{\\alpha/2}(n-1)$ 换成 $t_\\alpha(n-1)$。\n",
-      tags: ["t检验", "均值检验", "方差未知"]
-    },
-    {
-      id: "prob-ht-thm-chi-square-test",
-      chapterId: "hypothesis-testing",
-      type: "theorem",
-      title: "单个正态总体方差的检验（χ²检验）",
-      md: "### 〔定理〕\n\n设总体 $X\\sim N(\\mu,\\sigma^2)$，$\\mu$ 未知，检验假设 $H_0:\\sigma^2=\\sigma_0^2$ vs $H_1:\\sigma^2\\neq\\sigma_0^2$。\n\n- 取检验统计量 $\\chi^2=\\dfrac{(n-1)S^2}{\\sigma_0^2}$，在 $H_0$ 成立时 $\\chi^2\\sim\\chi^2(n-1)$。\n- 给定显著性水平 $\\alpha$，拒绝域为 $\\chi^2\\geqslant\\chi_{\\alpha/2}^2(n-1)$ 或 $\\chi^2\\leqslant\\chi_{1-\\alpha/2}^2(n-1)$。\n\n### 〔提示〕\n\n==由于 $\\chi^2$ 分布不对称，双侧检验的两个临界值不能像正态分布那样简单取相反数==，须分别查 $\\chi_{\\alpha/2}^2(n-1)$ 与 $\\chi_{1-\\alpha/2}^2(n-1)$ 两个不同的分位点。\n",
-      tags: ["卡方检验", "方差检验"]
-    },
-    {
-      id: "prob-ht-def-p-value",
-      chapterId: "hypothesis-testing",
-      type: "definition",
-      title: "p值",
-      md: "### 〔定义〕\n\n在假设检验中，**p值**是指在原假设 $H_0$ 成立的条件下，检验统计量取到其样本观测值以及更极端方向取值的概率，即**拒绝 $H_0$ 所需要的最小显著性水平**。\n\n### 〔提示〕\n\n- ==若 $p$ 值小于给定的显著性水平 $\\alpha$，则在水平 $\\alpha$ 下拒绝 $H_0$；反之则不拒绝==。\n- 相较于只给出\"拒绝\"或\"不拒绝\"的结论，$p$ 值能提供更精细的证据强度信息，$p$ 值越小说明拒绝 $H_0$ 的证据越强。\n",
-      tags: ["p值", "假设检验"]
-    },
-    {
-      id: "prob-ht-thm-two-sample-mean-test",
-      chapterId: "hypothesis-testing",
-      type: "theorem",
-      title: "两个正态总体均值差的检验（方差相等但未知，t检验）",
-      md: "### 〔定理〕\n\n设 $X_1,\\cdots,X_{n_1}$ 与 $Y_1,\\cdots,Y_{n_2}$ 分别来自相互独立的正态总体 $N(\\mu_1,\\sigma^2)$ 与 $N(\\mu_2,\\sigma^2)$（**方差相等但未知**），检验假设 $H_0:\\mu_1=\\mu_2$ vs $H_1:\\mu_1\\neq\\mu_2$。\n\n- 取检验统计量 $T=\\dfrac{\\bar X-\\bar Y}{S_w\\sqrt{1/n_1+1/n_2}}$，其中 $S_w^2=\\dfrac{(n_1-1)S_1^2+(n_2-1)S_2^2}{n_1+n_2-2}$，在 $H_0$ 成立时 $T\\sim t(n_1+n_2-2)$。\n- 给定显著性水平 $\\alpha$，拒绝域为 $|T|\\geqslant t_{\\alpha/2}(n_1+n_2-2)$。\n\n### 〔提示〕\n\n该检验用于比较两组独立正态样本的均值是否相等（如两种工艺的产品指标对比），==前提是两总体方差相等（可先用 F 检验验证）==，统计量与其对应的置信区间构造方法一致。\n",
-      tags: ["两样本t检验", "均值差检验"]
-    },
-    {
-      id: "prob-ht-thm-f-test-variance-ratio",
-      chapterId: "hypothesis-testing",
-      type: "theorem",
-      title: "两个正态总体方差比的检验（F检验）",
-      md: "### 〔定理〕\n\n设 $X_1,\\cdots,X_{n_1}$ 与 $Y_1,\\cdots,Y_{n_2}$ 分别来自相互独立的正态总体 $N(\\mu_1,\\sigma_1^2)$ 与 $N(\\mu_2,\\sigma_2^2)$，$\\mu_1,\\mu_2$ 未知，检验假设 $H_0:\\sigma_1^2=\\sigma_2^2$ vs $H_1:\\sigma_1^2\\neq\\sigma_2^2$。\n\n- 取检验统计量 $F=\\dfrac{S_1^2}{S_2^2}$，在 $H_0$ 成立时 $F\\sim F(n_1-1,n_2-1)$。\n- 给定显著性水平 $\\alpha$，拒绝域为 $F\\geqslant F_{\\alpha/2}(n_1-1,n_2-1)$ 或 $F\\leqslant F_{1-\\alpha/2}(n_1-1,n_2-1)$。\n\n### 〔提示〕\n\n- 该检验称为 **F 检验**，常作为两样本 t 检验（方差齐性假设）的前置检验；\n- ==由于 $F$ 分布不对称，双侧检验需分别确定上下两个不同的临界值==，可利用关系 $F_{1-\\alpha/2}(n_1-1,n_2-1)=1/F_{\\alpha/2}(n_2-1,n_1-1)$ 简化查表。\n",
-      tags: ["F检验", "方差比检验"]
-    },
-    {
-      id: "prob-ht-prop-test-ci-duality",
-      chapterId: "hypothesis-testing",
-      type: "property",
-      title: "假设检验与置信区间的对偶关系",
-      md: "### 〔性质〕\n\n- 对双侧假设 $H_0:\\theta=\\theta_0$ vs $H_1:\\theta\\neq\\theta_0$，在显著性水平 $\\alpha$ 下**\"接受 $H_0$\"**等价于**\"$\\theta_0$ 落在 $\\theta$ 的置信度为 $1-\\alpha$ 的置信区间内\"**；\n- **\"拒绝 $H_0$\"**等价于**\"$\\theta_0$ 不在该置信区间内\"**。\n\n### 〔提示〕\n\n这一**对偶关系**表明置信区间与假设检验本质上是同一枢轴量在不同角度下的应用：==置信区间回答\"参数的合理取值范围是什么\"，假设检验回答\"某个特定值是否合理\"==，二者可以相互转化。\n",
-      tags: ["假设检验", "置信区间", "对偶关系"]
-    },
-    {
-      id: "prob-rv-def-hypergeometric",
-      chapterId: "random-variable",
-      type: "definition",
-      title: "超几何分布",
-      md: "### 〔定义〕\n\n设 $N$ 件产品中有 $M$ 件次品，从中**不放回**地任取 $n$ 件，则其中次品数 $X$ 服从**超几何分布** $H(n,M,N)$，其分布律为 $$P\\{X=k\\}=\\frac{\\dbinom{M}{k}\\dbinom{N-M}{n-k}}{\\dbinom{N}{n}},\\quad k=\\max(0,\\,n-N+M),\\cdots,\\min(n,M).$$ 其期望为 $E(X)=n\\dfrac{M}{N}$。\n\n### 〔提示〕\n\n与二项分布的核心区别在于**是否放回**：==放回抽样是二项分布（各次独立），不放回抽样是超几何分布（各次不独立）==。\n\n- 但当 $N$ 很大而 $n$ 相对很小时，抽走几件对总体比例影响甚微，此时超几何分布可用二项分布近似：$P\\{X=k\\}\\approx\\dbinom{n}{k}p^k(1-p)^{n-k}$，其中 $p=M/N$。\n- 注意两者**期望公式形式相同**（都是 $np$），但方差不同。\n",
-      tags: ["随机变量", "超几何分布", "不放回抽样"]
-    },
-    {
-      id: "prob-nc-def-covariance-matrix",
-      chapterId: "numerical-characteristics",
-      type: "definition",
-      title: "n 维随机变量的协方差矩阵",
-      md: "### 〔定义〕\n\n设 $n$ 维随机变量 $(X_1,X_2,\\cdots,X_n)$ 的二阶混合中心矩 $c_{ij}=\\operatorname{Cov}(X_i,X_j)=E\\{[X_i-E(X_i)][X_j-E(X_j)]\\}$ 均存在，则矩阵 $$C=\\begin{pmatrix} c_{11} & c_{12} & \\cdots & c_{1n}\\\\ c_{21} & c_{22} & \\cdots & c_{2n}\\\\ \\vdots & \\vdots & & \\vdots\\\\ c_{n1} & c_{n2} & \\cdots & c_{nn}\\end{pmatrix}$$ 称为该 $n$ 维随机变量的**协方差矩阵**。\n\n### 〔提示〕\n\n三个必记性质：\n\n- **主对角元就是方差：**$c_{ii}=\\operatorname{Cov}(X_i,X_i)=D(X_i)$\n- **对称性：**$c_{ij}=c_{ji}$，故 $C$ 是**实对称矩阵**（可正交对角化，与线代打通）\n- **半正定性：**$C$ 总是半正定的；若各分量不存在线性相关关系则为正定\n\n==若 $X_1,\\cdots,X_n$ 两两不相关，则 $C$ 是对角矩阵==，这是判断独立性/不相关性的常用切入点。\n",
-      tags: ["数字特征", "协方差矩阵", "多维随机变量"]
+      types: ["theorem"],
+      module: 2,
+      card: "③",
+      title: "两个正态总体的检验",
+      md: "### 〔定理〕均值差的检验（方差已知，$Z$ 检验）\n\n$H_0: \\mu_1 = \\mu_2$。检验统计量\n$$Z = \\dfrac{\\bar{X} - \\bar{Y}}{\\sqrt{\\sigma_1^2/n_1 + \\sigma_2^2/n_2}}$$\n\n$H_0$ 为真时 $Z \\sim N(0, 1)$；双侧拒绝域 $|Z| \\ge z_{\\alpha/2}$，单侧与卡② 的 $Z$ 检验相同。\n\n---\n\n### 〔定理〕均值差的检验（方差相等但未知，$t$ 检验）\n\n$H_0: \\mu_1 = \\mu_2$。检验统计量\n$$T = \\dfrac{\\bar{X} - \\bar{Y}}{S_w\\sqrt{1/n_1 + 1/n_2}}$$\n\n$H_0$ 为真时 $T \\sim t(n_1 + n_2 - 2)$（$S_w$ 见第6章卡③）：\n- **双侧**：$|T| \\ge t_{\\alpha/2}(n_1 + n_2 - 2)$；\n- **右侧**：$T \\ge t_\\alpha(n_1 + n_2 - 2)$；\n- **左侧**：$T \\le -t_\\alpha(n_1 + n_2 - 2)$。\n\n---\n\n### 〔定理〕方差比的检验（$F$ 检验）\n\n$\\mu_1, \\mu_2$ 未知，$H_0: \\sigma_1^2 = \\sigma_2^2$。检验统计量\n$$F = \\dfrac{S_1^2}{S_2^2}$$\n\n$H_0$ 为真时 $F \\sim F(n_1 - 1, n_2 - 1)$，拒绝域：\n- **双侧**：$F \\ge F_{\\alpha/2}(n_1 - 1, n_2 - 1)$ 或 $F \\le F_{1-\\alpha/2}(n_1 - 1, n_2 - 1)$；\n- **右侧**（$H_1: \\sigma_1^2 > \\sigma_2^2$）：$F \\ge F_\\alpha(n_1 - 1, n_2 - 1)$；\n- **左侧**（$H_1: \\sigma_1^2 < \\sigma_2^2$）：$F \\le F_{1-\\alpha}(n_1 - 1, n_2 - 1)$。",
+      tags: ["两个正态总体", "均值差的检验", "方差比的检验", "F检验", "定理"]
     }
   ]
 });
