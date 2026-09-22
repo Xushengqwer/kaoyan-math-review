@@ -498,18 +498,20 @@ const App = {
           note: searchText(Notes.get(it.id)),
         });
       });
-      // 章末的本章总结只有笔记，没有课本正文
+      // 章末固定卡只有自己的内容，不计入知识点条数。
       KaoyanData.chapters(s.id).forEach((c) => {
-        const nid = this.chapterNoteId(s.id, c.id);
-        if (!Notes.has(nid)) return;
-        rows.push({
-          summary: true,
-          subject: s,
-          chapter: c,
-          noteId: nid,
-          title: searchText("本章总结 " + c.name),
-          body: "",
-          note: searchText(Notes.get(nid)),
+        this.chapterExtras(s.id, c.id).forEach((extra) => {
+          if (!Notes.has(extra.noteId)) return;
+          rows.push({
+            summary: true,
+            label: extra.label,
+            subject: s,
+            chapter: c,
+            noteId: extra.noteId,
+            title: searchText(extra.label + " " + c.name),
+            body: "",
+            note: searchText(Notes.get(extra.noteId)),
+          });
         });
       });
     });
@@ -552,9 +554,9 @@ const App = {
       if (r.summary) {
         return `
       <a class="result" href="#${r.subject.id}/${r.chapter.id}" data-item="${r.noteId}">
-        <span class="result-type summary">总结</span>
+        <span class="result-type summary">${r.label}</span>
         <span class="result-body">
-          <span class="result-title">${this.mark("本章总结：" + r.chapter.name, query)}</span>
+          <span class="result-title">${this.mark(r.label + "：" + r.chapter.name, query)}</span>
           <span class="result-where">${where}</span>
           ${snippet}
         </span>
@@ -712,6 +714,7 @@ const App = {
 
       <p class="chapter-hits" id="chapter-hits" hidden></p>
       <div id="chapter-item-groups"></div>
+      ${this.chapterFlowHtml(subjectId, chapterId)}
       ${this.chapterSummaryHtml(subjectId, chapterId)}
       ${this.exportBarHtml()}
       ${this.pagerHtml(subjectId, chapterId)}
@@ -760,19 +763,42 @@ const App = {
     setTimeout(() => window.print(), 60);
   },
 
-  // 章末的「本章笔记总结」：整章读完之后自己串一遍
-  // 放在筛选容器外面，所以搜索/类型筛选不会把它藏起来
+  // 章末固定卡：顺序固定，不属于模块，也不占知识点卡号。
+  chapterExtras(subjectId, chapterId) {
+    return [
+      { noteId: this.chapterFlowId(subjectId, chapterId), title: "决策流", label: "决策流", cls: "chapter-flow", sub: "从题目条件出发，找到解题路径" },
+      { noteId: this.chapterNoteId(subjectId, chapterId), title: "本章笔记总结", label: "本章总结", cls: "", sub: "用自己的话把整章串一遍" },
+    ];
+  },
+
+  chapterFlowHtml(subjectId, chapterId) {
+    return this.chapterExtraHtml(subjectId, chapterId, this.chapterExtras(subjectId, chapterId)[0]);
+  },
+
   chapterSummaryHtml(subjectId, chapterId) {
-    const noteId = this.chapterNoteId(subjectId, chapterId);
+    return this.chapterExtraHtml(subjectId, chapterId, this.chapterExtras(subjectId, chapterId)[1]);
+  },
+
+  chapterExtraHtml(subjectId, chapterId, extra) {
     const c = KaoyanData.chapter(subjectId, chapterId);
     return `
-      <section class="chapter-summary" id="item-${noteId}">
+      <section class="chapter-summary${extra.cls ? " " + extra.cls : ""}" id="item-${extra.noteId}">
         <header class="chapter-summary-head">
-          <h3>本章笔记总结</h3>
-          <span class="chapter-summary-sub">第${c.order}章 ${escapeHtml(c.name)} · 用自己的话把整章串一遍</span>
+          <h3>${extra.title}</h3>
+          <span class="chapter-summary-sub">第${c.order}章 ${escapeHtml(c.name)} · ${extra.sub}</span>
         </header>
-        <div class="mynote-slot" data-note="${noteId}">${this.myNoteHtml(noteId)}</div>
+        <div class="mynote-slot" data-note="${extra.noteId}">${this.myNoteHtml(extra.noteId)}</div>
       </section>`;
+  },
+
+  chapterExtraTocHtml(subjectId, chapterId) {
+    return this.chapterExtras(subjectId, chapterId).map(({ noteId, title }) => `
+      <a class="toc-foot" href="#item-${noteId}" data-goto="${noteId}">
+        <span class="toc-foot-name">${title}</span>
+        <span class="toc-foot-state${Notes.has(noteId) ? " done" : ""}">${
+          Notes.has(noteId) ? (Notes.isPending(noteId) ? "已写 · 未进仓库" : "已写") : "还没写"
+        }</span>
+      </a>`).join("");
   },
 
   pagerHtml(subjectId, chapterId) {
@@ -909,8 +935,7 @@ const App = {
   // 导出条和上下章翻页跟结果列表摆在一起没有意义。
   chapterSearchMode(on) {
     [".chapter-summary", ".export-bar", ".pager"].forEach((sel) => {
-      const el = document.querySelector(sel);
-      if (el) el.hidden = on;
+      document.querySelectorAll(sel).forEach((el) => { el.hidden = on; });
     });
     // 退出搜索时把战果行也收起来；进入搜索时由 renderChapterHits 填内容再显示
     const bar = document.getElementById("chapter-hits");
@@ -942,15 +967,14 @@ const App = {
       })
       .filter(Boolean);
 
-    // 本章总结也是本章的一部分，一起搜，排在最后
-    const chNote = this.chapterNoteId(subjectId, chapterId);
-    const summaryHit =
-      Notes.has(chNote) && searchText(c.name + " 本章总结 " + Notes.get(chNote)).includes(q);
+    // 决策流和总结也一起搜，按页面顺序放在知识点后面。
+    const extraHits = this.chapterExtras(subjectId, chapterId).filter((extra) =>
+      Notes.has(extra.noteId) && searchText(c.name + " " + extra.label + " " + Notes.get(extra.noteId)).includes(q));
 
     this.chapterSearchMode(true);
-    this.renderChapterHits(hits, summaryHit, KaoyanData.itemsByChapter(subjectId, chapterId).length, raw);
+    this.renderChapterHits(hits, extraHits, KaoyanData.itemsByChapter(subjectId, chapterId).length, raw);
 
-    if (!hits.length && !summaryHit) {
+    if (!hits.length && !extraHits.length) {
       wrap.innerHTML = `<div class="empty-state">本章的知识点和笔记里都没有「${escapeHtml(raw)}」</div>`;
       renderMath(wrap);
       return;
@@ -983,17 +1007,17 @@ const App = {
       </a>`;
     });
 
-    if (summaryHit) {
+    extraHits.forEach((extra) => {
       rows.push(`
-      <a class="result" href="#${subjectId}/${chapterId}" data-item="${chNote}">
-        <span class="result-type summary">总结</span>
+      <a class="result" href="#${subjectId}/${chapterId}" data-item="${extra.noteId}">
+        <span class="result-type summary">${extra.label}</span>
         <span class="result-body">
-          <span class="result-title">${this.mark("本章笔记总结", raw)}</span>
-          <span class="result-where">整章串一遍</span>
-          <span class="result-snippet"><span class="snippet-from">笔记</span>${this.textSnippet(Notes.get(chNote), raw)}</span>
+          <span class="result-title">${this.mark(extra.title, raw)}</span>
+          <span class="result-where">${extra.sub}</span>
+          <span class="result-snippet"><span class="snippet-from">笔记</span>${this.textSnippet(Notes.get(extra.noteId), raw)}</span>
         </span>
       </a>`);
-    }
+    });
 
     wrap.innerHTML = `<div class="result-list">${rows.join("")}</div>`;
     renderMath(wrap);
@@ -1010,18 +1034,18 @@ const App = {
   },
 
   // 搜索框下面那行：命中几条、分布在哪儿
-  renderChapterHits(hits, summaryHit, total, raw) {
+  renderChapterHits(hits, extraHits, total, raw) {
     const bar = document.getElementById("chapter-hits");
     if (!bar) return;
     const noteOnly = hits.filter((h) => !h.inTitle && !h.inBook && h.inNote).length;
-    if (!hits.length && !summaryHit) {
+    if (!hits.length && !extraHits.length) {
       bar.hidden = false;
       bar.innerHTML = `「${escapeHtml(raw)}」在本章没有出现`;
       return;
     }
     const parts = [`本章 ${total} 条里命中 <b>${hits.length}</b> 条`];
     if (noteOnly) parts.push(`其中 <b>${noteOnly}</b> 条只写在笔记里`);
-    if (summaryHit) parts.push("本章总结也命中");
+    extraHits.forEach((extra) => parts.push(extra.label + "也命中"));
     parts.push("点结果跳到正文");
     bar.hidden = false;
     bar.innerHTML = `「${escapeHtml(raw)}」　${parts.join("　·　")}`;
@@ -1066,14 +1090,7 @@ const App = {
       )
       .join("");
 
-    const chNote = this.chapterNoteId(subjectId, chapterId);
-    const foot = `
-      <a class="toc-foot" href="#item-${chNote}" data-goto="${chNote}">
-        <span class="toc-foot-name">本章笔记总结</span>
-        <span class="toc-foot-state${Notes.has(chNote) ? " done" : ""}">${
-          Notes.has(chNote) ? (Notes.isPending(chNote) ? "已写 · 未进仓库" : "已写") : "还没写"
-        }</span>
-      </a>`;
+    const foot = this.chapterExtraTocHtml(subjectId, chapterId);
 
     rail.innerHTML = `
       <button class="rail-tab" id="rail-tab" aria-expanded="false" aria-controls="rail-panel">本章目录</button>
@@ -1157,14 +1174,7 @@ const App = {
         </div>`
       )
       .join("");
-    const chNote = this.chapterNoteId(subjectId, chapterId);
-    const foot = `
-      <a class="toc-foot" href="#item-${chNote}" data-goto="${chNote}">
-        <span class="toc-foot-name">本章笔记总结</span>
-        <span class="toc-foot-state${Notes.has(chNote) ? " done" : ""}">${
-          Notes.has(chNote) ? (Notes.isPending(chNote) ? "已写 · 未进仓库" : "已写") : "还没写"
-        }</span>
-      </a>`;
+    const foot = this.chapterExtraTocHtml(subjectId, chapterId);
 
     return `
       <details class="toc" open>
@@ -1479,13 +1489,13 @@ const App = {
   // 「笔记」区块：有内容就展示，没有就显示一个添加按钮
   myNoteHtml(noteId) {
     const text = Notes.get(noteId);
-    const isCh = noteId.indexOf("ch:") === 0;
+    const label = this.noteLabel(noteId);
     if (!text) {
-      return `<button class="mynote-add" data-action="edit">＋ ${isCh ? "写一段本章总结" : "写一段笔记"}</button>`;
+      return `<button class="mynote-add" data-action="edit">＋ ${label === "决策流" ? "写一份决策流" : "写一段" + label}</button>`;
     }
     return `<div class="mynote${Notes.isPending(noteId) ? " is-pending" : ""}">
       <div class="mynote-head">
-        <span class="mynote-label">${isCh ? "本章总结" : "笔记"}</span>
+        <span class="mynote-label">${label}</span>
         ${this.noteFlagHtml(noteId)}
         ${
           Notes.isPending(noteId) && this.hasSeed(noteId)
@@ -1500,18 +1510,22 @@ const App = {
 
   editorHtml(noteId) {
     const text = Notes.get(noteId);
+    const label = this.noteLabel(noteId);
     const isCh = noteId.indexOf("ch:") === 0;
-    const placeholder = isCh
+    const isFlow = noteId.indexOf("flow:") === 0;
+    const placeholder = isFlow
+      ? "从题目条件出发，写下你的判断顺序，比如：&#10;&#10;先看要求什么：…&#10;再看给了什么条件：…&#10;满足条件 A → 用方法 A&#10;否则 → 继续判断条件 B&#10;最后检查：…"
+      : isCh
       ? "把整章串成一条线，比如：&#10;&#10;这一章在讲什么：…&#10;几个概念怎么串起来：…&#10;考试会怎么考：…&#10;我最容易错的地方：…&#10;&#10;公式用 $ 包起来会渲染，例如 $A\\vec{v}=\\lambda\\vec{v}$"
       : "用你自己的话写一遍，比如：&#10;&#10;对象：…&#10;规则：…&#10;意义：…&#10;&#10;公式用 $ 包起来会渲染，例如 $A\\vec{v}=\\lambda\\vec{v}$";
     return `<div class="mynote mynote-editing">
       <div class="mynote-head">
-        <span class="mynote-label">${isCh ? "本章总结" : "笔记"}</span>
+        <span class="mynote-label">${label}</span>
         <button class="mynote-md-btn" data-action="import-md" title="读取一个 .md 文件，原样填进来">导入 .md</button>
         <button class="mynote-preview-btn" data-action="preview">预览</button>
         <button class="mynote-zoom-btn" data-action="zoom" title="全屏编辑（Esc 退出）">放大</button>
       </div>
-      <textarea class="mynote-input" rows="${isCh ? 14 : 9}" placeholder="${placeholder}">${escapeHtml(text)}</textarea>
+      <textarea class="mynote-input" rows="${isCh || isFlow ? 14 : 9}" placeholder="${placeholder}">${escapeHtml(text)}</textarea>
       <div class="mynote-warn" hidden></div>
       <div class="mynote-preview" hidden></div>
       <input type="file" class="mynote-md-file" accept=".md,.markdown,.txt,text/markdown,text/plain" hidden />
@@ -1610,6 +1624,15 @@ const App = {
     return "ch:" + subjectId + "/" + chapterId;
   },
 
+  chapterFlowId(subjectId, chapterId) {
+    return "flow:" + subjectId + "/" + chapterId;
+  },
+
+  noteLabel(noteId) {
+    if (noteId.indexOf("flow:") === 0) return "决策流";
+    return noteId.indexOf("ch:") === 0 ? "本章总结" : "笔记";
+  },
+
   // 选一个 .md 文件，把内容原样填进输入框（只读文件，不做任何转换）
   bindMdFile(slot, noteId) {
     const input = slot.querySelector(".mynote-md-file");
@@ -1680,14 +1703,14 @@ const App = {
 
   // 定位一条笔记：属于哪个学科、第几章；知识点还要给出在本章同类里排第几
   locate(noteId) {
-    if (noteId.indexOf("ch:") === 0) {
-      const [subjectId, chapterId] = noteId.slice(3).split("/");
+    if (noteId.indexOf("ch:") === 0 || noteId.indexOf("flow:") === 0) {
+      const [subjectId, chapterId] = noteId.slice(noteId.indexOf(":") + 1).split("/");
       const s = KaoyanData.subject(subjectId);
       const c = s && KaoyanData.chapter(subjectId, chapterId);
       if (!c) return null;
       return {
         subject: s, chapter: c, item: null, isChapter: true,
-        typeLabel: "本章总结", index: 0, title: c.name,
+        typeLabel: this.noteLabel(noteId), index: 0, title: c.name,
       };
     }
     for (const s of this.subjects) {
@@ -1706,7 +1729,7 @@ const App = {
 
   // 一条笔记在章内的位置标签：定义05 / 本章总结
   noteSlotLabel(p) {
-    if (p.isChapter) return "本章总结";
+    if (p.isChapter) return p.typeLabel;
     if (p.item && p.item.card) return "卡" + p.item.card;
     return p.typeLabel + String(p.index).padStart(2, "0");
   },

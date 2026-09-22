@@ -847,7 +847,10 @@ body.mynote-zoomed { overflow: hidden; }
 .md .term-head.ex { color: var(--example); }
 .md .term-head.tip { color: var(--tip); }
 .md .term-head.meaning { color: var(--meaning); }
-.md .term-head.subquestion { color: var(--def); font-size: 14px; }
+.md .term-head.subquestion {
+  color: var(--example); font-size: 14px; font-weight: 600;
+  padding-left: 12px; border-left: 2px solid color-mix(in srgb, var(--example) 35%, transparent);
+}
 .md .term-head strong { color: inherit; }
 .md p { margin: 9px 0; }
 .md ul, .md ol { margin: 8px 0; padding-left: 22px; }
@@ -926,6 +929,10 @@ body.mynote-zoomed { overflow: hidden; }
 .chapter-summary .mynote-slot { margin-top: 0; padding-top: 0; border-top: none; }
 .chapter-summary .mynote-editing { box-shadow: none; background: var(--bg); }
 .chapter-summary .mynote-input { background: var(--surface); }
+.chapter-flow { border-left: 3px solid var(--thm); }
+.chapter-flow .chapter-summary-head h3 { color: var(--thm); }
+.chapter-flow .mynote { border-left-color: color-mix(in srgb, var(--thm) 35%, transparent); }
+.chapter-flow + .chapter-summary { margin-top: 28px; }
 
 .entry.flash, .chapter-summary.flash { animation: flash 1.8s ease; border-radius: var(--r-md); }
 @keyframes flash {
