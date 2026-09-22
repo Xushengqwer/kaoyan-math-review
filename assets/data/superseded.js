@@ -3,7 +3,7 @@
 // 由提交脚本自动登记，不用手改。
 registerSuperseded({
   notes: {
-    "ch:linalg/determinant": ["izc77q1ywo"],
+    "ch:linalg/determinant": ["izc77q1ywo","uuslnzu327"],
     "ch:linalg/linear-equations": ["1iep8njagzr"],
     "ch:linalg/vector-space": ["11fvs29j6r7","48749qx063"],
     "la-det-def-adjoint": ["201xy73w8gw","61qi1k6v49","onbxd7oe96"],

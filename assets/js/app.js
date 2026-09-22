@@ -41,9 +41,9 @@ function plainText(raw) {
 // - ==重点== 显示为下划线（Markdown 本身没有下划线，这是本站约定），公式也能划
 // 教材额外一条：「### 〔提示〕」那一节放进卡片底部的提示区（笔记里留在原位）。
 // 公式先挖出来再交给 Markdown，保护流水线只有这一份。
-const TERM_KINDS = "定义|定理|性质|推论|方法|例题|提示";
+const TERM_KINDS = "定义|定理|性质|推论|方法|例题|意义|提示";
 const BOOK_HEAD = new RegExp("^#{1,6}[ \\t]*(〔(" + TERM_KINDS + ")〕.*?)[ \\t]*$");
-const BOOK_CLASS = { 定义: "def", 定理: "thm", 推论: "thm", 性质: "prp", 方法: "method", 例题: "ex", 提示: "tip" };
+const BOOK_CLASS = { 定义: "def", 定理: "thm", 推论: "thm", 性质: "prp", 方法: "method", 例题: "ex", 意义: "meaning", 提示: "tip" };
 
 // ==重点== 划到公式上：KaTeX 排出来的公式是 inline-block，外层 <u> 的下划线画不进去。
 // 所以被 ==…== 包住的公式、公式里面写的 ==…==，显示时都换成 KaTeX 自己的 \underline{}（原文不动）。
@@ -104,13 +104,19 @@ function mdHtml(text, inline) {
   return underlineAndUnmask(html, store);
 }
 
-// 笔记里的〔〕小标题：和教材同一套颜色，但留在原位、标题层级照旧（笔记怎么排是自己定的，不挪）。
-// 前面带编号也认：「## 四、〔方法〕先凑零，再展开」。
-const NOTE_TERM_HEAD = new RegExp("<h([1-6])>((?:[一二三四五六七八九十]+、|\\d+[.、．][ \\t]*)?〔(" + TERM_KINDS + ")〕)", "g");
+// 只给 Markdown 标题上色：保留原文字、公式和层级，也兼容未加〔〕的例题及小题。
+const NOTE_TERM_HEAD = new RegExp("^〔(" + TERM_KINDS + ")〕");
 
 function noteMdHtml(text) {
-  return mdHtml(trimRules(text)).replace(NOTE_TERM_HEAD, (m, level, head, kind) =>
-    "<h" + level + ' class="term-head ' + BOOK_CLASS[kind] + '">' + head);
+  return mdHtml(trimRules(text)).replace(/<h([1-6])>([\s\S]*?)<\/h\1>/g, (m, level, head) => {
+    const title = head.replace(HTML_TAG, "").trim()
+      .replace(/^(?:[一二三四五六七八九十]+、|\d+[.、．])[ \t]*/, "");
+    const term = title.match(NOTE_TERM_HEAD);
+    let cls = term ? BOOK_CLASS[term[1]] : "";
+    if (!cls && /^例题(?=$|[\s:：0-9一二三四五六七八九十（(])/.test(title)) cls = "ex";
+    if (!cls && /^(?:【|〔)?小题\s*[0-9一二三四五六七八九十]+(?=$|[\s】〕:：、.．（(])/.test(title)) cls = "subquestion";
+    return cls ? '<h' + level + ' class="term-head ' + cls + '">' + head + '</h' + level + '>' : m;
+  });
 }
 
 // → { main: 正文 HTML（一个〔〕小节一个 .term）, tip: 提示 HTML }
@@ -118,7 +124,9 @@ function bookParts(md) {
   const sections = [{ label: null, kind: null, lines: [] }];
   String(md == null ? "" : md).split("\n").forEach((line) => {
     const m = line.match(BOOK_HEAD);
+    const meaning = line.match(/^#{1,6}[ \t]*意义(?:[ \t]*[:：][ \t]*(.*?))?[ \t]*$/);
     if (m) sections.push({ label: m[1], kind: m[2], lines: [] });
+    else if (meaning) sections.push({ label: "〔意义〕" + (meaning[1] || ""), kind: "意义", lines: [] });
     else sections[sections.length - 1].lines.push(line);
   });
   let main = "";
