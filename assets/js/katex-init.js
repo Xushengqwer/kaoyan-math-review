@@ -7,6 +7,10 @@ function renderMath(container) {
       { left: "$", right: "$", display: false },
     ],
     throwOnError: false,
+    // 反向斜省略号：仅补充显示宏，教材和笔记中的 LaTeX 原文保持不变。
+    macros: {
+      "\\iddots": "\\mathinner{\\mkern1mu\\raisebox{0.1em}{.}\\mkern2mu\\raisebox{0.4em}{.}\\mkern2mu\\raisebox{0.7em}{.}\\mkern1mu}",
+    },
   });
 }
 
