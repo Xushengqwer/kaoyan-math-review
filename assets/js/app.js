@@ -696,7 +696,7 @@ const App = {
         <a href="#${subjectId}">${escapeHtml(s.name)}</a>
       </nav>
       <h1 class="page-title"><span class="page-title-no">${String(c.order).padStart(2, "0")}</span>${escapeHtml(c.name)}</h1>
-      <p class="page-sub">共 ${items.length} 条 · ${TYPE_ORDER.filter((t) => items.some((i) => i.type === t)).map((t) => `${TYPE_LABEL[t]} ${items.filter((i) => i.type === t).length}`).join(" · ")}</p>
+      <p class="page-sub">共 ${items.length} 条 · ${TYPE_ORDER.filter((t) => items.some((i) => this.itemTypes(i).includes(t))).map((t) => `${TYPE_LABEL[t]} ${items.filter((i) => this.itemTypes(i).includes(t)).length}`).join(" · ")}</p>
 
       <div class="toolbar">
         <div class="search-bar">
@@ -706,7 +706,7 @@ const App = {
         <div class="chip-row" id="chapter-type-filter">
           <button class="chip active" data-type="all">全部</button>
           ${TYPE_ORDER.map((t) => {
-            const n = items.filter((i) => i.type === t).length;
+            const n = items.filter((i) => this.itemTypes(i).includes(t)).length;
             return n ? `<button class="chip" data-type="${t}">${TYPE_LABEL[t]}</button>` : "";
           }).join("")}
         </div>
