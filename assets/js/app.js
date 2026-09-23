@@ -279,20 +279,24 @@ const App = {
     // 「还没进仓库」提醒
     const box = document.getElementById("side-pending");
     if (!box) return;
-    const n = Notes.pendingIds().length + BookEdits.pendingIds().length;
-    box.hidden = n === 0;
     const num = document.getElementById("side-pending-n");
-    if (num) num.textContent = n;
+    const textPending = Notes.pendingIds().length + BookEdits.pendingIds().length;
+    const update = (n) => { box.hidden = n === 0; if (num) num.textContent = n; };
+    update(textPending);
+    MindMaps.pendingCount().then((count) => update(textPending + count)).catch(() => {});
   },
 
   // 把所有「还没进仓库」的笔记和教材改动打包成一个 .md：每条都带完整出处和 id，
   // 正文夹在起止注释之间逐字节原样。文件本身就是 Markdown，
   // 直接丢进任何预览器（或交给我）都能正常看，也能原样提交进仓库。
-  exportPending() {
+  async exportPending() {
     const ids = Notes.pendingIds();
     const bookIds = BookEdits.pendingIds();
-    const total = ids.length + bookIds.length;
-    if (total === 0) { alert("所有笔记和教材内容都已经在仓库里了。"); return; }
+    let imageEntries;
+    try { imageEntries = await MindMaps.pendingEntries(); }
+    catch (error) { alert("读取思维导图失败：" + error.message); return; }
+    const total = ids.length + bookIds.length + imageEntries.length;
+    if (total === 0) { alert("所有笔记、教材和思维导图都已经在仓库里了。"); return; }
     // 极端情况：正文里如果自己带了结束标记，切分就会错位，先拦下来。
     const clash = ids.filter((id) => Notes.get(id).indexOf(this.bodyClose(id)) >= 0)
       .concat(bookIds.filter((id) => BookEdits.get(id).indexOf(this.bodyClose("book:" + id)) >= 0).map((id) => "book:" + id));
@@ -301,16 +305,20 @@ const App = {
       return;
     }
     const date = new Date().toISOString().slice(0, 10);
-    const kind = ids.length && bookIds.length ? "笔记与教材" : bookIds.length ? "教材" : "笔记";
+    const kind = imageEntries.length
+      ? (ids.length || bookIds.length ? "笔记教材与思维导图" : "思维导图")
+      : ids.length && bookIds.length ? "笔记与教材" : bookIds.length ? "教材" : "笔记";
     const parts = [
       "# 待提交" + kind + " · " + date,
       "",
-      "共 " + total + " 条" + (ids.length && bookIds.length ? "（笔记 " + ids.length + " 条、教材 " + bookIds.length + " 条）" : "") +
+      "共 " + total + " 条" + (imageEntries.length ? "（笔记 " + ids.length + " 条、教材 " + bookIds.length + " 条、思维导图 " + imageEntries.length + " 张）" : ids.length && bookIds.length ? "（笔记 " + ids.length + " 条、教材 " + bookIds.length + " 条）" : "") +
         "。每条正文夹在 `正文开始` / `正文结束` 两行注释之间，" +
-        "**与网页里输入的内容逐字节相同**，导出没有做任何转换。",
+        "**与网页里输入的内容逐字节相同**，导出没有做任何转换。思维导图原图使用 Base64 编码，另附 SHA-256 校验值。",
       "",
     ];
-    const texts = ids.map((id) => this.buildNoteText(id)).concat(bookIds.map((id) => this.buildBookText(id)));
+    const texts = ids.map((id) => this.buildNoteText(id))
+      .concat(bookIds.map((id) => this.buildBookText(id)))
+      .concat(imageEntries.map((record) => this.buildImageText(record)));
     texts.forEach((text, i) => {
       parts.push("---");
       parts.push("");
@@ -326,6 +334,23 @@ const App = {
     a.click();
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+  },
+
+  buildImageText(record) {
+    const [subjectId, chapterId] = record.id.slice(4).split("/");
+    const subject = KaoyanData.subject(subjectId);
+    const chapter = KaoyanData.chapter(subjectId, chapterId);
+    const imageId = "image:" + record.id;
+    return [
+      "> **" + subject.name + " · 第" + chapter.order + "章 " + chapter.name + " · 思维导图**",
+      "> " + record.name + "　·　`" + imageId + "`　·　" + record.type + "　·　" + record.size + " 字节　·　SHA-256: " + record.sha256,
+      "",
+      "<!-- ↓ 图片 Base64 开始 · 原图逐字节编码，请勿修改 -->",
+      "",
+      MindMaps.base64(record),
+      "",
+      "<!-- ↑ 图片 Base64 结束 · " + imageId + " -->",
+    ].join("\n");
   },
 
   exportNotes() {
@@ -435,6 +460,9 @@ const App = {
   // ---------------- content ----------------
   renderContent() {
     const el = document.getElementById("content-pane");
+    el.querySelectorAll(".mindmap-slot[data-preview-url]").forEach((slot) => {
+      URL.revokeObjectURL(slot.dataset.previewUrl);
+    });
     const r = this.current;
     if (r.type === "search") {
       this.hideRail();
@@ -460,7 +488,8 @@ const App = {
       el.innerHTML = this.chapterViewHtml(r.subjectId, r.chapterId);
       this.renderRail(r.subjectId, r.chapterId);
       this.bindChapterControls(r.subjectId, r.chapterId);
-      this.bindNoteEditors(el); // 章末总结的编辑器（知识点的已在上面绑好）
+      this.bindNoteEditors(el); // 章末笔记的编辑器（知识点的已在上面绑好）
+      this.bindMindMaps(el);
       const pdfBtn = document.getElementById("chapter-pdf");
       if (pdfBtn) pdfBtn.addEventListener("click", () => this.printChapter(r.subjectId, r.chapterId));
     } else if (r.type === "subject") {
@@ -500,7 +529,13 @@ const App = {
       });
       // 章末固定卡只有自己的内容，不计入知识点条数。
       KaoyanData.chapters(s.id).forEach((c) => {
+        rows.push({
+          summary: true, image: true, label: "思维导图",
+          subject: s, chapter: c, noteId: this.chapterMapId(s.id, c.id),
+          title: searchText("思维导图 " + c.name), body: "", note: "",
+        });
         this.chapterExtras(s.id, c.id).forEach((extra) => {
+          if (extra.imageId) return;
           if (!Notes.has(extra.noteId)) return;
           rows.push({
             summary: true,
@@ -546,8 +581,8 @@ const App = {
     const rows = hits.slice(0, 60).map((h) => {
       const r = h.row;
       const where = `${escapeHtml(r.subject.name)} · ${r.chapter.order}. ${escapeHtml(r.chapter.name)}`;
-      const fromNote = h.fromNote || r.summary;
-      const snippet = fromNote
+      const fromNote = h.fromNote || (r.summary && !r.image);
+      const snippet = r.image ? "" : fromNote
         ? `<span class="result-snippet"><span class="snippet-from">笔记</span>${this.textSnippet(Notes.get(r.noteId), query)}</span>`
         : `<span class="result-snippet">${this.snippet(r.item, query)}</span>`;
 
@@ -715,6 +750,7 @@ const App = {
       <p class="chapter-hits" id="chapter-hits" hidden></p>
       <div id="chapter-item-groups"></div>
       ${this.chapterFlowHtml(subjectId, chapterId)}
+      ${this.chapterMapHtml(subjectId, chapterId)}
       ${this.chapterSummaryHtml(subjectId, chapterId)}
       ${this.exportBarHtml()}
       ${this.pagerHtml(subjectId, chapterId)}
@@ -767,6 +803,7 @@ const App = {
   chapterExtras(subjectId, chapterId) {
     return [
       { noteId: this.chapterFlowId(subjectId, chapterId), title: "决策流", label: "决策流", cls: "chapter-flow", sub: "从题目条件出发，找到解题路径" },
+      { imageId: this.chapterMapId(subjectId, chapterId), title: "思维导图", label: "思维导图", cls: "chapter-map", sub: "用一张图看清本章知识结构" },
       { noteId: this.chapterNoteId(subjectId, chapterId), title: "本章笔记总结", label: "本章总结", cls: "", sub: "用自己的话把整章串一遍" },
     ];
   },
@@ -775,30 +812,139 @@ const App = {
     return this.chapterExtraHtml(subjectId, chapterId, this.chapterExtras(subjectId, chapterId)[0]);
   },
 
-  chapterSummaryHtml(subjectId, chapterId) {
+  chapterMapHtml(subjectId, chapterId) {
     return this.chapterExtraHtml(subjectId, chapterId, this.chapterExtras(subjectId, chapterId)[1]);
+  },
+
+  chapterSummaryHtml(subjectId, chapterId) {
+    return this.chapterExtraHtml(subjectId, chapterId, this.chapterExtras(subjectId, chapterId)[2]);
   },
 
   chapterExtraHtml(subjectId, chapterId, extra) {
     const c = KaoyanData.chapter(subjectId, chapterId);
     return `
-      <section class="chapter-summary${extra.cls ? " " + extra.cls : ""}" id="item-${extra.noteId}">
+      <section class="chapter-summary${extra.cls ? " " + extra.cls : ""}" id="item-${extra.imageId || extra.noteId}">
         <header class="chapter-summary-head">
           <h3>${extra.title}</h3>
           <span class="chapter-summary-sub">第${c.order}章 ${escapeHtml(c.name)} · ${extra.sub}</span>
         </header>
-        <div class="mynote-slot" data-note="${extra.noteId}">${this.myNoteHtml(extra.noteId)}</div>
+        ${extra.imageId ? this.mindMapHtml(extra.imageId) : `<div class="mynote-slot" data-note="${extra.noteId}">${this.myNoteHtml(extra.noteId)}</div>`}
       </section>`;
   },
 
   chapterExtraTocHtml(subjectId, chapterId) {
-    return this.chapterExtras(subjectId, chapterId).map(({ noteId, title }) => `
-      <a class="toc-foot" href="#item-${noteId}" data-goto="${noteId}">
+    return this.chapterExtras(subjectId, chapterId).map(({ noteId, imageId, title }) => `
+      <a class="toc-foot" href="#item-${imageId || noteId}" data-goto="${imageId || noteId}">
         <span class="toc-foot-name">${title}</span>
-        <span class="toc-foot-state${Notes.has(noteId) ? " done" : ""}">${
-          Notes.has(noteId) ? (Notes.isPending(noteId) ? "已写 · 未进仓库" : "已写") : "还没写"
+        <span class="toc-foot-state${!imageId && Notes.has(noteId) ? " done" : ""}">${
+          imageId ? "还没上传" : Notes.has(noteId) ? (Notes.isPending(noteId) ? "已写 · 未进仓库" : "已写") : "还没写"
         }</span>
       </a>`).join("");
+  },
+
+  mindMapHtml(id) {
+    return `
+      <div class="mindmap-slot" data-map="${id}">
+        <input class="mindmap-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden />
+        <div class="mindmap-content">正在读取图片…</div>
+      </div>`;
+  },
+
+  async refreshMindMapSlot(slot) {
+    const id = slot.dataset.map;
+    const view = await MindMaps.get(id);
+    if (!slot.isConnected) return;
+    if (slot.dataset.previewUrl) URL.revokeObjectURL(slot.dataset.previewUrl);
+    delete slot.dataset.previewUrl;
+    const content = slot.querySelector(".mindmap-content");
+    if (!view) {
+      content.innerHTML = `
+        <button class="mindmap-upload" data-map-action="choose">＋ 上传思维导图</button>
+        <p class="mindmap-hint">支持 PNG、JPEG、WebP、GIF，保留原图；每张最多 20 MB。</p>`;
+    } else {
+      const src = view.source === "local" ? URL.createObjectURL(MindMaps.blob(view)) : view.path;
+      if (view.source === "local") slot.dataset.previewUrl = src;
+      content.innerHTML = `
+        <div class="mindmap-meta">
+          <span class="mindmap-name">${escapeHtml(view.name)}</span>
+          <span class="mynote-flag ${view.pending ? "pending" : "saved"}">${view.pending ? "未进仓库" : "已进仓库"}</span>
+        </div>
+        <a class="mindmap-open" href="${escapeHtml(src)}" target="_blank" rel="noopener" title="点击查看原图">
+          <img class="mindmap-image" src="${escapeHtml(src)}" alt="${escapeHtml(view.name)}" />
+        </a>
+        <div class="mindmap-actions">
+          <button data-map-action="choose">更换图片</button>
+          <button data-map-action="download">下载原图</button>
+          ${view.pending ? `<button class="mindmap-remove" data-map-action="remove">${MindMaps.seed(id) ? "恢复仓库版" : "删除图片"}</button>` : ""}
+        </div>`;
+    }
+    this.refreshMindMapToc(id, view);
+  },
+
+  refreshMindMapToc(id, view) {
+    document.querySelectorAll('[data-goto="' + id + '"] .toc-foot-state').forEach((status) => {
+      status.textContent = view ? (view.pending ? "已上传 · 未进仓库" : "已进仓库") : "还没上传";
+      status.classList.toggle("done", !!view && !view.pending);
+      status.classList.toggle("pending", !!view && view.pending);
+    });
+  },
+
+  bindMindMaps(scope) {
+    scope.querySelectorAll(".mindmap-slot").forEach((slot) => {
+      if (slot.dataset.bound) return;
+      slot.dataset.bound = "1";
+      const id = slot.dataset.map;
+      const show = async () => {
+        try { await this.refreshMindMapSlot(slot); }
+        catch (error) { slot.querySelector(".mindmap-content").textContent = "图片读取失败：" + error.message; }
+      };
+      slot.addEventListener("click", async (event) => {
+        const button = event.target.closest("[data-map-action]");
+        if (!button) return;
+        if (button.dataset.mapAction === "choose") {
+          slot.querySelector(".mindmap-file").click();
+        } else if (button.dataset.mapAction === "download") {
+          const view = await MindMaps.get(id);
+          if (!view) return;
+          const a = document.createElement("a");
+          a.href = view.source === "local" ? slot.dataset.previewUrl : view.path;
+          a.download = view.name;
+          document.body.appendChild(a); a.click(); a.remove();
+        } else if (button.dataset.mapAction === "remove") {
+          const message = MindMaps.seed(id)
+            ? "放弃本设备上的图片，恢复仓库中的版本？"
+            : "删除本设备保存的图片？如果尚未打包备份，将无法恢复。";
+          if (!confirm(message)) return;
+          try { await MindMaps.removeLocal(id); await show(); this.refreshNoteCount(); }
+          catch (error) { alert("删除失败：" + error.message); }
+        }
+      });
+      slot.querySelector(".mindmap-file").addEventListener("change", async (event) => {
+        const file = event.target.files && event.target.files[0];
+        event.target.value = "";
+        if (!file) return;
+        try {
+          if (!MindMaps.allowedTypes.includes(file.type) || !file.size || file.size > MindMaps.maxBytes) {
+            throw new Error("请选择 20 MB 以内的 PNG、JPEG、WebP 或 GIF 图片");
+          }
+          const url = URL.createObjectURL(file);
+          try {
+            await new Promise((resolve, reject) => {
+              const image = new Image();
+              image.onload = resolve;
+              image.onerror = () => reject(new Error("图片无法打开，请检查文件"));
+              image.src = url;
+            });
+          } finally { URL.revokeObjectURL(url); }
+          const current = await MindMaps.get(id);
+          if (current && current.pending && !confirm("用新图片替换本设备上尚未提交的图片？")) return;
+          await MindMaps.save(id, file);
+          await show();
+          this.refreshNoteCount();
+        } catch (error) { alert("上传失败：" + error.message); }
+      });
+      show();
+    });
   },
 
   pagerHtml(subjectId, chapterId) {
@@ -969,7 +1115,9 @@ const App = {
 
     // 决策流和总结也一起搜，按页面顺序放在知识点后面。
     const extraHits = this.chapterExtras(subjectId, chapterId).filter((extra) =>
-      Notes.has(extra.noteId) && searchText(c.name + " " + extra.label + " " + Notes.get(extra.noteId)).includes(q));
+      extra.imageId
+        ? searchText(extra.label).includes(q)
+        : Notes.has(extra.noteId) && searchText(c.name + " " + extra.label + " " + Notes.get(extra.noteId)).includes(q));
 
     this.chapterSearchMode(true);
     this.renderChapterHits(hits, extraHits, KaoyanData.itemsByChapter(subjectId, chapterId).length, raw);
@@ -1009,12 +1157,12 @@ const App = {
 
     extraHits.forEach((extra) => {
       rows.push(`
-      <a class="result" href="#${subjectId}/${chapterId}" data-item="${extra.noteId}">
+      <a class="result" href="#${subjectId}/${chapterId}" data-item="${extra.imageId || extra.noteId}">
         <span class="result-type summary">${extra.label}</span>
         <span class="result-body">
           <span class="result-title">${this.mark(extra.title, raw)}</span>
           <span class="result-where">${extra.sub}</span>
-          <span class="result-snippet"><span class="snippet-from">笔记</span>${this.textSnippet(Notes.get(extra.noteId), raw)}</span>
+          ${extra.imageId ? "" : `<span class="result-snippet"><span class="snippet-from">笔记</span>${this.textSnippet(Notes.get(extra.noteId), raw)}</span>`}
         </span>
       </a>`);
     });
@@ -1626,6 +1774,10 @@ const App = {
 
   chapterFlowId(subjectId, chapterId) {
     return "flow:" + subjectId + "/" + chapterId;
+  },
+
+  chapterMapId(subjectId, chapterId) {
+    return "map:" + subjectId + "/" + chapterId;
   },
 
   noteLabel(noteId) {

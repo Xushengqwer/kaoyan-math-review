@@ -500,6 +500,7 @@ button { font: inherit; border: none; background: none; color: inherit; cursor: 
   font-size: 10.5px; color: var(--text-3); background: var(--hairline);
 }
 .toc-foot-state.done { color: var(--accent); background: var(--accent-soft); }
+.toc-foot-state.pending { color: var(--pend); background: var(--pend-bg); }
 
 /* ---- type groups ---- */
 .type-group { margin-top: 52px; }
@@ -933,6 +934,22 @@ body.mynote-zoomed { overflow: hidden; }
 .chapter-flow .chapter-summary-head h3 { color: var(--thm); }
 .chapter-flow .mynote { border-left-color: color-mix(in srgb, var(--thm) 35%, transparent); }
 .chapter-flow + .chapter-summary { margin-top: 28px; }
+.chapter-map { margin-top: 28px; border-left: 3px solid var(--example); }
+.chapter-map .chapter-summary-head h3 { color: var(--example); }
+.chapter-map + .chapter-summary { margin-top: 28px; }
+.mindmap-upload {
+  padding: 11px 16px; border: 1px dashed var(--example); border-radius: var(--r-sm);
+  color: var(--example); font-weight: 650;
+}
+.mindmap-upload:hover { background: color-mix(in srgb, var(--example) 9%, transparent); }
+.mindmap-hint { margin: 10px 0 0; font-size: 12px; color: var(--text-3); }
+.mindmap-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.mindmap-name { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.mindmap-open { display: block; width: fit-content; max-width: 100%; }
+.mindmap-image { display: block; max-width: 100%; max-height: 75vh; width: auto; height: auto; border: 1px solid var(--border); border-radius: var(--r-sm); }
+.mindmap-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.mindmap-actions button { padding: 7px 10px; border-radius: var(--r-sm); background: var(--accent-soft); color: var(--accent); font-size: 13px; }
+.mindmap-actions .mindmap-remove { margin-left: auto; color: var(--method); background: transparent; }
 
 .entry.flash, .chapter-summary.flash { animation: flash 1.8s ease; border-radius: var(--r-md); }
 @keyframes flash {

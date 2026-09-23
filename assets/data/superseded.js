@@ -2,6 +2,7 @@
 // 本机浏览器里存的副本如果正好是其中一版，打开网页时自动清掉，免得盖住仓库里的新版。
 // 由提交脚本自动登记，不用手改。
 registerSuperseded({
+  images: {},
   notes: {
     "la-det-prop-adjoint-rank": ["nirkc69n17"],
     "ch:linalg/determinant": ["izc77q1ywo","uuslnzu327"],

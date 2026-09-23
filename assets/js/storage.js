@@ -11,15 +11,107 @@ function registerNotes(map) {
 // 进过仓库、后来仓库里又改过的旧版本的指纹（assets/data/superseded.js 登记）。
 // 本机存的副本如果正好是其中一版，说明它早就在 Git 历史里了：打开网页时清掉，
 // 免得旧副本盖住仓库里的新版、还误报「本地已改」。自己改过、没交的内容指纹对不上，不会被动。
-window.__KAOYAN_SUPERSEDED__ = { notes: {}, book: {} };
+window.__KAOYAN_SUPERSEDED__ = { notes: {}, book: {}, images: {} };
 function registerSuperseded(map) {
-  ["notes", "book"].forEach((kind) => {
+  ["notes", "book", "images"].forEach((kind) => {
     const all = window.__KAOYAN_SUPERSEDED__[kind];
     Object.keys((map && map[kind]) || {}).forEach((id) => {
       all[id] = (all[id] || []).concat(map[kind][id]);
     });
   });
 }
+
+// 思维导图原图存进 IndexedDB；仓库已发布的图片由清单按路径读取。
+// 图片保持原字节，不经过 Canvas 压缩，也不占用笔记的 localStorage 配额。
+window.__KAOYAN_MINDMAPS__ = {};
+function registerMindMaps(map) {
+  Object.assign(window.__KAOYAN_MINDMAPS__, map || {});
+}
+
+const MindMaps = {
+  _openPromise: null,
+  maxBytes: 20 * 1024 * 1024,
+  allowedTypes: ["image/png", "image/jpeg", "image/webp", "image/gif"],
+
+  _db() {
+    if (!this._openPromise) {
+      this._openPromise = new Promise((resolve, reject) => {
+        if (!window.indexedDB) { reject(new Error("当前浏览器不支持图片存储")); return; }
+        const request = indexedDB.open("kaoyan_mindmaps_v1", 1);
+        request.onupgradeneeded = () => {
+          if (!request.result.objectStoreNames.contains("images")) {
+            request.result.createObjectStore("images", { keyPath: "id" });
+          }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error || new Error("无法打开图片存储"));
+        request.onblocked = () => reject(new Error("图片存储正被其他页面占用，请关闭旧页面后重试"));
+      }).catch((error) => { this._openPromise = null; throw error; });
+    }
+    return this._openPromise;
+  },
+
+  async _request(mode, action) {
+    const db = await this._db();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction("images", mode);
+      const request = action(tx.objectStore("images"));
+      let value;
+      request.onsuccess = () => { value = request.result; };
+      tx.oncomplete = () => resolve(value);
+      tx.onerror = () => reject(tx.error || new Error("图片保存失败"));
+      tx.onabort = () => reject(tx.error || new Error("图片保存被中断"));
+    });
+  },
+
+  _local(id) { return this._request("readonly", (store) => store.get(id)); },
+  _all() { return this._request("readonly", (store) => store.getAll()); },
+  seed(id) { return window.__KAOYAN_MINDMAPS__[id] || null; },
+  _isPublished(record) {
+    const seed = this.seed(record.id);
+    return !!seed && seed.sha256 === record.sha256;
+  },
+  _isSuperseded(record) {
+    return (window.__KAOYAN_SUPERSEDED__.images[record.id] || []).includes(record.sha256);
+  },
+
+  async get(id) {
+    const local = await this._local(id);
+    if (local && !this._isPublished(local) && !this._isSuperseded(local)) {
+      return { ...local, source: "local", pending: true };
+    }
+    const seed = this.seed(id);
+    return seed ? { ...seed, id, source: "seed", pending: false } : null;
+  },
+
+  async save(id, file) {
+    if (!this.allowedTypes.includes(file.type)) throw new Error("请选择 PNG、JPEG、WebP 或 GIF 图片");
+    if (!file.size || file.size > this.maxBytes) throw new Error("图片不能超过 20 MB");
+    const bytes = await file.arrayBuffer();
+    if (bytes.byteLength !== file.size) throw new Error("图片读取不完整，请重试");
+    const digest = await crypto.subtle.digest("SHA-256", bytes);
+    const sha256 = [...new Uint8Array(digest)].map((n) => n.toString(16).padStart(2, "0")).join("");
+    const record = { id, name: file.name, type: file.type, size: file.size, sha256, bytes };
+    await this._request("readwrite", (store) => store.put(record));
+    return record;
+  },
+
+  async removeLocal(id) { await this._request("readwrite", (store) => store.delete(id)); },
+  async pendingEntries() {
+    const records = await this._all();
+    return records.filter((record) => !this._isPublished(record) && !this._isSuperseded(record));
+  },
+  async pendingCount() { return (await this.pendingEntries()).length; },
+  blob(record) { return new Blob([record.bytes], { type: record.type }); },
+  base64(record) {
+    const bytes = new Uint8Array(record.bytes);
+    let binary = "";
+    for (let i = 0; i < bytes.length; i += 32768) {
+      binary += String.fromCharCode(...bytes.subarray(i, i + 32768));
+    }
+    return btoa(binary);
+  },
+};
 
 // 53 位文本指纹（cyrb53），只用来认「是不是同一版」
 function textFingerprint(str) {
