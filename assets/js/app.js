@@ -174,13 +174,18 @@ const App = {
   bindChrome() {
     const menuBtn = document.getElementById("menu-btn");
     const closeBtn = document.getElementById("sidebar-close");
+    const collapseBtn = document.getElementById("sidebar-collapse");
+    const reopenBtn = document.getElementById("sidebar-reopen");
     const backdrop = document.getElementById("sidebar-backdrop");
     const sidebar = document.getElementById("sidebar");
+    const shell = document.querySelector(".app-shell");
     const open = () => { sidebar.classList.add("open"); backdrop.classList.add("show"); };
     const close = () => { sidebar.classList.remove("open"); backdrop.classList.remove("show"); };
     if (menuBtn) menuBtn.addEventListener("click", open);
     if (closeBtn) closeBtn.addEventListener("click", close);
     if (backdrop) backdrop.addEventListener("click", close);
+    if (collapseBtn) collapseBtn.addEventListener("click", () => shell.classList.add("sidebar-collapsed"));
+    if (reopenBtn) reopenBtn.addEventListener("click", () => shell.classList.remove("sidebar-collapsed"));
     this._closeMobileSidebar = close;
 
     const toTop = document.getElementById("to-top");
@@ -390,6 +395,7 @@ const App = {
   },
 
   route() {
+    this.clearSearchHighlight();
     const r = this.parseHash();
     this.current = r;
     if (r.subjectId) this.openSubjects.add(r.subjectId);
@@ -400,17 +406,75 @@ const App = {
     this.renderContent();
     if (this._closeMobileSidebar) this._closeMobileSidebar();
 
-    // 从搜索结果跳过来时，滚到那一条并闪一下；否则回到顶部
-    const target = this._pendingHighlight;
-    this._pendingHighlight = null;
-    const node = target && document.getElementById("item-" + target);
+    // 搜索结果携带命中来源；卡片渲染完后再找正文中的词，停在该词处。
+    const jump = this._pendingSearchJump;
+    this._pendingSearchJump = null;
+    const node = jump && document.getElementById("item-" + jump.id);
     if (node) {
-      this.scrollToItem(node);
-      node.classList.add("flash");
-      setTimeout(() => node.classList.remove("flash"), 1800);
+      requestAnimationFrame(() => {
+        if (!node.isConnected) return;
+        const match = this.highlightSearchTerm(node, jump.query, jump.source);
+        this.scrollToItem(match || node);
+        node.classList.add("flash");
+        setTimeout(() => node.classList.remove("flash"), 1800);
+      });
     } else {
       window.scrollTo(0, 0);
     }
+  },
+
+  clearSearchHighlight() {
+    if (window.CSS && CSS.highlights) CSS.highlights.delete("search-arrival");
+    document.querySelectorAll("mark.search-arrival").forEach((mark) => mark.replaceWith(mark.textContent));
+  },
+
+  // 在实际渲染后的可见文字中定位。跨 <strong>/<u> 等标签的词也能作为一段 Range 标亮，
+  // 不改笔记、教材原文，离开本页时清掉临时高亮。
+  highlightSearchTerm(card, query, source) {
+    const selectors = source === "title" ? [".entry-title, .chapter-summary-head"]
+      : source === "book" ? [".entry-statement, .entry-note"]
+      : source === "note" ? [".mynote-slot"] : [];
+    selectors.push(".entry-title, .entry-statement, .entry-note, .mynote-slot, .chapter-summary-head");
+    const needle = String(query || "").trim().toLowerCase();
+    if (!needle) return null;
+    for (const selector of selectors) {
+      for (const area of card.querySelectorAll(selector)) {
+        const walker = document.createTreeWalker(area, NodeFilter.SHOW_TEXT);
+        const nodes = [];
+        let current;
+        while ((current = walker.nextNode())) {
+          if (!current.textContent || current.parentElement.closest("button, textarea, input, script, style, .katex-mathml, [hidden]")) continue;
+          nodes.push(current);
+        }
+        const all = nodes.map((n) => n.textContent).join("");
+        const at = all.toLowerCase().indexOf(needle);
+        if (at < 0) continue;
+        let offset = 0, start, end;
+        for (const textNode of nodes) {
+          const next = offset + textNode.length;
+          if (!start && at < next) start = [textNode, at - offset];
+          if (start && at + needle.length <= next) { end = [textNode, at + needle.length - offset]; break; }
+          offset = next;
+        }
+        if (!start || !end) continue;
+        const range = document.createRange();
+        range.setStart(...start);
+        range.setEnd(...end);
+        if (window.CSS && CSS.highlights && window.Highlight) {
+          CSS.highlights.set("search-arrival", new Highlight(range));
+          return range;
+        }
+        // 旧浏览器降级：至少把起始文字标亮，并准确滚到该词开头。
+        const first = document.createRange();
+        first.setStart(...start);
+        first.setEnd(start[0], Math.min(start[0].length, start[1] + needle.length));
+        const mark = document.createElement("mark");
+        mark.className = "search-arrival";
+        first.surroundContents(mark);
+        return mark;
+      }
+    }
+    return null;
   },
 
   // ---------------- sidebar ----------------
@@ -471,7 +535,7 @@ const App = {
       el.querySelectorAll(".result").forEach((a) => {
         a.addEventListener("click", (e) => {
           e.preventDefault();
-          this._pendingHighlight = a.dataset.item;
+          this._pendingSearchJump = { id: a.dataset.item, query: this.globalQuery, source: a.dataset.matchSource };
           const gs = document.getElementById("global-search");
           if (gs) gs.value = "";
           this.globalQuery = "";
@@ -581,6 +645,7 @@ const App = {
     const rows = hits.slice(0, 60).map((h) => {
       const r = h.row;
       const where = `${escapeHtml(r.subject.name)} · ${r.chapter.order}. ${escapeHtml(r.chapter.name)}`;
+      const source = r.title.includes(q) ? "title" : r.body.includes(q) ? "book" : "note";
       const fromNote = h.fromNote || (r.summary && !r.image);
       const snippet = r.image ? "" : fromNote
         ? `<span class="result-snippet"><span class="snippet-from">笔记</span>${this.textSnippet(Notes.get(r.noteId), query)}</span>`
@@ -588,7 +653,7 @@ const App = {
 
       if (r.summary) {
         return `
-      <a class="result" href="#${r.subject.id}/${r.chapter.id}" data-item="${r.noteId}">
+      <a class="result" href="#${r.subject.id}/${r.chapter.id}" data-item="${r.noteId}" data-match-source="${source}">
         <span class="result-type summary">${r.label}</span>
         <span class="result-body">
           <span class="result-title">${this.mark(r.label + "：" + r.chapter.name, query)}</span>
@@ -599,7 +664,7 @@ const App = {
       }
       const item = r.item;
       return `
-      <a class="result" href="#${r.subject.id}/${r.chapter.id}" data-item="${item.id}">
+      <a class="result" href="#${r.subject.id}/${r.chapter.id}" data-item="${item.id}" data-match-source="${source}">
         <span class="result-type ${item.type}">${TYPE_LABEL[item.type]}</span>
         <span class="result-body">
           <span class="result-title">${this.mark(item.title, query)}</span>
@@ -1145,7 +1210,7 @@ const App = {
       const tf = this.chapterTypeFilter || "all";
       const badge = tf !== "all" && this.itemTypes(it).includes(tf) ? tf : it.type;
       return `
-      <a class="result" href="#${subjectId}/${chapterId}" data-item="${it.id}">
+      <a class="result" href="#${subjectId}/${chapterId}" data-item="${it.id}" data-match-source="${inTitle ? "title" : inBook ? "book" : "note"}">
         <span class="result-type ${badge}">${TYPE_LABEL[badge]}</span>
         <span class="result-body">
           <span class="result-title"><span class="result-no">${nos[it.id]}</span>${this.mark(it.title, raw)}</span>
@@ -1157,7 +1222,7 @@ const App = {
 
     extraHits.forEach((extra) => {
       rows.push(`
-      <a class="result" href="#${subjectId}/${chapterId}" data-item="${extra.imageId || extra.noteId}">
+      <a class="result" href="#${subjectId}/${chapterId}" data-item="${extra.imageId || extra.noteId}" data-match-source="${extra.imageId || searchText(extra.label).includes(q) ? "title" : "note"}">
         <span class="result-type summary">${extra.label}</span>
         <span class="result-body">
           <span class="result-title">${this.mark(extra.title, raw)}</span>
@@ -1175,7 +1240,7 @@ const App = {
     wrap.querySelectorAll(".result").forEach((link) => {
       link.addEventListener("click", (e) => {
         e.preventDefault();
-        this._pendingHighlight = link.dataset.item;
+        this._pendingSearchJump = { id: link.dataset.item, query: raw, source: link.dataset.matchSource };
         this.route();
       });
     });

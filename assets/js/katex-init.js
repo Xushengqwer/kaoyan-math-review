@@ -10,6 +10,8 @@ function renderMath(container) {
     // 反向斜省略号：仅补充显示宏，教材和笔记中的 LaTeX 原文保持不变。
     macros: {
       "\\iddots": "\\mathinner{\\mkern1mu\\raisebox{0.1em}{.}\\mkern2mu\\raisebox{0.4em}{.}\\mkern2mu\\raisebox{0.7em}{.}\\mkern1mu}",
+      // 新笔记沿用 LaTeX 的 \centernot\implies；显示时交给 KaTeX 的 \not，原文不动。
+      "\\centernot": "\\not",
     },
   });
 }
