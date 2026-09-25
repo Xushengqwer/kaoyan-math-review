@@ -329,7 +329,7 @@ registerSuperseded({
     "la-vec-def-equivalent-groups": ["2cqdpwdzeo4","mcpn1bftc8"],
     "la-vec-def-linear-combination": ["1mq7719me7i","1z1j8yfg11j","cn4w2jhl9r","1zwq5hddqz4","15f26k9wgni"],
     "la-vec-def-linear-dependence": ["1wfae8ix2c6","26l6qbz9zw6","ejwsi4srom","2llegofe99"],
-    "la-vec-def-max-independent-set": ["1irbxebxr41","bmlpf4g68m","18sxeje8qao"],
+    "la-vec-def-max-independent-set": ["1irbxebxr41","bmlpf4g68m","18sxeje8qao","14abudgf8q4","1sk9z3bdhit","1arr0xqto4s","1vwepwsvvjv","2gi1a4smh92","1bety1pybdj"],
     "la-vec-def-orthogonal-vector": ["1oxy2aev5b5","hbro8agb30","b11cpecloc"],
     "la-vec-def-transition-matrix": ["o81dc40jrk"],
     "la-vec-def-vector-group-rank": ["93ajzkumfv"],
