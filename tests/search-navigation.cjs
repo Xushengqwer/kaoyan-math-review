@@ -20,7 +20,7 @@ for (const file of [
 context.assert = assert;
 vm.runInContext(`
   App.subjects = KaoyanData.subjects();
-  const global = App.searchViewHtml('秩增量与解的存在性考题判定准则');
+  const global = App.searchViewHtml('表示系数不变号，基础解系要变号');
   assert.match(global, /data-item="la-vec-def-max-independent-set"[^>]*data-match-source="note"/);
   assert.equal(typeof App.highlightSearchTerm, 'function');
   const chapter = App.chapterViewHtml('linalg', 'vector-space');

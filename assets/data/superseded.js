@@ -80,7 +80,7 @@ registerSuperseded({
     "la-vec-def-equivalent-groups": ["wn66vg5hw1","1fo31az6bla","1w13k9jrfaj","zlcqz0hp9q"],
     "la-vec-def-linear-combination": ["1gi0lt53qwe","1qkzfac3nv7","1uf3260v1tx","yxhr506nin","3xirxv5fcz"],
     "la-vec-def-linear-dependence": ["vl79c363qi","sx7mz2xmiy","uqmy84ra65","1tq3w3ret6p"],
-    "la-vec-def-max-independent-set": ["2dihlr8ssl","13grxhzspwj","1mbtdsyclyl","irtc9hu0ko","13cc8bfa1u9"],
+    "la-vec-def-max-independent-set": ["2dihlr8ssl","13grxhzspwj","1mbtdsyclyl","irtc9hu0ko","13cc8bfa1u9","38uu00v28n","7btgk98y1p"],
     "la-vec-def-orthogonal-vector": ["28bk9ljywei","ijuvdm63hl","1kz3ngutp6e","13sdhyyf6i"],
     "la-vec-def-transition-matrix": ["1aztun8wpu8"],
     "la-vec-def-vector-group-rank": ["s2mu7d4iwt"],
