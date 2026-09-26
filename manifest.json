@@ -1,7 +1,7 @@
 {
   "name": "考研数学复习卡",
   "short_name": "数学复习卡",
-  "description": "考研数学定义定理性质速记卡片",
+  "description": "考研数学定义与性质速记卡片",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

@@ -795,7 +795,7 @@ const App = {
     return `
       <header class="hero">
         <p class="hero-eyebrow">考研数学一</p>
-        <h1>定义 · 定理 · 性质<br />每天读一点</h1>
+        <h1>定义 · 性质<br />每天读一点</h1>
         <p class="hero-sub">高等数学、线性代数、概率论与数理统计的核心考点，分类清晰，图文并茂。</p>
         <dl class="hero-stats">
           <div class="stat"><dt>学科</dt><dd>${this.subjects.length}</dd></div>
