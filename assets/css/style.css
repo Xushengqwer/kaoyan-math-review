@@ -487,19 +487,37 @@ button { font: inherit; border: none; background: none; color: inherit; cursor: 
 
 .toc-list { list-style: none; margin: 0; padding: 0; }
 .toc-list li { margin: 0; }
-.toc-list a {
+.toc-list li > a {
   display: flex; align-items: baseline; gap: 8px;
   padding: 5px 8px; margin-left: -8px;
   border-radius: 7px;
   font-size: 12.8px; line-height: 1.5; color: var(--text-2);
   transition: background .15s, color .15s;
 }
-.toc-list a:hover { background: var(--accent-soft); color: var(--accent); }
+.toc-list li > a:hover { background: var(--accent-soft); color: var(--accent); }
 .toc-no { flex: none; font-size: 11px; color: var(--text-3); }
 .toc-list a:hover .toc-no { color: var(--accent); }
 .toc-title { flex: 1; }
 .toc-noted { flex: none; font-size: 8px; color: var(--accent); }
 .toc-noted.pending { color: var(--pend-dot); }
+
+/* 目录里每张卡下面的两行：「教材」「笔记」+ 这一部分实际有的小节，颜色和正文里的〔〕标题一致 */
+.toc-sub { margin: 0 0 6px 13px; padding-left: 8px; border-left: 1px solid var(--hairline); }
+.toc-sub-row { display: flex; flex-wrap: wrap; align-items: baseline; gap: 1px 2px; line-height: 1.5; }
+.toc-sub a {
+  padding: 1px 5px; border-radius: 5px;
+  font-size: 11.5px; color: var(--text-3);
+  transition: background .15s, color .15s;
+}
+.toc-sub a:hover { background: var(--accent-soft); color: var(--accent); }
+.toc-sub .toc-sub-part { margin-right: 2px; font-weight: 600; color: var(--text-2); }
+.toc-sub-sec.def { color: var(--def); }
+.toc-sub-sec.thm { color: var(--thm); }
+.toc-sub-sec.prp { color: var(--prp); }
+.toc-sub-sec.method { color: var(--method); }
+.toc-sub-sec.ex { color: var(--example); }
+.toc-sub-sec.meaning { color: var(--meaning); }
+.toc-sub-sec.tip { color: var(--tip); }
 
 .toc-foot {
   display: flex; align-items: center; gap: 10px;
@@ -969,6 +987,7 @@ body.mynote-zoomed { overflow: hidden; }
 .mindmap-actions .mindmap-remove { margin-left: auto; color: var(--method); background: transparent; }
 
 .entry.flash, .chapter-summary.flash { animation: flash 1.8s ease; border-radius: var(--r-md); }
+.toc-flash { animation: flash 1.8s ease; border-radius: var(--r-sm); }
 @keyframes flash {
   0%, 55% { background: var(--accent-soft); }
   100% { background: transparent; }
@@ -1112,14 +1131,14 @@ body.mynote-zoomed { overflow: hidden; }
 .rail-group.property .rail-group-name { color: var(--prp); }
 
 .rail-list { list-style: none; margin: 0; padding: 0; }
-.rail-list a {
+.rail-list li > a {
   display: flex; align-items: baseline; gap: 8px;
   padding: 5px 8px; margin-left: -8px;
   border-radius: 7px;
   font-size: 12.5px; line-height: 1.5; color: var(--text-2);
   transition: background .15s, color .15s;
 }
-.rail-list a:hover { background: var(--accent-soft); color: var(--accent); }
+.rail-list li > a:hover { background: var(--accent-soft); color: var(--accent); }
 .rail-list a:hover .toc-no { color: var(--accent); }
 .rail .toc-foot { margin-top: 14px; padding-top: 12px; font-size: 12.5px; }
 

@@ -149,6 +149,44 @@ function bookParts(md) {
   return { main, tip };
 }
 
+// 目录里每张卡下面的小节：「教材 / 笔记」两行，后面列出这一部分实际有的「定义 性质 意义…」。
+// 从原文的小节标题读出来（不写死），同一类只列一次，点了跳到第一个。
+// 标题的认法和上色一致：去掉「四、」「1.」这类编号后以〔定义〕等开头；笔记里没加〔〕的「例题」也算。
+function sectionKind(title) {
+  const t = String(title).replace(/\*\*/g, "").trim()
+    .replace(/^(?:[一二三四五六七八九十]+、|\d+[.、．])[ \t]*/, "");
+  const term = t.match(NOTE_TERM_HEAD);
+  if (term) return term[1];
+  return /^例题(?=$|[\s:：（(])/.test(t) ? "例题" : null;
+}
+
+function bookSections(md) {
+  const kinds = [];
+  String(md == null ? "" : md).split("\n").forEach((line) => {
+    const m = line.match(BOOK_HEAD);
+    const kind = m ? m[2] : /^#{1,6}[ \t]*意义(?:[ \t]*[:：].*)?[ \t]*$/.test(line) ? "意义" : null;
+    if (kind && !kinds.includes(kind)) kinds.push(kind);
+  });
+  return kinds;
+}
+
+// 笔记只认最外层那一级小节标题：「### 〔例题〕」算，它下面的「#### 例题 1」「##### 【小题 1】」不算
+function noteSections(text) {
+  const found = [];
+  let fence = false;
+  String(text == null ? "" : text).split("\n").forEach((line) => {
+    if (/^\s*```/.test(line)) { fence = !fence; return; }
+    const h = !fence && line.match(/^(#{1,6})[ \t]+(.*?)[ \t]*$/);
+    const kind = h && sectionKind(h[2]);
+    if (kind) found.push({ level: h[1].length, kind });
+  });
+  if (!found.length) return { level: 0, kinds: [] };
+  const level = Math.min(...found.map((f) => f.level));
+  const kinds = [];
+  found.forEach((f) => { if (f.level === level && !kinds.includes(f.kind)) kinds.push(f.kind); });
+  return { level, kinds };
+}
+
 // 搜索、摘要用的教材原文（本机改过的优先）
 function bookText(it) {
   return BookEdits.get(it.id);
@@ -1295,6 +1333,7 @@ const App = {
                     <span class="toc-title">${escapeHtml(it.title)}</span>
                     ${this.noteDotHtml(it.id)}
                   </a>
+                  ${this.tocSubHtml(it.id)}
                 </li>`
               )
               .join("")}
@@ -1358,6 +1397,35 @@ const App = {
     }">●</span>`;
   },
 
+  // 卡片条目下面的两行：「教材」「笔记」各自跳到那一块，后面的「定义 性质 …」跳到那一节。
+  // 教材每张卡都有；笔记写了才出现。
+  tocSubHtml(itemId) {
+    const row = (part, label, kinds) => `
+                    <div class="toc-sub-row">
+                      <a class="toc-sub-part" href="#item-${itemId}" data-goto="${itemId}" data-part="${part}">${label}</a>
+                      ${kinds
+                        .map((k) => `<a class="toc-sub-sec ${BOOK_CLASS[k] || ""}" href="#item-${itemId}" data-goto="${itemId}" data-part="${part}" data-sec="${k}">${k}</a>`)
+                        .join("")}
+                    </div>`;
+    const note = Notes.has(itemId) ? row("note", "笔记", noteSections(Notes.get(itemId)).kinds) : "";
+    return `<div class="toc-sub" data-sub="${itemId}">${row("book", "教材", bookSections(BookEdits.get(itemId)))}${note}
+                  </div>`;
+  },
+
+  // 教材或笔记改完后，只重画目录里这张卡的两行（页面顶部和右侧导轨各一份）
+  refreshTocSub(itemId) {
+    document.querySelectorAll('.toc-sub[data-sub="' + itemId.replace(/"/g, '\\"') + '"]').forEach((old) => {
+      const box = document.createElement("div");
+      box.innerHTML = this.tocSubHtml(itemId);
+      const fresh = box.firstElementChild;
+      old.replaceWith(fresh);
+      this.bindToc(fresh);
+      if (fresh.closest("#chapter-rail")) {
+        fresh.querySelectorAll("[data-goto]").forEach((a) => a.addEventListener("click", () => this.closeRail()));
+      }
+    });
+  },
+
   // 章节开头的目录：按类型分栏，点条目滚到对应位置
   tocHtml(groups, nos, subjectId, chapterId) {
     const total = groups.reduce((n, g) => n + g.items.length, 0);
@@ -1380,6 +1448,7 @@ const App = {
                     <span class="toc-title">${escapeHtml(it.title)}</span>
                     ${this.noteDotHtml(it.id)}
                   </a>
+                  ${this.tocSubHtml(it.id)}
                 </li>`
               )
               .join("")}
@@ -1401,8 +1470,9 @@ const App = {
   refreshTocState(noteId) {
     const has = Notes.has(noteId);
     const pending = Notes.isPending(noteId);
-    // 页面顶部的目录和右侧导轨里都有同一条，一起更新
-    document.querySelectorAll('[data-goto="' + noteId.replace(/"/g, '\\"') + '"]').forEach((link) => {
+    // 页面顶部的目录和右侧导轨里都有同一条，一起更新（卡片下面「教材 / 笔记」那两行另外重画）
+    this.refreshTocSub(noteId);
+    document.querySelectorAll('[data-goto="' + noteId.replace(/"/g, '\\"') + '"]:not([data-part])').forEach((link) => {
       const foot = link.querySelector(".toc-foot-state");
       if (foot) {
         foot.textContent = has ? (pending ? "已写 · 未进仓库" : "已写") : "还没写";
@@ -1443,11 +1513,30 @@ const App = {
         e.preventDefault();
         const node = document.getElementById("item-" + a.dataset.goto);
         if (!node) return;
-        this.scrollToItem(node);
-        node.classList.add("flash");
-        setTimeout(() => node.classList.remove("flash"), 1800);
+        const target = this.tocTarget(node, a.dataset.part, a.dataset.sec);
+        this.scrollToItem(target || node);
+        const cls = target ? "toc-flash" : "flash";
+        (target || node).classList.add(cls);
+        setTimeout(() => (target || node).classList.remove(cls), 1800);
       });
     });
+  },
+
+  // 目录里「教材 / 笔记」和其下小节对应的位置；找不到（比如正在编辑）就退回那一块，再不行退回整张卡
+  tocTarget(node, part, sec) {
+    if (!part) return null;
+    const box = node.querySelector(part === "book" ? "section.card-book" : ".mynote-slot");
+    if (!box || !sec) return box;
+    if (part === "book") {
+      if (sec === "提示") return box.querySelector(".entry-note") || box;
+      const label = [...box.querySelectorAll(".term-label")].find((l) => l.textContent.trim().startsWith("〔" + sec + "〕"));
+      return label ? label.closest(".term") || label : box;
+    }
+    const heads = [...box.querySelectorAll(".mynote-body h1, .mynote-body h2, .mynote-body h3, .mynote-body h4, .mynote-body h5, .mynote-body h6")]
+      .filter((h) => sectionKind(h.textContent) === sec);
+    if (!heads.length) return box;
+    const top = Math.min(...heads.map((h) => +h.tagName.charAt(1)));
+    return heads.find((h) => +h.tagName.charAt(1) === top);
   },
 
   entryHtml(item, index) {
@@ -1600,6 +1689,7 @@ const App = {
           this.exitZoom();
           show(this.bookCardInner(id));
           this.refreshNoteCount();
+          this.refreshTocSub(id);
         } else if (action === "cancel") {
           const ta = section.querySelector(".mynote-input");
           if (ta && ta.value !== BookEdits.get(id) && !confirm("改动还没保存，确定放弃吗？")) return;
@@ -1610,6 +1700,7 @@ const App = {
           BookEdits.reset(id);
           show(this.bookCardInner(id));
           this.refreshNoteCount();
+          this.refreshTocSub(id);
         }
       });
     });
