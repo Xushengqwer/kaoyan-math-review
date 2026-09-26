@@ -2,8 +2,11 @@
 // 本机浏览器里存的副本如果正好是其中一版，打开网页时自动清掉，免得盖住仓库里的新版。
 // 由提交脚本自动登记，不用手改。
 registerSuperseded({
-  images: {},
+  images: {
+    "map:linalg/vector-space": ["5ec107105d39a923071208cbac70bd8414ceb355e691cc30030207339a0d28c2"],
+  },
   notes: {
+    "flow:linalg/vector-space": ["cs9a4z0lgs"],
     "la-det-prop-adjoint-rank": ["nirkc69n17"],
     "ch:linalg/determinant": ["izc77q1ywo","uuslnzu327"],
     "ch:linalg/linear-equations": ["1iep8njagzr"],
