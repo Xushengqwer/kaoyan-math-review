@@ -7,6 +7,7 @@ registerSuperseded({
     "map:linalg/vector-space": ["5ec107105d39a923071208cbac70bd8414ceb355e691cc30030207339a0d28c2"],
   },
   notes: {
+    "flow:linalg/eigen": ["1h3p2d178s"],
     "la-qf-thm-semi-positive-definite": ["5v8qxlj8bq"],
     "la-qf-prop-positive-definite-necessary": ["1xxirl9xcmr"],
     "la-qf-def-positive-definite": ["i22ibn62o2","22bb4dv8oyj"],
