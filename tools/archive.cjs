@@ -1,5 +1,6 @@
 // 存档：把要被替换或删除的条目原文导出成一个 .md（格式与网站「导出」相同，正文夹在两行标记之间，逐字节原样）。
-// 取的是 git HEAD 里的版本，也就是网站上现在的那一版；写完逐条核对存档里的正文与原文完全相同。
+// 取的是 git HEAD 里的版本；HEAD 必须与 origin/main 相同（先 git pull --ff-only，且没有未推送的提交），
+// 这时它就是仓库里最新的正式版本，也就是网站上的那一版。写完逐条核对存档里的正文与原文完全相同。
 //
 // 用法：
 //   node tools/archive.cjs <输出.md> "<存档标题>" <条目> [<条目> ...]
@@ -8,7 +9,8 @@
 // 输出位置：本机时放 C:\Users\许志火\Downloads\，文件名如「线性代数-第4章XX存档（YY前）-2026-09-29.md」。
 const fs = require("fs");
 const path = require("path");
-const { main, must, loadNotes, loadSubjects, findItem } = require("./lib.cjs");
+const cp = require("child_process");
+const { REPO, main, must, loadNotes, loadSubjects, findItem } = require("./lib.cjs");
 
 const OPEN = "<!-- ↓ 正文开始 · 到「正文结束」为止逐字节原样，请勿改动 -->";
 const close = (id) => "<!-- ↑ 正文结束 · " + id + " -->";
@@ -17,6 +19,10 @@ main(() => {
   const [out, title, ...ids] = process.argv.slice(2);
   must(out && title && ids.length, "用法：node tools/archive.cjs <输出.md> \"<存档标题>\" <条目>...");
   must(!fs.existsSync(out), "输出文件已存在，换个名字，免得覆盖旧存档：" + out);
+  const rev = (r) => { try { return cp.execSync("git rev-parse " + r, { cwd: REPO, encoding: "utf8" }).trim(); } catch (e) { return null; } };
+  const head = rev("HEAD"), remote = rev("origin/main");
+  must(head && remote && head === remote,
+    "HEAD（" + (head || "?").slice(0, 7) + "）与 origin/main（" + (remote || "?").slice(0, 7) + "）不同：先 git pull --ff-only；有没推送的提交就先处理，再存档");
   const N = loadNotes("HEAD");
   const subjects = loadSubjects("HEAD");
   const chapterName = (sid, cid) => {

@@ -32,6 +32,7 @@
 5. **先汇报，后提交**：改完先自检、先汇报，等用户确认再提交；除非用户在任务里明确说「写完直接提交」。
 6. **先存档，后替换或删除**：替换或删除任何笔记、教材之前，用 `tools/archive.cjs` 存档；删除只用 `tools/remove.cjs`（没有存档它会拒绝）。
 7. **先拉取**：开工前、提交前都 `git pull --ff-only`。Claude 也往这个仓库提交；只在 `main` 上工作，除非用户另说。
+   - 如果工作区有未提交的改动，挡住了拉取：不要 `stash`、`reset`、`checkout` 丢弃它。先把改动的内容备份到仓库外的文件并逐字核对，然后报告用户是哪些改动、备份在哪，等用户同意后再撤下。
 8. **一次提交只做一件事**，只 `git add` 本次改动的文件。
 
 ## 4. 仓库地图
@@ -77,7 +78,7 @@
 | `node tools/write.cjs note <key> <草稿.md>` | 把草稿逐字写进一条笔记（没有就新增），读回核对 |
 | `node tools/write.cjs book <卡片id> <草稿.md>` | 把草稿逐字写进一张卡的教材，读回核对 |
 | `node tools/verify.cjs note\|book <id> <草稿.md> [--rev HEAD]` | 逐字核对网站里的这一条和草稿是否完全相同 |
-| `node tools/archive.cjs <输出.md> "<标题>" <条目>...` | 存档（取 git HEAD 版本，网站导出格式）；教材条目写 `book:<卡片id>` |
+| `node tools/archive.cjs <输出.md> "<标题>" <条目>...` | 存档（取 git HEAD 版本，网站导出格式）；教材条目写 `book:<卡片id>`。HEAD 与 `origin/main` 不同（没拉取或有没推送的提交）时会拒绝 |
 | `node tools/remove.cjs note\|item <id> --archived <存档.md>` | 删除一条笔记或一整张卡（先查存档） |
 | `node tools/apply-export.cjs <导出文件.md> [--write]` | 提交用户从网站导出的修改；不加 `--write` 只预览 |
 | `node tools/supersede.cjs` | 登记旧版本指纹（笔记、教材、思维导图），提交前必跑 |
@@ -135,7 +136,7 @@ node tools/verify.cjs note <key> drafts/xxx.md
 ### E. 网站功能、排版（写代码）
 
 1. 先报计划：改哪些文件、界面长什么样。等用户说「开始」。
-2. 只改 `assets/js`、`assets/css`、`index.html`；**不动数据文件的内容**。
+2. 主要改 `assets/js`、`assets/css`、`index.html`；配套可以改：`tests/`（新增或更新测试）、`sw.js`（只用 `bump-sw` 升版本号）、`docs/status.md`（更新进度）。**不动数据文件的内容**（`assets/data/*.js`）。
 3. 仿照 `tests/` 里的写法加测试；显示层的改动要有「原文不变」的测试（例：`tests/station-bars.cjs`）。
 4. 自检：
    - 桌面宽度，以及手机宽度 375px 下没有横向溢出；
@@ -143,6 +144,8 @@ node tools/verify.cjs note <key> drafts/xxx.md
    - 浏览器控制台无报错；
    - 其他章节不受影响。
 5. `bump-sw`。
+
+**所有流程（A 到 E）提交前都要跑 `node tools/test-all.cjs`，全部通过才汇报、才提交。**
 
 ## 7. 汇报格式
 
