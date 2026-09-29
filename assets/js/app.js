@@ -120,7 +120,8 @@ function noteMdHtml(text) {
 }
 
 // → { main: 正文 HTML（一个〔〕小节一个 .term）, tip: 提示 HTML }
-function bookParts(md) {
+// deco(html, 小节)：可选，给每个〔〕小节渲染好的正文再加工一次（站牌用，见 App.stationDeco）
+function bookParts(md, deco) {
   const sections = [{ label: null, kind: null, lines: [] }];
   String(md == null ? "" : md).split("\n").forEach((line) => {
     const m = line.match(BOOK_HEAD);
@@ -142,8 +143,9 @@ function bookParts(md) {
     } else if (!s.label) {
       if (body.trim()) main += '<div class="term-md">' + mdHtml(body) + "</div>";
     } else {
+      const html = mdHtml(body);
       main += '<div class="term"><div class="term-label ' + BOOK_CLASS[s.kind] + '">' +
-        mdHtml(s.label, true) + '</div><div class="term-md">' + mdHtml(body) + "</div></div>";
+        mdHtml(s.label, true) + '</div><div class="term-md">' + (deco ? deco(html, s.kind) : html) + "</div></div>";
     }
   });
   return { main, tip };
@@ -203,6 +205,32 @@ function sectionStations(text, part) {
   return out;
 }
 
+// 站牌：站名行渲染后是「<p><strong>⑥ 读出符号</strong></p>」，显示时换成醒目的一块：
+// 圈号 + 站名，左边线用所在小节的颜色；下面一行链接跳到同一站在其他小节里的位置
+// （这一节高亮，没有这一站的小节灰掉）。只改显示，原文一个字不动，块里的文字仍是原来那一行。
+// map：这张卡教材、笔记各有哪些小节、每节有哪些站（App.stationMap）。
+const STATION_P = /<p><strong>(([①-⑳]′?)[ \t]*[^<]*?)<\/strong><\/p>/g;
+
+function stationBarHtml(itemId, part, sec, mark, name, map) {
+  const attr = (s) => s.replace(/"/g, "&quot;");
+  const group = (p, label) => {
+    const g = map[p];
+    if (!g || !g.kinds.length) return "";
+    return `<span class="station-part">${label}</span>` + g.kinds.map((k) => {
+      const cls = "station-link " + (BOOK_CLASS[k] || "");
+      if (p === part && k === sec) return `<span class="${cls} current">${k}</span>`;
+      return (g.st[k] || []).some((s) => s.mark === mark)
+        ? `<a class="${cls}" href="#item-${itemId}" data-goto="${itemId}" data-part="${p}" data-sec="${k}" data-station="${attr(mark)}">${k}</a>`
+        : `<span class="${cls} missing">${k}</span>`;
+    }).join("");
+  };
+  const tail = name.slice(mark.length);
+  const gap = tail.match(/^[ \t]*/)[0];
+  return `<div class="station ${BOOK_CLASS[sec] || ""}" data-part="${part}" data-sec="${sec}" data-station="${attr(mark)}">` +
+    `<div class="station-head"><span class="station-no">${mark}</span>${gap}<span class="station-name">${tail.slice(gap.length)}</span></div>` +
+    `<div class="station-links">${group("book", "教材")}${group("note", "笔记")}</div></div>`;
+}
+
 // 笔记只认最外层那一级小节标题：「### 〔例题〕」算，它下面的「#### 例题 1」「##### 【小题 1】」不算
 function noteSections(text) {
   const found = [];
@@ -258,6 +286,23 @@ const App = {
     if (collapseBtn) collapseBtn.addEventListener("click", () => shell.classList.add("sidebar-collapsed"));
     if (reopenBtn) reopenBtn.addEventListener("click", () => shell.classList.remove("sidebar-collapsed"));
     this._closeMobileSidebar = close;
+
+    // 站牌上的链接、顶部位置条都跟着页面内容重画，所以点击挂在 document 上
+    document.addEventListener("click", (e) => {
+      const el = e.target.closest && e.target.closest(".station-links a[data-goto], #chapter-here");
+      if (!el) return;
+      e.preventDefault();
+      if (el.id === "chapter-here") this.openRail();
+      else this.gotoLink(el);
+    });
+    let hereQueued = false;
+    const here = () => {
+      if (hereQueued) return;
+      hereQueued = true;
+      requestAnimationFrame(() => { hereQueued = false; this.updateHere(); });
+    };
+    window.addEventListener("scroll", here, { passive: true });
+    window.addEventListener("resize", here);
 
     const toTop = document.getElementById("to-top");
     if (toTop) {
@@ -881,6 +926,7 @@ const App = {
             return n ? `<button class="chip" data-type="${t}">${TYPE_LABEL[t]}</button>` : "";
           }).join("")}
         </div>
+        <button class="here" id="chapter-here" type="button" hidden></button>
       </div>
 
       <p class="chapter-hits" id="chapter-hits" hidden></p>
@@ -1477,6 +1523,89 @@ const App = {
                   </div>`;
   },
 
+  // 站牌要用：这张卡教材、笔记各有哪些小节，每节里有哪些站。编辑预览时传正在编辑的原文（texts.book / texts.note）。
+  stationMap(itemId, texts) {
+    const t = texts || {};
+    const book = t.book != null ? t.book : BookEdits.get(itemId);
+    const note = t.note != null ? t.note : Notes.has(itemId) ? Notes.get(itemId) : "";
+    return {
+      book: { kinds: bookSections(book), st: sectionStations(book, "book") },
+      note: { kinds: noteSections(note).kinds, st: sectionStations(note, "note") },
+    };
+  },
+
+  // 教材：交给 bookParts 的 deco，逐个〔〕小节把站名行换成站牌
+  stationDeco(itemId, texts) {
+    let map = null;
+    return (html, kind) => html.replace(STATION_P, (m, name, mark) => {
+      map = map || this.stationMap(itemId, texts);
+      return stationBarHtml(itemId, "book", kind, mark, name, map);
+    });
+  },
+
+  // 笔记：小节按最外层标题认，第一个小节之前的不算（与 sectionStations 一致）
+  stationizeNote(html, text, itemId) {
+    const level = noteSections(text).level;
+    let cur = null, map = null;
+    return html.replace(/<h([1-6])\b[^>]*>([\s\S]*?)<\/h\1>|<p><strong>(([①-⑳]′?)[ \t]*[^<]*?)<\/strong><\/p>/g, (m, lv, head, name, mark) => {
+      if (lv) {
+        if (+lv <= level) cur = sectionKind(head.replace(HTML_TAG, ""));
+        return m;
+      }
+      if (!cur) return m;
+      map = map || this.stationMap(itemId, { note: text });
+      return stationBarHtml(itemId, "note", cur, mark, name, map);
+    });
+  },
+
+  // 顶部位置条：滚到按站组织的卡里时，在工具条下沿显示「教材〔性质〕⑥ 读出符号」，点了打开右侧本章目录
+  updateHere() {
+    const pill = document.getElementById("chapter-here");
+    if (!pill) return;
+    const line = pill.parentElement.getBoundingClientRect().bottom + 30;
+    let hit = null;
+    document.querySelectorAll("#chapter-item-groups .entry").forEach((entry) => {
+      if (hit || !entry.querySelector(".station")) return;
+      const r = entry.getBoundingClientRect();
+      if (r.top > line || r.bottom < line) return;
+      const body = entry.querySelector(".mynote-body");
+      const heads = body ? [...body.children].filter((h) => /^H[1-6]$/.test(h.tagName)) : [];
+      const kinded = heads.filter((h) => sectionKind(h.textContent));
+      const top = kinded.length ? Math.min(...kinded.map((h) => +h.tagName.charAt(1))) : 0;
+      const marks = [...entry.querySelectorAll("section.card-book .term-label, .station")]
+        .concat(heads.filter((h) => +h.tagName.charAt(1) <= top))
+        .filter((m) => m.getClientRects().length)
+        .sort((a, b) => (a.compareDocumentPosition(b) & 4 ? -1 : 1));
+      let cur = null;
+      for (const m of marks) {
+        if (m.getBoundingClientRect().top > line) break;
+        cur = m;
+      }
+      if (cur) hit = cur;
+    });
+    const st = hit && hit.classList.contains("station");
+    const sec = hit && (st ? hit.dataset.sec : sectionKind(hit.textContent));
+    if (!sec) { pill.hidden = true; pill.dataset.key = ""; return; }
+    const part = hit.closest("section.card-book") ? "教材" : "笔记";
+    const no = st ? hit.querySelector(".station-no").textContent : "";
+    const key = part + sec + no;
+    if (pill.dataset.key !== key) {
+      pill.dataset.key = key;
+      pill.innerHTML = `<span class="here-part">${part}</span><span class="here-sec ${BOOK_CLASS[sec] || ""}">〔${sec}〕</span>` +
+        (st ? `<span class="here-no">${no}</span><span class="here-name">${hit.querySelector(".station-name").innerHTML}</span>` : "");
+      pill.title = "打开本章目录";
+    }
+    pill.hidden = false;
+  },
+
+  openRail() {
+    const rail = document.getElementById("chapter-rail");
+    if (!rail || rail.hidden) return;
+    rail.classList.add("open");
+    const tab = document.getElementById("rail-tab");
+    if (tab) tab.setAttribute("aria-expanded", "true");
+  },
+
   // 教材或笔记改完后，只重画目录里这张卡的两行（页面顶部和右侧导轨各一份）
   refreshTocSub(itemId) {
     document.querySelectorAll('.toc-sub[data-sub="' + itemId.replace(/"/g, '\\"') + '"]').forEach((old) => {
@@ -1576,15 +1705,20 @@ const App = {
     scope.querySelectorAll("[data-goto]").forEach((a) => {
       a.addEventListener("click", (e) => {
         e.preventDefault();
-        const node = document.getElementById("item-" + a.dataset.goto);
-        if (!node) return;
-        const target = this.tocTarget(node, a.dataset.part, a.dataset.sec, a.dataset.station);
-        this.scrollToItem(target || node);
-        const cls = target ? "toc-flash" : "flash";
-        (target || node).classList.add(cls);
-        setTimeout(() => (target || node).classList.remove(cls), 1800);
+        this.gotoLink(a);
       });
     });
+  },
+
+  // 按链接上的 data-goto / data-part / data-sec / data-station 跳过去并闪一下（目录和站牌共用）
+  gotoLink(a) {
+    const node = document.getElementById("item-" + a.dataset.goto);
+    if (!node) return;
+    const target = this.tocTarget(node, a.dataset.part, a.dataset.sec, a.dataset.station);
+    this.scrollToItem(target || node);
+    const cls = target ? "toc-flash" : "flash";
+    (target || node).classList.add(cls);
+    setTimeout(() => (target || node).classList.remove(cls), 1800);
   },
 
   // 目录里「教材 / 笔记」和其下小节对应的位置；找不到（比如正在编辑）就退回那一块，再不行退回整张卡。
@@ -1593,8 +1727,9 @@ const App = {
     if (!part) return null;
     const box = node.querySelector(part === "book" ? "section.card-book" : ".mynote-slot");
     if (!box || !sec) return box;
-    // 站名行渲染后是只含一个 <strong> 的 <p>；「⑤」不能认成「⑤′」
+    // 站名行显示成站牌（.station）；万一没换成站牌，就认只含一个 <strong> 的 <p>。「⑤」不能认成「⑤′」
     const isStation = (p) => {
+      if (p.classList.contains("station")) return p.dataset.station === station;
       const t = p.textContent.trim();
       return p.tagName === "P" && p.children.length === 1 && p.firstElementChild.tagName === "STRONG" &&
         t === p.firstElementChild.textContent.trim() && t.startsWith(station) && t.charAt(station.length) !== "′";
@@ -1605,7 +1740,7 @@ const App = {
         .filter((l) => l.textContent.trim().startsWith("〔" + sec + "〕"))
         .map((l) => l.closest(".term") || l);
       if (!terms.length) return box;
-      const hit = station && terms.map((t) => [...t.querySelectorAll("p")].find(isStation)).find(Boolean);
+      const hit = station && terms.map((t) => [...t.querySelectorAll(".station, p")].find(isStation)).find(Boolean);
       return hit || terms[0];
     }
     const heads = [...box.querySelectorAll(".mynote-body h1, .mynote-body h2, .mynote-body h3, .mynote-body h4, .mynote-body h5, .mynote-body h6")]
@@ -1646,7 +1781,7 @@ const App = {
 
   bookCardInner(itemId) {
     const it = KaoyanData.find(itemId);
-    const book = bookParts(BookEdits.get(itemId));
+    const book = bookParts(BookEdits.get(itemId), this.stationDeco(itemId));
     const pending = BookEdits.isPending(itemId);
     return `
             <div class="card-book-head">
@@ -1752,7 +1887,7 @@ const App = {
           pv.hidden = !toPreview;
           btn.textContent = toPreview ? "回到编辑" : "预览";
           if (toPreview) {
-            const b = bookParts(ta.value);
+            const b = bookParts(ta.value, this.stationDeco(id, { book: ta.value }));
             pv.innerHTML = `<div class="entry-statement">${b.main}</div>` +
               (b.tip ? `<div class="entry-note">${b.tip}</div>` : "");
             renderMath(pv);
@@ -1837,8 +1972,10 @@ const App = {
   // 笔记正文的显示：一律按 Markdown，和教材同一个函数（mdHtml）——
   // 公式先挖出来保护、〔〕小标题上色、==重点== 下划线；存储和导出的原文一个字不动。
   // （以前还有按内容自动判定、可手动切换的「纯文本」显示模式，已统一去掉。）
-  noteBodyHtml(text) {
-    return noteMdHtml(text);
+  // 显示卡片笔记时（带 noteId）把站名行换成站牌；章节笔记、体检不换
+  noteBodyHtml(text, noteId) {
+    const html = noteMdHtml(text);
+    return noteId && KaoyanData.find(noteId) ? this.stationizeNote(html, text, noteId) : html;
   },
 
   // 体检：Markdown 里最容易踩的坑是「缩进被当成代码块」。

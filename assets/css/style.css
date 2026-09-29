@@ -430,6 +430,31 @@ button { font: inherit; border: none; background: none; color: inherit; cursor: 
 
 .chip-row { display: flex; gap: 7px; flex-wrap: wrap; }
 
+/* 顶部位置条：挂在工具条下沿右侧、浮在正文上，不占版面（工具条变高会让正文跟着跳）；
+   放右边是为了不挡住每行开头的加粗小标题 */
+.here {
+  position: absolute; right: 0; top: calc(100% - 8px);
+  display: flex; align-items: baseline; gap: 5px; max-width: 100%;
+  padding: 4px 12px; border: none; border-radius: 999px;
+  background: var(--surface); box-shadow: var(--lift);
+  font: inherit; font-size: 12.5px; line-height: 1.5; color: var(--text-2);
+  white-space: nowrap; overflow: hidden; cursor: pointer;
+}
+.here[hidden] { display: none; }
+.here:hover { box-shadow: 0 0 0 3px var(--accent-soft), var(--lift); }
+.here-part { font-weight: 600; color: var(--text-3); }
+.here-sec { font-weight: 600; }
+.here-no { margin-left: 2px; font-weight: 700; color: var(--accent); }
+.here-name { overflow: hidden; text-overflow: ellipsis; }
+.here-sec.def { color: var(--def); }
+.here-sec.thm { color: var(--thm); }
+.here-sec.prp { color: var(--prp); }
+.here-sec.method { color: var(--method); }
+.here-sec.ex { color: var(--example); }
+.here-sec.meaning { color: var(--meaning); }
+.here-sec.tip { color: var(--tip); }
+@media (max-width: 480px) { .here-name { display: none; } }
+
 /* 章内搜索的战果行：命中几条、几处，跟着搜索框走 */
 .chapter-hits {
   margin: 2px 0 18px;
@@ -525,6 +550,44 @@ button { font: inherit; border: none; background: none; color: inherit; cursor: 
 .toc-sub-stations .toc-sub-st { min-width: 2.1em; font-size: 11.5px; text-align: center; }
 .toc-sub-main { margin-bottom: 2px; }
 .toc-sub-label { margin-right: 2px; padding: 1px 5px; font-size: 11.5px; font-weight: 600; color: var(--text-2); }
+
+/* 站牌：按站组织的卡里每站开头一块。左边线、底色、圈号用所在小节的颜色，一眼看出在哪一节、哪一站；
+   下面一行跳到同一站在其他小节里的位置 */
+.station {
+  --st: var(--accent);
+  margin: 36px 0 16px; padding: 10px 14px 9px;
+  border-left: 3px solid var(--st); border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  background: color-mix(in srgb, var(--st) 7%, transparent);
+}
+.term-md > .station:first-child, .mynote-body > h1 + .station, .mynote-body > h2 + .station,
+.mynote-body > h3 + .station, .mynote-body > h4 + .station { margin-top: 14px; }
+.station.def { --st: var(--def); }
+.station.thm { --st: var(--thm); }
+.station.prp { --st: var(--prp); }
+.station.method { --st: var(--method); }
+.station.ex { --st: var(--example); }
+.station.meaning { --st: var(--meaning); }
+.station.tip { --st: var(--tip); }
+.station-head { display: flex; align-items: baseline; gap: 8px; }
+.station-no { flex: none; font-size: 22px; font-weight: 700; line-height: 1.25; color: var(--st); }
+.station-name { font-size: 18px; font-weight: 700; line-height: 1.35; letter-spacing: -.01em; color: var(--text); }
+.station-links {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 2px;
+  margin-top: 5px; font-size: 12px; line-height: 1.5;
+}
+.station-part { margin-right: 1px; font-weight: 600; color: var(--text-3); }
+.station-link + .station-part { margin-left: 10px; }
+.station .station-link { padding: 1px 6px; border-radius: 5px; color: var(--text-2); text-decoration: none; }
+.station a.station-link:hover { background: var(--accent-soft); }
+.station-link.def { color: var(--def); }
+.station-link.thm { color: var(--thm); }
+.station-link.prp { color: var(--prp); }
+.station-link.method { color: var(--method); }
+.station-link.ex { color: var(--example); }
+.station-link.meaning { color: var(--meaning); }
+.station-link.tip { color: var(--tip); }
+.station-link.current { font-weight: 700; background: color-mix(in srgb, currentColor 14%, transparent); }
+.station-link.missing { opacity: .32; }
 
 .toc-foot {
   display: flex; align-items: center; gap: 10px;
@@ -1175,7 +1238,7 @@ body.mynote-zoomed { overflow: hidden; }
   .toolbar, .pager, .export-bar, .breadcrumb,
   .modal-backdrop, .mynote-edit, .mynote-add, .mynote-actions,
   .mynote-preview-btn, .mynote-zoom-btn, .mynote-restore,
-  .mynote-flag { display: none !important; }
+  .mynote-flag, .station-links, .here { display: none !important; }
 
   html, body { background: #fff !important; }
   body { color: #000; font-size: 12pt; }
