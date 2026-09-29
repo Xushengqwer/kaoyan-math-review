@@ -160,14 +160,47 @@ function sectionKind(title) {
   return /^例题(?=$|[\s:：（(])/.test(t) ? "例题" : null;
 }
 
+function bookHeadKind(line) {
+  const m = line.match(BOOK_HEAD);
+  return m ? m[2] : /^#{1,6}[ \t]*意义(?:[ \t]*[:：].*)?[ \t]*$/.test(line) ? "意义" : null;
+}
+
 function bookSections(md) {
   const kinds = [];
   String(md == null ? "" : md).split("\n").forEach((line) => {
-    const m = line.match(BOOK_HEAD);
-    const kind = m ? m[2] : /^#{1,6}[ \t]*意义(?:[ \t]*[:：].*)?[ \t]*$/.test(line) ? "意义" : null;
+    const kind = bookHeadKind(line);
     if (kind && !kinds.includes(kind)) kinds.push(kind);
   });
   return kinds;
+}
+
+// 一张卡按「站」往下走时（第4章超级卡：① 出发点 → … → ⑥ 读出符号），每个小节里都有站名行：
+// 单独一行、整行加粗、以圈号开头，如「**⑤′ 另一种换法：配方法**」。
+// 按小节列出其中的站：{ 小节: [{ mark: "⑤′", name: "⑤′ 另一种换法：配方法" }] }；同一小节同一站只列一次。
+// 小节的认法与 bookSections / noteSections 相同（笔记只认最外层一级标题，代码块里的不算）。
+const STATION_LINE = /^\*\*(([①-⑳]′?)[ \t]*[^*]*?)\*\*[ \t]*$/;
+
+function sectionStations(text, part) {
+  const src = String(text == null ? "" : text);
+  const level = part === "note" ? noteSections(src).level : 0;
+  const out = {};
+  let cur = null, fence = false;
+  src.split("\n").forEach((line) => {
+    if (part === "note") {
+      if (/^\s*```/.test(line)) { fence = !fence; return; }
+      if (fence) return;
+      const h = line.match(/^(#{1,6})[ \t]+(.*?)[ \t]*$/);
+      if (h && h[1].length <= level) { cur = sectionKind(h[2]); return; }
+    } else {
+      const kind = bookHeadKind(line);
+      if (kind) { cur = kind; return; }
+    }
+    const s = cur && line.match(STATION_LINE);
+    if (!s) return;
+    const list = out[cur] || (out[cur] = []);
+    if (!list.some((x) => x.mark === s[2])) list.push({ mark: s[2], name: s[1] });
+  });
+  return out;
 }
 
 // 笔记只认最外层那一级小节标题：「### 〔例题〕」算，它下面的「#### 例题 1」「##### 【小题 1】」不算
@@ -1399,16 +1432,48 @@ const App = {
 
   // 卡片条目下面的两行：「教材」「笔记」各自跳到那一块，后面的「定义 性质 …」跳到那一节。
   // 教材每张卡都有；笔记写了才出现。
+  // 按「站」组织的卡（见 sectionStations）：先一行「主线」列出各站全名（跳到教材里该站第一次出现处），
+  // 「教材」「笔记」下面每个小节各占一行，后面是这一节里有的站（圈号，悬停看全名），点了跳到这一节里的这一站。
   tocSubHtml(itemId) {
-    const row = (part, label, kinds) => `
+    const attr = (s) => escapeHtml(s).replace(/"/g, "&quot;");
+    const link = (cls, part, sec, st, text, title) =>
+      `<a class="${cls}" href="#item-${itemId}" data-goto="${itemId}" data-part="${part}"${sec ? ` data-sec="${sec}"` : ""}${
+        st ? ` data-station="${attr(st)}"` : ""}${title ? ` title="${attr(title)}"` : ""}>${escapeHtml(text)}</a>`;
+    const secLink = (part, k) => link(`toc-sub-sec ${BOOK_CLASS[k] || ""}`, part, k, "", k);
+    const row = (part, label, kinds, text) => {
+      const st = sectionStations(text, part);
+      if (!kinds.some((k) => st[k])) return `
                     <div class="toc-sub-row">
-                      <a class="toc-sub-part" href="#item-${itemId}" data-goto="${itemId}" data-part="${part}">${label}</a>
-                      ${kinds
-                        .map((k) => `<a class="toc-sub-sec ${BOOK_CLASS[k] || ""}" href="#item-${itemId}" data-goto="${itemId}" data-part="${part}" data-sec="${k}">${k}</a>`)
-                        .join("")}
+                      ${link("toc-sub-part", part, "", "", label)}
+                      ${kinds.map((k) => secLink(part, k)).join("")}
                     </div>`;
-    const note = Notes.has(itemId) ? row("note", "笔记", noteSections(Notes.get(itemId)).kinds) : "";
-    return `<div class="toc-sub" data-sub="${itemId}">${row("book", "教材", bookSections(BookEdits.get(itemId)))}${note}
+      // 各行的圈号按列对齐：这一节没有的站留空位
+      const cols = [];
+      kinds.forEach((k) => (st[k] || []).forEach((s) => { if (!cols.includes(s.mark)) cols.push(s.mark); }));
+      return `
+                    <div class="toc-sub-row">${link("toc-sub-part", part, "", "", label)}</div>
+                    ${kinds
+                      .map((k) => `<div class="toc-sub-row toc-sub-stations">${secLink(part, k)}${cols
+                        .map((m) => {
+                          const s = (st[k] || []).find((x) => x.mark === m);
+                          return s ? link("toc-sub-st", part, k, s.mark, s.mark, s.name) : `<span class="toc-sub-st"></span>`;
+                        })
+                        .join("")}</div>`)
+                      .join("")}`;
+    };
+    const book = BookEdits.get(itemId);
+    const bookKinds = bookSections(book);
+    const bookSt = sectionStations(book, "book");
+    const main = [];
+    bookKinds.forEach((k) => (bookSt[k] || []).forEach((s) => {
+      if (!main.some((m) => m.s.mark === s.mark)) main.push({ k, s });
+    }));
+    const mainRow = main.length ? `
+                    <div class="toc-sub-row toc-sub-main"><span class="toc-sub-label">主线</span>${main
+                      .map(({ k, s }) => link("toc-sub-st", "book", k, s.mark, s.name))
+                      .join("")}</div>` : "";
+    const note = Notes.has(itemId) ? row("note", "笔记", noteSections(Notes.get(itemId)).kinds, Notes.get(itemId)) : "";
+    return `<div class="toc-sub" data-sub="${itemId}">${mainRow}${row("book", "教材", bookKinds, book)}${note}
                   </div>`;
   },
 
@@ -1513,7 +1578,7 @@ const App = {
         e.preventDefault();
         const node = document.getElementById("item-" + a.dataset.goto);
         if (!node) return;
-        const target = this.tocTarget(node, a.dataset.part, a.dataset.sec);
+        const target = this.tocTarget(node, a.dataset.part, a.dataset.sec, a.dataset.station);
         this.scrollToItem(target || node);
         const cls = target ? "toc-flash" : "flash";
         (target || node).classList.add(cls);
@@ -1522,21 +1587,38 @@ const App = {
     });
   },
 
-  // 目录里「教材 / 笔记」和其下小节对应的位置；找不到（比如正在编辑）就退回那一块，再不行退回整张卡
-  tocTarget(node, part, sec) {
+  // 目录里「教材 / 笔记」和其下小节对应的位置；找不到（比如正在编辑）就退回那一块，再不行退回整张卡。
+  // 带站（station）时再往下找这一节里的站名行，找不到就停在这一节。
+  tocTarget(node, part, sec, station) {
     if (!part) return null;
     const box = node.querySelector(part === "book" ? "section.card-book" : ".mynote-slot");
     if (!box || !sec) return box;
+    // 站名行渲染后是只含一个 <strong> 的 <p>；「⑤」不能认成「⑤′」
+    const isStation = (p) => {
+      const t = p.textContent.trim();
+      return p.tagName === "P" && p.children.length === 1 && p.firstElementChild.tagName === "STRONG" &&
+        t === p.firstElementChild.textContent.trim() && t.startsWith(station) && t.charAt(station.length) !== "′";
+    };
     if (part === "book") {
       if (sec === "提示") return box.querySelector(".entry-note") || box;
-      const label = [...box.querySelectorAll(".term-label")].find((l) => l.textContent.trim().startsWith("〔" + sec + "〕"));
-      return label ? label.closest(".term") || label : box;
+      const terms = [...box.querySelectorAll(".term-label")]
+        .filter((l) => l.textContent.trim().startsWith("〔" + sec + "〕"))
+        .map((l) => l.closest(".term") || l);
+      if (!terms.length) return box;
+      const hit = station && terms.map((t) => [...t.querySelectorAll("p")].find(isStation)).find(Boolean);
+      return hit || terms[0];
     }
     const heads = [...box.querySelectorAll(".mynote-body h1, .mynote-body h2, .mynote-body h3, .mynote-body h4, .mynote-body h5, .mynote-body h6")]
       .filter((h) => sectionKind(h.textContent) === sec);
     if (!heads.length) return box;
     const top = Math.min(...heads.map((h) => +h.tagName.charAt(1)));
-    return heads.find((h) => +h.tagName.charAt(1) === top);
+    const head = heads.find((h) => +h.tagName.charAt(1) === top);
+    if (!station) return head;
+    for (let el = head.nextElementSibling; el; el = el.nextElementSibling) {
+      if (/^H[1-6]$/.test(el.tagName) && +el.tagName.charAt(1) <= top) break;
+      if (isStation(el)) return el;
+    }
+    return head;
   },
 
   entryHtml(item, index) {
