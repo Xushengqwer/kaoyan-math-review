@@ -3,6 +3,7 @@
 // 由提交脚本自动登记，不用手改。
 registerSuperseded({
   images: {
+    "map:linalg/eigen": ["9ad3b9d32b06b3b2969012e55338a749af409911d816a26f72617c1bc60e784f"],
     "map:linalg/vector-space": ["5ec107105d39a923071208cbac70bd8414ceb355e691cc30030207339a0d28c2"],
   },
   notes: {
