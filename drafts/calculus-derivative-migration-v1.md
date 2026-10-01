@@ -1,6 +1,6 @@
 # 高数第 2 章合并为超级卡：迁移表与结构改动（v1）
 
-对应草稿：`drafts/calculus-derivative-card1-book-v1.md`（教材全文）、`drafts/calculus-derivative-mindmap-v1.webp`（思维导图）。
+对应草稿：`drafts/calculus-derivative-card1-book-v1.md`（教材全文）、`drafts/calculus-derivative-mindmap-v2.webp`（思维导图，由 `drafts/calculus-derivative-mindmap-v2.cjs` 经 `tools/mindmap.cjs` 导出）。
 本文件是给用户确认、给 Codex 执行的计划，不写进网站。
 
 ## 1. 结构改动
@@ -13,7 +13,7 @@
 - **章节** `derivative`：
   - 注释改为：`// 第2章按「一条主线」组织：一张超级卡，分六站（变化有多快 → 怎么求导 → 一点怎么管住一整段 → 洛必达 → 泰勒 → 用导数看函数）。`
   - `modules` 改为一项：`{ no: "一", name: "一条主线", brief: "从一点的变化率，看清整个函数：导数 → 求导 → 中值定理 → 洛必达 → 泰勒 → 用导数看函数" }`
-- **思维导图**：新增 `map:calculus/derivative`，图片用 `drafts/calculus-derivative-mindmap-v1.webp`（按 AGENTS.md 流程 D 的命名放进 `assets/images/mindmaps/`）。图已在本地改过三处：第 ③ 站的切线改成与割线平行、切点改到斜率相等处，端点改成实心；第 ⑥ 站的拐点移到峰谷之间。
+- **思维导图**：新增 `map:calculus/derivative`，图片用 `drafts/calculus-derivative-mindmap-v2.webp`（按 AGENTS.md 流程 D 的命名放进 `assets/images/mindmaps/`）。`v1`（GPT 画的）作废，不要用。
 - 高数第 2 章没有笔记、决策流、本章总结，本次不涉及。
 
 ## 2. 迁移表（旧卡每个知识点 → 新位置）
@@ -74,7 +74,7 @@
 **删除一条**：旧卡 ⑥ 的〔方法〕「其他未定式的转化」。它和第 1 章 `calc-lim-function` 重复，按「谁定义放谁那里」，未定式归第 1 章：
 
 - $0 \cdot \infty$：第 1 章意义第 10 类第 1 步；
-- $\infty - \infty$：第 1 章意义第 10 类第 2、3 步（通分、有理化、倒代换）；旧卡的「提公因子」第 1 章没写，**建议给第 1 章意义第 10 类第 2 步补上「或提公因子」**（需要用户同意后另出第 1 章教材 v2）；
+- $\infty - \infty$：第 1 章意义第 10 类第 2、3 步（通分、有理化、倒代换）；旧卡的「提公因子」第 1 章没写，用户决定不补（用处不大）；
 - $1^\infty$、$0^0$、$\infty^0$：第 1 章性质⑤·是 8、意义第 11 类。
 
 ## 3. 新增内容（旧卡没有）

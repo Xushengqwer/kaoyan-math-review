@@ -86,6 +86,7 @@
 | `node tools/test-all.cjs` | 全部测试（`tests/*.cjs`）+ 全站体检，提交前必跑 |
 | `node tools/wait-live.cjs` | 推送后等到线上缓存版本号等于本地的，确认已上线 |
 | `node tools/preview.cjs <输出.html> "<标题>" note\|book <草稿.md> "<小标题>" ...` | 生成草稿预览页（公式预渲染，可离线打开） |
+| `node tools/mindmap.cjs <内容.cjs> <输出.webp>` | 章节路线图（思维导图）由 Claude 用它画：内容文件在 `drafts/`，本机 Edge 截图、ffmpeg 转 webp |
 
 草稿读入时只做三件事：去 BOM、CRLF 统一成 LF、去掉末尾空白。
 
