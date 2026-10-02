@@ -6,7 +6,7 @@
 //
 // 内容文件导出一个函数 (h) => spec，h 是下面的画图工具：
 //   spec = { chapter: "第 2 章", name: "一元函数微分学", nameSize: 25（可选，章名太长时调小）, mainline: "从一点的变化率，\n看清整个函数", height: 900,
-//            keyLabel: "本章重点",
+//            keyLabel: "本章重点", layers: [{ from: 1, to: 2, label: "工具", color }]（可选：顶部分层括号，这时 key 站显示小标签）,
 //            stations: [{ n, name, color, bg, w, key, desc, fig, chips: [...] 或 groups: [[小标题, [...]], ...] }] }
 //   文字里 $...$ 用网站同一套 KaTeX 排版，\n 换行。
 // 导出：用本机 Edge（或 Chrome）无界面截图（2 倍分辨率），再用 ffmpeg 转成 webp。
@@ -62,7 +62,14 @@ function render(spec) {
   must(x - GAP <= 1672, "各站宽度加起来超出画布：" + (x - GAP));
   const cx = (c) => c.x + c.w / 2;
   const keys = cols.filter((c) => c.key);
-  const key = keys.length ? (() => {
+  // 分层：spec.layers = [{ from, to, label, color }]，按站号给几站加一个顶部括号；这时「重点」改成每站右上角的小标签
+  const bracket = (k0, k1, label, color) => { const w = k1 - k0;
+    return `<div class="key" style="left:${k0}px;width:${w}px"><svg width="${w}" height="30" viewBox="0 0 ${w} 30"><path d="M2 28 V8 Q2 4 6 4 H${w - 6} Q${w - 2} 4 ${w - 2} 8 V28" stroke="${color}" stroke-width="3" fill="none"/></svg><span style="color:${color}">${esc(label)}</span></div>`; };
+  const key = spec.layers ? spec.layers.map((l) => {
+    const a = cols.find((c) => c.n === l.from), b = cols.find((c) => c.n === l.to);
+    must(a && b, "layers 里的站号不存在：" + l.from + "—" + l.to);
+    return bracket(a.x + 6, b.x + b.w - 6, l.label, l.color || "#7b3fd0");
+  }).join("") : keys.length ? (() => {
     const k0 = keys[0].x + 6, k1 = keys[keys.length - 1].x + keys[keys.length - 1].w - 6, w = k1 - k0;
     return `<div class="key" style="left:${k0}px;width:${w}px"><svg width="${w}" height="30" viewBox="0 0 ${w} 30"><path d="M2 28 V8 Q2 4 6 4 H${w - 6} Q${w - 2} 4 ${w - 2} 8 V28" stroke="#b07be8" stroke-width="3" fill="none"/></svg><span>${esc(spec.keyLabel || "本章重点")}</span></div>`;
   })() : "";
@@ -70,7 +77,7 @@ function render(spec) {
   const card = (c) => `
 <section class="col" style="left:${c.x}px;width:${c.w}px">
   <div class="top" style="background:${c.bg}">
-    <h2 style="color:${c.color}">${esc(c.name)}</h2>
+    <h2 style="color:${c.color}">${esc(c.name)}</h2>${spec.layers && c.key ? `<div class="badge">${esc(spec.keyLabel || "重点")}</div>` : ""}
     <div class="desc">${tx(c.desc)}</div>
     <div class="fig">${c.fig || ""}</div>
   </div>
@@ -98,7 +105,8 @@ body{font-family:'HarmonyOS Sans SC','Microsoft YaHei',sans-serif;color:#1f2430;
 .key{position:absolute;top:8px;height:30px}
 .key span{position:absolute;left:50%;top:-4px;transform:translateX(-50%);background:#fff;padding:0 14px;font-size:24px;font-weight:700;color:#7b3fd0;letter-spacing:2px}
 .col{position:absolute;top:${lineY + 36}px}
-.top{border-radius:16px;padding:12px 10px 6px;box-shadow:0 2px 8px rgba(30,40,70,.08)}
+.top{position:relative;border-radius:16px;padding:12px 10px 6px;box-shadow:0 2px 8px rgba(30,40,70,.08)}
+.badge{position:absolute;right:-6px;top:-12px;background:#7b3fd0;color:#fff;font-size:13px;font-weight:700;border-radius:10px;padding:1px 8px;letter-spacing:1px;box-shadow:0 2px 5px rgba(0,0,0,.15)}
 h2{font-size:22px;font-weight:700;text-align:center;letter-spacing:.5px;white-space:nowrap}
 .desc{background:rgba(255,255,255,.82);border-radius:10px;padding:8px 9px;margin-top:9px;font-size:14.5px;line-height:1.6;min-height:90px}
 .fig{margin-top:6px;height:178px;display:flex;flex-direction:column;justify-content:center}
