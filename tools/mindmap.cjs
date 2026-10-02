@@ -5,7 +5,7 @@
 //   例：node tools/mindmap.cjs drafts/calculus-derivative-mindmap-v2.cjs drafts/calculus-derivative-mindmap-v2.webp
 //
 // 内容文件导出一个函数 (h) => spec，h 是下面的画图工具：
-//   spec = { chapter: "第 2 章", name: "一元函数微分学", mainline: "从一点的变化率，\n看清整个函数", height: 900,
+//   spec = { chapter: "第 2 章", name: "一元函数微分学", nameSize: 25（可选，章名太长时调小）, mainline: "从一点的变化率，\n看清整个函数", height: 900,
 //            keyLabel: "本章重点",
 //            stations: [{ n, name, color, bg, w, key, desc, fig, chips: [...] 或 groups: [[小标题, [...]], ...] }] }
 //   文字里 $...$ 用网站同一套 KaTeX 排版，\n 换行。
@@ -89,7 +89,7 @@ body{font-family:'HarmonyOS Sans SC','Microsoft YaHei',sans-serif;color:#1f2430;
 .m{display:inline-block;white-space:nowrap}
 .title{position:absolute;left:12px;top:44px;width:242px;height:330px;border-radius:20px;background:linear-gradient(160deg,#16489e,#0d3a86);color:#fff;padding:26px 22px;box-shadow:0 6px 18px rgba(13,58,134,.25)}
 .title .ch{font-size:46px;font-weight:700;letter-spacing:2px}
-.title .nm{font-size:25px;letter-spacing:.5px;font-weight:700;margin-top:6px}
+.title .nm{font-size:${spec.nameSize || 25}px;letter-spacing:.5px;font-weight:700;margin-top:6px;white-space:nowrap}
 .title hr{border:0;border-top:2px solid rgba(255,255,255,.55);margin:16px 0 14px}
 .title .ml{font-size:22px;font-weight:700}
 .title .mt{font-size:21px;line-height:1.45;margin-top:4px;font-weight:600}
@@ -144,10 +144,19 @@ main(() => {
   fs.writeFileSync(htmlFile, html, "utf8");
   if (htmlOut) fs.writeFileSync(htmlOut, html, "utf8");
   const r = spawnSync(browser(), ["--headless=new", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=2",
+    `--user-data-dir=${path.join(tmp, "profile")}`,
     `--window-size=1672,${spec.height || 900}`, `--screenshot=${png}`, "file:///" + htmlFile.replace(/\\/g, "/")], { encoding: "utf8" });
+  // 新版 Edge 的 msedge.exe 只是启动器，会先返回，截图稍后才写出：等文件出现、大小不再变化
+  const nap = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+  for (let i = 0, last = -1; i < 120; i++) {
+    const size = fs.existsSync(png) ? fs.statSync(png).size : -1;
+    if (size > 0 && size === last) break;
+    last = size;
+    nap(250);
+  }
   must(fs.existsSync(png), "截图失败：" + (r.stderr || "").slice(-300));
   const f = spawnSync("ffmpeg", ["-loglevel", "error", "-y", "-i", png, "-c:v", "libwebp", "-quality", "92", path.resolve(out)], { encoding: "utf8" });
   must(f.status === 0, "ffmpeg 转换失败：" + (f.stderr || "").slice(-300));
-  fs.rmSync(tmp, { recursive: true, force: true });
+  try { fs.rmSync(tmp, { recursive: true, force: true, maxRetries: 5, retryDelay: 400 }); } catch (e) { /* 浏览器还占着临时目录，留给系统清理 */ }
   console.log("✓ 路线图：" + out + "（" + Math.round(fs.statSync(out).size / 1024) + " KB）");
 });
