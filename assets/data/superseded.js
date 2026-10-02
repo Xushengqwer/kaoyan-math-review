@@ -107,6 +107,13 @@ registerSuperseded({
     "la-vec-thm-representation-criterion": ["29e883afoil"],
   },
   book: {
+    "calc-vec-space-curves": ["21vhgp6zgmt"],
+    "calc-vec-surfaces": ["ahyhzxo5b7"],
+    "calc-vec-relations": ["d02nlpwicj"],
+    "calc-vec-line": ["1casoe9jcv2"],
+    "calc-vec-plane": ["1cynrizkcid"],
+    "calc-vec-products": ["20jc6w4lfis"],
+    "calc-vec-coordinates": ["1oid3e0lfzi"],
     "calc-int-applications": ["ac3e4fx2v4"],
     "calc-int-improper": ["27fy86tv00a"],
     "calc-int-definite-computation": ["1qmj2ggaecx"],
