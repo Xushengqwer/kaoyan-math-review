@@ -76,7 +76,7 @@ function render(spec) {
   </div>
   <div class="stem"></div>
   ${c.chips ? list(c.chips) : ""}
-  ${c.groups ? c.groups.map(([h, l]) => `<div class="ghead" style="color:${c.color}">${esc(h)}</div>` + list(l)).join("") : ""}
+  ${c.groups ? c.groups.map(([h, l]) => `<div class="ghead" style="color:${c.color}">${tx(h)}</div>` + list(l)).join("") : ""}
 </section>`;
   const wave = `M250 ${lineY + 10} C 420 ${lineY - 18}, 560 ${lineY + 18}, 760 ${lineY} S 1180 ${lineY - 16}, 1400 ${lineY + 2} S 1600 ${lineY + 14}, 1672 ${lineY - 4}`;
   return `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>${esc(spec.chapter + " " + spec.name)}</title>
