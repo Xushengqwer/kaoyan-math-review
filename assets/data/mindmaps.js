@@ -1,6 +1,7 @@
 // 已提交到仓库的思维导图：id -> { path, name, type, size, sha256 }。
 // 用户上传的新图片先保存在浏览器，提交时再登记到这里。
 registerMindMaps({
+  "map:calculus/multivar-derivative": {"path":"assets/images/mindmaps/calculus-multivar-derivative-a3dab851a3cd.webp","name":"calculus-multivar-derivative-mindmap-v1.webp","type":"image/webp","size":685580,"sha256":"a3dab851a3cd793ce3c37e6b85b906af7e93712c5dd4fa6de8c4db25b890619d"},
   "map:calculus/vector-geometry": {"path":"assets/images/mindmaps/calculus-vector-geometry-5223811a0f48.webp","name":"calculus-vector-geometry-mindmap-v1.webp","type":"image/webp","size":558916,"sha256":"5223811a0f484c4e27b5e1778e2b4c30a64eeec34f0dff2ad34fb84fc186c2de"},
   "map:calculus/integral": {"path":"assets/images/mindmaps/calculus-integral-010fd5ce47d9.webp","name":"calculus-integral-mindmap-v1.webp","type":"image/webp","size":540644,"sha256":"010fd5ce47d90ad8c902c18130a445a53b1d788f5e38e2c1e371a746807aa71c"},
   "map:calculus/derivative": {"path":"assets/images/mindmaps/calculus-derivative-026ddc670cfc.webp","name":"calculus-derivative-mindmap-v2.webp","type":"image/webp","size":402130,"sha256":"026ddc670cfc9715e125e67ea0a7c97396cdbf645b338e9efb9343131b5e57dc"},
