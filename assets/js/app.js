@@ -205,6 +205,66 @@ function sectionStations(text, part) {
   return out;
 }
 
+// 右侧目录的大纲：按站（没有站就整张卡一块）列出教材〔定义〕〔性质〕「意义」和笔记〔例题〕〔提示〕里每一条的标题，
+// 一眼看到每一站里有什么。认法与对照视图相同：站名行要独立成段；分组行是整行加粗、后面（隔空行）紧跟「#### n.」的一行。
+// 条目：〔定义〕〔性质〕〔提示〕是「#### n. 标题」，意义是顶格的「* **n. 标题**」，例题是「#### 例题 n：标题」。
+// ord：这一条在「这一节的这一站」里排第几（从 0 起），跳转时在页面上按同样的规则数到它（App.outlineTarget）。
+// → { structured: 有站或有分组（都没有就不用大纲）, blocks: [{ mark, name, rows: { 部分+小节: { part, sec, items: [{ title, ord, group }] } } }] }
+const OUTLINE_SECS = [["book", "定义"], ["book", "性质"], ["book", "意义"], ["note", "例题"], ["note", "提示"]];
+
+function cardOutline(book, note) {
+  const blocks = [];
+  let structured = false;
+  const block = (mark, name) => {
+    let b = blocks.find((x) => x.mark === mark);
+    if (!b) blocks.push((b = { mark, name, rows: {} }));
+    return b;
+  };
+  const scan = (raw, part) => {
+    const src = String(raw == null ? "" : raw);
+    const lines = src.split("\n").map((l) => l.replace(/\r$/, ""));
+    const level = part === "note" ? noteSections(src).level : 0;
+    const counts = {};
+    let sec = null, station = "", group = "", fence = false;
+    lines.forEach((line, i) => {
+      if (/^\s*(```|~~~)/.test(line)) { fence = !fence; return; }
+      if (fence) return;
+      if (part === "book") {
+        const k = bookHeadKind(line);
+        if (k) { sec = k; station = group = ""; return; }
+      } else {
+        const h = line.match(/^(#{1,6})[ \t]+(.*?)[ \t]*$/);
+        if (h && h[1].length <= level) { sec = sectionKind(h[2]); station = group = ""; return; }
+      }
+      if (!OUTLINE_SECS.some(([p, s]) => p === part && s === sec)) return;
+      const independent = i === 0 || !lines[i - 1].trim() || /^#{1,6}[ \t]/.test(lines[i - 1]);
+      const st = independent && line.match(STATION_LINE);
+      if (st) { station = st[2]; group = ""; structured = true; block(station, st[1]); return; }
+      let m = null;
+      if (sec === "定义" || sec === "性质") {
+        const bold = independent && line.match(/^\*\*([^*]+)\*\*[ \t]*$/);
+        if (bold) {
+          let j = i + 1;
+          while (j < lines.length && !lines[j].trim()) j++;
+          if (j < lines.length && /^####[ \t]+\d+\./.test(lines[j])) { group = bold[1]; structured = true; return; }
+        }
+        m = line.match(/^####[ \t]+\d+\.[ \t]*(.*?)[ \t]*$/);
+      } else if (sec === "意义") m = line.match(/^[*-][ \t]+\*\*\d+\.[ \t]*(.*?)\*\*/);
+      else if (sec === "例题") m = line.match(/^#{2,6}[ \t]+例题[ \t]*\d+(?![\d.])[ \t]*[：:]?[ \t]*(.*?)[ \t]*$/);
+      else m = line.match(/^#{2,6}[ \t]+\d+\.[ \t]*(.*?)[ \t]*$/);
+      if (!m) return;
+      const rows = block(station, "").rows;
+      const row = rows[part + sec] || (rows[part + sec] = { part, sec, items: [] });
+      const n = counts[sec + station] || 0;
+      counts[sec + station] = n + 1;
+      row.items.push({ title: m[1], ord: n, group: sec === "定义" || sec === "性质" ? group : "" });
+    });
+  };
+  scan(book, "book");
+  scan(note, "note");
+  return { structured, blocks: blocks.filter((b) => b.mark || Object.keys(b.rows).length) };
+}
+
 // 站牌：站名行渲染后是「<p><strong>⑥ 读出符号</strong></p>」，显示时换成醒目的一块：
 // 圈号 + 站名，左边线用所在小节的颜色；下面一行链接跳到同一站在其他小节里的位置
 // （这一节高亮，没有这一站的小节灰掉）。只改显示，原文一个字不动，块里的文字仍是原来那一行。
@@ -585,6 +645,9 @@ const App = {
     // 站牌上的链接、顶部位置条都跟着页面内容重画，所以点击挂在 document 上
     document.addEventListener("click", (e) => {
       const el = e.target.closest && e.target.closest(".station-links a[data-goto], #chapter-here");
+      // 目录是点开的：点目录以外的地方就收起
+      const rail = document.getElementById("chapter-rail");
+      if (!el && rail && rail.classList.contains("open") && !(e.target.closest && e.target.closest("#chapter-rail"))) this.closeRail();
       if (!el) return;
       e.preventDefault();
       if (el.id === "chapter-here") this.openRail();
@@ -1742,7 +1805,7 @@ const App = {
 
   // ---------- 右侧「本章目录」导轨 ----------
   // 页面顶部那份目录一往下滚就看不见了，所以在右边缘常驻一条：
-  // 鼠标移上去弹出，移开收起；触屏没有 hover，点一下钉住。
+  // 点把手打开，点目录以外的地方、按 Esc 或点了条目就收起（鼠标经过不再弹出，免得挡住正在读的内容）。
   renderRail(subjectId, chapterId) {
     const rail = document.getElementById("chapter-rail");
     if (!rail) return;
@@ -1771,7 +1834,7 @@ const App = {
                     <span class="toc-title">${escapeHtml(it.title)}</span>
                     ${this.noteDotHtml(it.id)}
                   </a>
-                  ${this.tocSubHtml(it.id)}
+                  ${this.railSubHtml(it.id)}
                 </li>`
               )
               .join("")}
@@ -1781,6 +1844,8 @@ const App = {
       .join("");
 
     const foot = this.chapterExtraTocHtml(subjectId, chapterId);
+    // 只有一张超级卡时，「1 条」看不出东西，改报站数（⑤′ 这类支线不算一站）
+    const stations = items.length === 1 ? cardOutline(BookEdits.get(items[0].id), "").blocks.filter((b) => b.mark && !b.mark.includes("′")).length : 0;
 
     rail.innerHTML = `
       <button class="rail-tab" id="rail-tab" aria-expanded="false" aria-controls="rail-panel">本章目录</button>
@@ -1789,19 +1854,21 @@ const App = {
           <div class="rail-head">
             <span class="rail-head-no">${String(c.order).padStart(2, "0")}</span>
             <span class="rail-head-name">${escapeHtml(c.name)}</span>
-            <span class="rail-head-count">${items.length} 条</span>
+            <span class="rail-head-count">${stations ? stations + " 站" : items.length + " 条"}</span>
           </div>
           <div class="rail-body">${cols}${foot}</div>
         </div>
       </div>`;
     rail.hidden = false;
     rail.classList.remove("open");
+    rail.dataset.here = "";
+    renderMath(rail);
+    this.updateHere();
 
     const tab = document.getElementById("rail-tab");
     tab.addEventListener("click", () => {
-      const on = !rail.classList.contains("open");
-      rail.classList.toggle("open", on);
-      tab.setAttribute("aria-expanded", String(on));
+      if (rail.classList.contains("open")) this.closeRail();
+      else this.openRail();
     });
     this.bindToc(rail);
     // 点了条目就收起（触屏钉住的情况下尤其需要）
@@ -1882,6 +1949,101 @@ const App = {
                   </div>`;
   },
 
+  // 右侧目录里每张卡下面的部分：按站或分组组织的卡显示大纲（cardOutline），其余的卡和顶部目录一样是「教材 / 笔记」两行。
+  // 大纲一站一块：站名（跳到教材里这一站），下面每个小节一行，列出这一站这一节的各条标题，点了跳到那一条。
+  railSubHtml(itemId) {
+    const o = cardOutline(BookEdits.get(itemId), Notes.has(itemId) ? Notes.get(itemId) : "");
+    if (!o.structured) return this.tocSubHtml(itemId);
+    const attr = (s) => escapeHtml(s).replace(/"/g, "&quot;");
+    const link = (cls, part, sec, st, ord, html) =>
+      `<a class="${cls}" href="#item-${itemId}" data-goto="${itemId}" data-part="${part}" data-sec="${sec}"${
+        st ? ` data-station="${attr(st)}"` : ""}${ord != null ? ` data-ord="${ord}"` : ""}>${html}</a>`;
+    const blocks = o.blocks.map((b) => {
+      const rows = OUTLINE_SECS.map(([part, sec]) => b.rows[part + sec]).filter(Boolean);
+      const lines = rows.map((r) => {
+        // 同一分组的条目连成一串；有分组时每组另起一行，组名在前
+        const runs = [];
+        r.items.forEach((it) => {
+          const last = runs[runs.length - 1];
+          if (last && last.group === it.group) last.items.push(it);
+          else runs.push({ group: it.group, items: [it] });
+        });
+        const items = runs.map((run) => `<span class="ol-run">${run.group ? `<span class="ol-group">${mdHtml(run.group, true)}</span>` : ""}${run.items
+          .map((it) => link("ol-item", r.part, r.sec, b.mark, it.ord, mdHtml(it.title, true)))
+          .join('<span class="ol-dot" aria-hidden="true">·</span>')}</span>`).join("");
+        return `<div class="ol-row">${link("ol-sec " + (BOOK_CLASS[r.sec] || ""), r.part, r.sec, b.mark, null, r.sec)}<div class="ol-items">${items}</div></div>`;
+      }).join("");
+      const first = rows[0] || { part: "book", sec: "定义" };
+      const head = b.mark ? `<div class="ol-st-head">${link("ol-st-link", first.part, first.sec, b.mark, null,
+        `<span class="ol-st-no">${escapeHtml(b.mark)}</span><span class="ol-st-name">${mdHtml(b.name.slice(b.mark.length).trim(), true)}</span>`)}</div>` : "";
+      return `<div class="ol-st"${b.mark ? ` data-station="${attr(b.mark)}"` : ""}>${head}${lines}</div>`;
+    }).join("");
+    return `<div class="toc-sub rail-outline" data-sub="${itemId}">${blocks}</div>`;
+  },
+
+  // 大纲里的一条：先找到这一节的这一站（tocTarget 的认法），再按页面上实际显示的标题往下数到第 ord 条。
+  // 页面上一边走一边记「现在在哪一节、哪一站」（小节标题、站牌），只数属于这一部分（教材 / 笔记）的内容。
+  // 对照视图里〔定义〕〔性质〕的条目跳到整行（教材和笔记一起看）。数不到就返回 null，退回跳到这一站。
+  outlineTarget(node, part, sec, station, ord) {
+    const noteLevel = noteSections(Notes.has(node.id.slice(5)) ? Notes.get(node.id.slice(5)) : "").level;
+    const inPart = (el) => {
+      const cell = el.closest(".dual-shared, .dual-cell");
+      if (cell) return cell.classList.contains("dual-shared") || cell.dataset.part === part;
+      return !!el.closest(part === "book" ? "section.card-book" : ".mynote-slot");
+    };
+    const isItem = (el) => {
+      const t = el.textContent.trim();
+      if (sec === "意义") {
+        const s = el.tagName === "LI" && el.firstElementChild;
+        return !!s && s.tagName === "STRONG" && /^\d+\./.test(s.textContent.trim()) && !el.parentElement.closest("li");
+      }
+      if (!/^H[2-6]$/.test(el.tagName)) return false;
+      return sec === "例题" ? /^例题\s*\d+(?![\d.])/.test(t) : /^\d+\./.test(t);
+    };
+    let curSec = null, curSt = "", n = 0;
+    for (const el of node.querySelectorAll(".term-label, .station, h1, h2, h3, h4, h5, h6, li")) {
+      if (el.closest(".station") && !el.classList.contains("station")) continue;
+      if (!inPart(el)) continue;
+      if (el.classList.contains("term-label")) { curSec = sectionKind(el.textContent); curSt = ""; continue; }
+      if (el.classList.contains("station")) {
+        const sh = el.closest(".dual-shared");
+        curSec = (sh ? sh.dataset[part + "Sec"] : el.dataset.sec) || curSec;
+        curSt = el.dataset.station;
+        continue;
+      }
+      if (part === "note" && /^H[1-6]$/.test(el.tagName) && +el.tagName.charAt(1) <= noteLevel && el.closest(".mynote-body")) {
+        curSec = sectionKind(el.textContent); curSt = ""; continue;
+      }
+      if (curSec !== sec || curSt !== (station || "") || !isItem(el)) continue;
+      if (n++ === ord) return el.closest(".dual-row.kind-entry") || el;
+    }
+    return null;
+  },
+
+  // 右侧目录里标出现在读到的站（顶部位置条算出来的那一站）
+  markRailHere(itemId, station) {
+    const rail = document.getElementById("chapter-rail");
+    if (!rail) return;
+    const key = itemId && station ? itemId + "|" + station : "";
+    if (rail.dataset.here === key) return;
+    rail.dataset.here = key;
+    rail.querySelectorAll(".ol-st.is-here").forEach((b) => b.classList.remove("is-here"));
+    if (!key) return;
+    const box = rail.querySelector('.rail-outline[data-sub="' + itemId.replace(/"/g, '\\"') + '"]');
+    const b = box && [...box.querySelectorAll(".ol-st")].find((x) => x.dataset.station === station);
+    if (b) b.classList.add("is-here");
+  },
+
+  // 打开目录时，把标出的那一站滚进目录的可见范围
+  revealRailHere() {
+    const rail = document.getElementById("chapter-rail");
+    const body = rail && rail.querySelector(".rail-body");
+    const b = body && body.querySelector(".ol-st.is-here");
+    if (!b) return;
+    const off = b.getBoundingClientRect().top - body.getBoundingClientRect().top;
+    if (off < 0 || off > body.clientHeight - 60) body.scrollTop += off - 8;
+  },
+
   // 站牌要用：这张卡教材、笔记各有哪些小节，每节里有哪些站。编辑预览时传正在编辑的原文（texts.book / texts.note）。
   stationMap(itemId, texts) {
     const t = texts || {};
@@ -1929,10 +2091,12 @@ const App = {
     }
     let hit = null;
     let dual = null;
+    let hereId = "";
     document.querySelectorAll("#chapter-item-groups .entry").forEach((entry) => {
       if (hit || dual) return;
       const r = entry.getBoundingClientRect();
       if (r.top > line || r.bottom < line) return;
+      hereId = entry.id.slice(5);
       if (entry.classList.contains("is-dual")) {
         let row = null;
         for (const el of entry.querySelectorAll(".dual-row")) {
@@ -1967,6 +2131,7 @@ const App = {
     });
     const st = hit && hit.classList.contains("station");
     const sec = dual ? dual.sec : hit && (st ? hit.dataset.sec : sectionKind(hit.textContent));
+    this.markRailHere(hereId, dual ? dual.station : st ? hit.dataset.station : "");
     if (!sec) { pill.hidden = true; pill.dataset.key = ""; return; }
     const part = dual ? dual.part : hit.closest("section.card-book") ? "教材" : "笔记";
     const no = dual ? dual.station : st ? hit.querySelector(".station-no").textContent : "";
@@ -1986,18 +2151,24 @@ const App = {
     rail.classList.add("open");
     const tab = document.getElementById("rail-tab");
     if (tab) tab.setAttribute("aria-expanded", "true");
+    this.revealRailHere();
   },
 
   // 教材或笔记改完后，只重画目录里这张卡的两行（页面顶部和右侧导轨各一份）
   refreshTocSub(itemId) {
     document.querySelectorAll('.toc-sub[data-sub="' + itemId.replace(/"/g, '\\"') + '"]').forEach((old) => {
       const box = document.createElement("div");
-      box.innerHTML = this.tocSubHtml(itemId);
+      const inRail = !!old.closest("#chapter-rail");
+      box.innerHTML = inRail ? this.railSubHtml(itemId) : this.tocSubHtml(itemId);
       const fresh = box.firstElementChild;
       old.replaceWith(fresh);
       this.bindToc(fresh);
-      if (fresh.closest("#chapter-rail")) {
+      if (inRail) {
+        renderMath(fresh);
         fresh.querySelectorAll("[data-goto]").forEach((a) => a.addEventListener("click", () => this.closeRail()));
+        const rail = document.getElementById("chapter-rail");
+        if (rail) rail.dataset.here = "";
+        this.updateHere();
       }
     });
   },
@@ -2101,7 +2272,9 @@ const App = {
   gotoLink(a) {
     const node = document.getElementById("item-" + a.dataset.goto);
     if (!node) return;
-    const target = this.tocTarget(node, a.dataset.part, a.dataset.sec, a.dataset.station);
+    const d = a.dataset;
+    const target = (d.ord != null && this.outlineTarget(node, d.part, d.sec, d.station, +d.ord)) ||
+      this.tocTarget(node, d.part, d.sec, d.station);
     this.scrollToItem(target || node);
     const cls = target ? "toc-flash" : "flash";
     (target || node).classList.add(cls);

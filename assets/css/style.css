@@ -1114,7 +1114,6 @@ body.mynote-zoomed { overflow: hidden; }
   .pager-item.next { text-align: left; }
   .pager-empty { display: none; }
   .to-top { right: 16px; bottom: 16px; }
-  .rail { --rail-w: min(306px, 84vw); }
   .rail-tab { padding: 14px 7px; font-size: 11.5px; letter-spacing: .16em; }
   .rail-inner { padding: 14px 4px 12px 14px; }
 }
@@ -1139,7 +1138,7 @@ body.mynote-zoomed { overflow: hidden; }
 /* 收起时把整条推到屏幕外，只把左边的把手留在边缘；用 transform 而不是 width，
    避免「固定定位 + flex 收缩」互相依赖导致面板被压成 0 宽。 */
 .rail {
-  --rail-w: 306px;
+  --rail-w: min(340px, 86vw);
   position: fixed; right: 0; top: 50%;
   z-index: 36;
   display: flex; align-items: center;
@@ -1148,7 +1147,7 @@ body.mynote-zoomed { overflow: hidden; }
   transition: transform .22s ease;
 }
 .rail[hidden] { display: none; }
-.rail:hover, .rail.open { transform: translate(0, -50%); }
+.rail.open { transform: translate(0, -50%); }
 
 .rail-tab {
   flex: none; align-self: center;
@@ -1212,11 +1211,40 @@ body.mynote-zoomed { overflow: hidden; }
 .rail-list a:hover .toc-no { color: var(--accent); }
 .rail .toc-foot { margin-top: 14px; padding-top: 12px; font-size: 12.5px; }
 
-/* 触屏没有 hover，靠点把手钉住 */
-@media (hover: none) {
-  .rail:hover { transform: translate(var(--rail-w), -50%); }
-  .rail.open { transform: translate(0, -50%); }
+/* 按站（或分组）组织的卡：目录里是大纲，一站一块，每节一行列出各条标题；正在读的那一站衬底色 */
+.toc-sub.rail-outline { margin: 4px 0 8px; padding-left: 0; border-left: none; }
+.ol-st { position: relative; margin-left: -8px; padding: 7px 6px 8px 8px; border-radius: 8px; }
+.ol-st + .ol-st { margin-top: 2px; }
+.ol-st.is-here { background: var(--accent-soft); }
+.ol-st.is-here::before {
+  content: ""; position: absolute; left: 0; top: 9px; bottom: 9px;
+  width: 3px; border-radius: 2px; background: var(--accent);
 }
+.ol-st-head { margin-bottom: 3px; }
+.rail-outline a.ol-st-link {
+  display: flex; align-items: baseline; gap: 6px; padding: 0;
+  font-size: 13px; font-weight: 600; line-height: 1.45; color: var(--text);
+}
+.ol-st-no { flex: none; color: var(--accent); }
+.rail-outline a.ol-st-link:hover { background: none; }
+.rail-outline a.ol-st-link:hover .ol-st-name { color: var(--accent); }
+.ol-row {
+  display: grid; grid-template-columns: 2.3em 1fr; column-gap: 6px; align-items: baseline;
+  margin-top: 2px; font-size: 12px; line-height: 1.62;
+}
+.rail-outline a.ol-sec { padding: 0; font-size: 11px; font-weight: 700; color: var(--text-3); }
+.rail-outline a.ol-sec.def { color: var(--def); }
+.rail-outline a.ol-sec.prp { color: var(--prp); }
+.rail-outline a.ol-sec.meaning { color: var(--meaning); }
+.rail-outline a.ol-sec.ex { color: var(--example); }
+.rail-outline a.ol-sec.tip { color: var(--tip); }
+.rail-outline a.ol-sec:hover { background: none; text-decoration: underline; text-underline-offset: 2px; }
+.ol-items { min-width: 0; color: var(--text-2); }
+.ol-run { display: block; }
+.ol-group { margin-right: 6px; font-size: 11px; font-weight: 600; color: var(--text-3); }
+.rail-outline a.ol-item { padding: 0; border-radius: 0; font-size: 12px; color: var(--text-2); }
+.rail-outline a.ol-item:hover { background: none; color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+.ol-dot { margin: 0 .38em; color: var(--text-3); }
 
 /* 窄屏上，个别很长的行内公式（比如二维正态密度）比屏幕还宽，
    KaTeX 的行内公式又不能折行，会把整页顶得能左右滑。
