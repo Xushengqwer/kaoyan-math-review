@@ -1231,6 +1231,118 @@ body.mynote-zoomed { overflow: hidden; }
   .mynote { padding: 16px 15px 18px; }
 }
 
+/* ---- 教材 / 笔记双轨阅读 ---- */
+.content.is-compare {
+  max-width: 1320px;
+  padding-left: 32px;
+  padding-right: 48px;
+}
+.is-compare .entry:not(.is-dual), .is-compare .chapter-summary {
+  max-width: 756px;
+}
+.is-dual .entry-main { container: review-card / inline-size; }
+
+.chapter-view-mode {
+  display: flex; flex: none; gap: 3px;
+  padding: 3px; border: 1px solid var(--border); border-radius: 999px;
+  background: var(--surface);
+}
+.chapter-view-mode button {
+  padding: 6px 12px; border-radius: 999px;
+  font-size: 12.5px; color: var(--text-2);
+}
+.chapter-view-mode button:hover { color: var(--accent); }
+.chapter-view-mode button[aria-pressed="true"] {
+  color: var(--bg); background: var(--text); font-weight: 600;
+}
+
+.dual-track { --dual-color: var(--accent); min-width: 0; max-width: 100%; }
+.dual-controls { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin-bottom: 14px; }
+.dual-controls > .card-book, .dual-controls > .mynote-slot {
+  min-width: 0; margin: 0; padding: 10px 16px;
+  border: 1px solid var(--border); border-radius: var(--r-sm);
+  background: var(--surface);
+}
+.dual-controls > .mynote-slot {
+  border-color: var(--note-border); border-left: 3px solid var(--accent);
+  background: var(--accent-soft);
+}
+.dual-controls .card-book-head, .dual-controls .mynote-head { margin-bottom: 0; }
+.dual-columns { display: none; }
+.dual-row {
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px;
+  min-width: 0; margin: 10px 0;
+}
+.dual-cell, .dual-shared {
+  min-width: 0; max-width: 100%; padding: 12px 16px;
+  border: 1px solid color-mix(in srgb, var(--dual-color) 18%, var(--border));
+  border-left: 3px solid var(--dual-color); border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--dual-color) 3%, var(--surface));
+  overflow-wrap: anywhere;
+}
+.dual-note { background: color-mix(in srgb, var(--dual-color) 8%, var(--surface)); }
+.dual-shared {
+  grid-column: 1 / -1;
+  background: color-mix(in srgb, var(--dual-color) 6%, var(--surface));
+  overflow-x: auto;
+}
+.dual-row[data-sec="定义"], .dual-cell[data-sec="定义"] { --dual-color: var(--def); }
+.dual-row[data-sec="定理"], .dual-cell[data-sec="定理"] { --dual-color: var(--thm); }
+.dual-row[data-sec="性质"], .dual-cell[data-sec="性质"] { --dual-color: var(--prp); }
+.dual-row[data-sec="方法"], .dual-cell[data-sec="方法"] { --dual-color: var(--method); }
+.dual-row[data-sec="意义"], .dual-cell[data-sec="意义"] { --dual-color: var(--meaning); }
+.dual-row[data-sec="例题"], .dual-cell[data-sec="例题"] { --dual-color: var(--example); }
+.dual-row[data-sec="提示"], .dual-cell[data-sec="提示"] { --dual-color: var(--tip); }
+.dual-row.is-wide > .dual-cell { grid-column: 1 / -1; }
+.dual-label {
+  display: block; width: fit-content; margin-bottom: 6px;
+  font-size: 11px; font-weight: 700; letter-spacing: .04em; color: var(--dual-color);
+}
+.dual-missing {
+  display: block; border: 1px dashed var(--border);
+  background: transparent; color: var(--text-3); font-size: 12px; line-height: 1.7;
+}
+.dual-empty { display: none; }
+.dual-cell .entry-statement, .dual-cell .mynote-body {
+  min-width: 0; max-width: 100%; padding: 0;
+  overflow-x: auto; overflow-y: hidden;
+}
+.dual-cell .term-md { min-width: 0; max-width: 100%; }
+.dual-cell .katex-display { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
+.dual-cell table, .dual-cell pre { max-width: 100%; overflow-x: auto; }
+.dual-cell img { max-width: 100%; height: auto; }
+.dual-cell .term-md > .station:first-child, .dual-cell .mynote-body > .station:first-child { margin-top: 0; }
+.dual-shared > .term-label, .dual-shared > :is(h1, h2, h3, h4, h5, h6, p, .station) { margin: 0; }
+.dual-shared > :is(h1, h2, h3, h4, h5, h6) { font-size: 17px; font-weight: 700; line-height: 1.5; }
+.dual-shared > .term-head { color: var(--dual-color); }
+.dual-shared > .station { padding: 0; border: 0; background: transparent; }
+
+/* 758 = 两栏各 (335px 正文 + 32px 内边距 + 4px 边线) + 16px 间距。 */
+@container review-card (min-width: 758px) {
+  .dual-controls, .dual-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .dual-columns {
+    position: sticky; top: var(--dual-sticky-top, 100px); z-index: 11;
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;
+    padding: 6px 0; margin-bottom: 10px;
+    background: var(--bg);
+  }
+  .dual-columns > span {
+    min-width: 0; padding: 8px 16px; border-bottom: 2px solid var(--border);
+    background: var(--surface); color: var(--text-2); font-size: 12px; font-weight: 700;
+  }
+  .dual-columns > span:last-child { border-color: var(--note-border); color: var(--accent); background: var(--accent-soft); }
+  .dual-missing { display: block; }
+  .dual-empty { display: block; padding: 0; border: 0; background: transparent; }
+}
+@media (max-width: 900px) {
+  .content.is-compare {
+    max-width: 100%; padding-left: 20px; padding-right: 20px;
+  }
+}
+@media (max-width: 720px) {
+  .dual-cell, .dual-shared { padding-left: 12px; padding-right: 12px; }
+}
+
 /* ---- 打印 / 导出 PDF ---- */
 @media print {
   /* 只留正文，界面元素全部收起 */
@@ -1238,12 +1350,13 @@ body.mynote-zoomed { overflow: hidden; }
   .toolbar, .pager, .export-bar, .breadcrumb,
   .modal-backdrop, .mynote-edit, .mynote-add, .mynote-actions,
   .mynote-preview-btn, .mynote-zoom-btn, .mynote-restore,
-  .mynote-flag, .station-links, .here { display: none !important; }
+  .mynote-flag, .station-links, .here, .dual-columns, .chapter-view-mode { display: none !important; }
 
   html, body { background: #fff !important; }
   body { color: #000; font-size: 12pt; }
   .app-shell { display: block; }
-  .content { max-width: none; padding: 0; }
+  .content, .content.is-compare { max-width: none; padding: 0; }
+  .is-compare .entry:not(.is-dual), .is-compare .chapter-summary { max-width: none; }
 
   /* 打印时保留分类色和笔记底色，否则一片灰 */
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }

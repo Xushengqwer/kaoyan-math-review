@@ -211,14 +211,14 @@ function sectionStations(text, part) {
 // map：这张卡教材、笔记各有哪些小节、每节有哪些站（App.stationMap）。
 const STATION_P = /<p><strong>(([①-⑳]′?)[ \t]*[^<]*?)<\/strong><\/p>/g;
 
-function stationBarHtml(itemId, part, sec, mark, name, map) {
+function stationBarHtml(itemId, part, sec, mark, name, map, bothCurrent) {
   const attr = (s) => s.replace(/"/g, "&quot;");
   const group = (p, label) => {
     const g = map[p];
     if (!g || !g.kinds.length) return "";
     return `<span class="station-part">${label}</span>` + g.kinds.map((k) => {
       const cls = "station-link " + (BOOK_CLASS[k] || "");
-      if (p === part && k === sec) return `<span class="${cls} current">${k}</span>`;
+      if ((p === part && k === sec) || (bothCurrent && k === (bothCurrent[p] || sec))) return `<span class="${cls} current">${k}</span>`;
       return (g.st[k] || []).some((s) => s.mark === mark)
         ? `<a class="${cls}" href="#item-${itemId}" data-goto="${itemId}" data-part="${p}" data-sec="${k}" data-station="${attr(mark)}">${k}</a>`
         : `<span class="${cls} missing">${k}</span>`;
@@ -258,8 +258,303 @@ function subjectSeal(s) {
   return `<span class="seal">${ch}</span>`;
 }
 
+// 对照只组织显示：源文与整块渲染的 HTML 分别保存字符区间。
+// 不重渲染 Markdown 片段，也不通过 DOM 序列化改变实体、空白或标签。
+function dualHtmlBlocks(html, start = 0, end = html.length) {
+  const tags = /<!--[\s\S]*?-->|<\/?[a-zA-Z][a-zA-Z0-9:-]*(?:\s(?:[^>"']|"[^"]*"|'[^']*')*)?\s*\/?>/g;
+  const voids = /^(?:area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/i;
+  const blocks = [], stack = [];
+  tags.lastIndex = start;
+  let m;
+  while ((m = tags.exec(html)) && m.index < end) {
+    if (m[0].startsWith("<!--")) continue;
+    const tag = m[0].match(/^<\/?([\w:-]+)/)[1].toLowerCase();
+    if (m[0].startsWith("</")) {
+      const node = stack.pop();
+      if (!node || node.tag !== tag) throw new Error("对照 HTML 块不完整");
+      node.innerEnd = m.index;
+      node.end = tags.lastIndex;
+      if (!stack.length) blocks.push(node);
+    } else {
+      const node = { tag, start: m.index, innerStart: tags.lastIndex, open: m[0] };
+      if (voids.test(tag) || /\/>$/.test(m[0])) {
+        node.innerEnd = node.innerStart;
+        node.end = tags.lastIndex;
+        if (!stack.length) blocks.push(node);
+      } else stack.push(node);
+    }
+  }
+  if (stack.length) throw new Error("对照 HTML 块未闭合");
+  return blocks;
+}
+
+function dualSource(raw, part) {
+  const lines = [], re = /[^\n]*(?:\n|$)/g;
+  let m;
+  while ((m = re.exec(raw)) && m[0]) lines.push({ start: m.index, end: re.lastIndex, line: m[0].replace(/\r?\n$/, "") });
+  const level = part === "note" ? noteSections(raw).level : 0;
+  let sec = "", station = "", group = "", fence = "";
+  const records = [];
+  const make = (start, kind, line = "", num = "", title = "") => {
+    const canonical = sec === "意义" || sec === "例题" ? "application" : sec;
+    const key = JSON.stringify([canonical, station, group, kind, num]);
+    records.push({ start, kind, line, title, num, sec, station, group,
+      key: sec === "提示" ? part + key : key, sourcePieces: [], htmlPieces: [], html: "" });
+  };
+  make(0, "content");
+  lines.forEach((l, i) => {
+    const fm = l.line.match(/^\s*(`{3,}|~{3,})/);
+    if (fm) { if (!fence) fence = fm[1][0]; else if (fm[1][0] === fence) fence = ""; return; }
+    if (fence) return;
+    const h = l.line.match(/^(#{1,6})[ \t]+(.*?)[ \t]*$/);
+    const kind = part === "book" ? bookHeadKind(l.line) : h && h[1].length === level && sectionKind(h[2]);
+    if (kind) {
+      sec = kind; station = group = "";
+      make(l.start, "section", l.line);
+      make(l.end, "content");
+      return;
+    }
+    const numbered = (sec === "定义" || sec === "性质") && l.line.match(/^####[ \t]+(\d+)\.[ \t]*(.*?)[ \t]*$/);
+    if (numbered) { make(l.start, "entry", l.line, numbered[1], numbered[2]); return; }
+    if (!sec || sec === "提示") return;
+    // 独立段落才能成为标题边界；紧贴上一段的加粗仍属于原段落。
+    const independent = i === 0 || !lines[i - 1].line.trim() || /^#{1,6}[ \t]/.test(lines[i - 1].line);
+    const st = l.line.match(STATION_LINE);
+    if (st && independent) {
+      station = st[2]; group = "";
+      make(l.start, "station", l.line, "", st[1]);
+      make(l.end, "content");
+      return;
+    }
+    const bold = l.line.match(/^\*\*([^*]+)\*\*[ \t]*$/);
+    let j = i + 1;
+    while (j < lines.length && !lines[j].line.trim()) j++;
+    if (bold && !st && independent && (sec === "定义" || sec === "性质") && j < lines.length && /^####[ \t]+\d+\./.test(lines[j].line)) {
+      group = bold[1];
+      make(l.start, "group", l.line, "", group); make(l.end, "content");
+    }
+  });
+  // 消除同位置的空开头；除此之外，包括空行在内都进入实际行模型。
+  const distinct = records.filter((r, i) => i === records.length - 1 || r.start !== records[i + 1].start);
+  distinct.forEach((r, i) => {
+    const end = i + 1 < distinct.length ? distinct[i + 1].start : raw.length;
+    r.sourcePieces.push({ start: r.start, end, text: raw.slice(r.start, end) });
+  });
+  return distinct;
+}
+
+function dualSide(raw, html, part) {
+  const segments = dualSource(raw, part);
+  const leaves = [];
+  dualHtmlBlocks(html).forEach((n) => {
+    if (part === "book" && /class="(?:term|term-md|note-body)"/.test(n.open)) {
+      if (/class="term"/.test(n.open)) {
+        dualHtmlBlocks(html, n.innerStart, n.innerEnd).forEach((c) => {
+          if (/class="term-md"/.test(c.open)) leaves.push(...dualHtmlBlocks(html, c.innerStart, c.innerEnd));
+          else leaves.push(c);
+        });
+      } else leaves.push(...dualHtmlBlocks(html, n.innerStart, n.innerEnd));
+    } else leaves.push(n);
+  });
+  const matches = new Map();
+  let after = -1;
+  const isMatch = (s, n) => {
+    const text = html.slice(n.start, n.end);
+    if (s.kind === "section") {
+      if (part === "book") return /class="(?:term-label|note-label)\b/.test(n.open) && text.includes("〔" + s.sec + "〕");
+      const h = text.match(/^<h([1-6])\b[^>]*>([\s\S]*?)<\/h\1>$/);
+      return h && +h[1] === noteSections(raw).level && sectionKind(h[2].replace(HTML_TAG, "")) === s.sec;
+    }
+    if (s.kind === "station") return /class="station\b/.test(n.open) && text.includes('data-station="' + s.station + '"');
+    if (s.kind === "group") return text === mdHtml(s.line).trim();
+    if (s.kind === "entry") {
+      const h = text.match(/^<h4\b[^>]*>([\s\S]*?)<\/h4>$/);
+      return h && h[1] === mdHtml(s.num + ". " + s.title, true);
+    }
+    return false;
+  };
+  segments.forEach((s, i) => {
+    if (s.kind === "content") return;
+    const at = leaves.findIndex((n, j) => j > after && isMatch(s, n));
+    if (at < 0) { s.kind = "content"; s.key = part + ":opaque:" + s.start; return; }
+    matches.set(at, i); after = at;
+  });
+  let active = 0, cursor = 0;
+  const htmlPieces = [];
+  const add = (s, start, end, visible) => {
+    if (end <= start) return;
+    const piece = { start, end, text: html.slice(start, end) };
+    htmlPieces.push(piece); s.htmlPieces.push(piece);
+    if (visible) s.html += piece.text;
+  };
+  leaves.forEach((n, i) => {
+    if (matches.has(i)) active = matches.get(i);
+    const s = segments[active];
+    add(s, cursor, n.start, !html.slice(cursor, n.start).includes("<"));
+    add(s, n.start, n.end, true);
+    cursor = n.end;
+    if (s.kind !== "entry" && matches.has(i) && segments[active + 1] && segments[active + 1].kind === "content") active++;
+  });
+  add(segments[active], cursor, html.length, !html.slice(cursor).includes("<"));
+  return { raw, html, segments, sourcePieces: segments.flatMap((s) => s.sourcePieces), htmlPieces };
+}
+
+function dualRows(book, note) {
+  const a = book.segments, b = note.segments;
+  const count = (xs) => { const m = new Map(); xs.forEach((s) => m.set(s.key, (m.get(s.key) || 0) + 1)); return m; };
+  const ca = count(a), cb = count(b);
+  const equal = (x, y) => x.key === y.key && ca.get(x.key) === 1 && cb.get(y.key) === 1;
+  // LCS preserves both original orders. Crossing or duplicate keys stay single-sided.
+  const dp = Array.from({ length: a.length + 1 }, () => new Uint16Array(b.length + 1));
+  for (let i = a.length - 1; i >= 0; i--) for (let j = b.length - 1; j >= 0; j--)
+    dp[i][j] = equal(a[i], b[j]) ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
+  const rows = [];
+  let i = 0, j = 0;
+  const push = (book, note) => rows.push({ kind: (book || note).kind, book, note,
+    merged: !!(book && note && /^(section|station|group)$/.test(book.kind) && book.line === note.line) });
+  while (i < a.length || j < b.length) {
+    if (i < a.length && j < b.length && equal(a[i], b[j])) push(a[i++], b[j++]);
+    else if (i < a.length && (j === b.length || dp[i + 1][j] >= dp[i][j + 1])) push(a[i++], null);
+    else push(null, b[j++]);
+  }
+  return rows;
+}
+
 const App = {
   openSubjects: new Set(),
+
+  dualTrackModel(id, bookRaw, noteRaw) {
+    const texts = { book: String(bookRaw || ""), note: String(noteRaw || "") };
+    const parts = bookParts(texts.book, this.stationDeco(id, texts));
+    const book = dualSide(texts.book, parts.main + parts.tip, "book");
+    const note = dualSide(texts.note, this.stationizeNote(noteMdHtml(texts.note), texts.note, id, texts), "note");
+    const rows = dualRows(book, note);
+    const pairs = rows.filter((r) => r.book && r.note && r.kind === "entry");
+    // 用户逐对核对后只批准这一处标题例外；不能扩大到其他卡、站或近似标题。
+    const approvedEigenPair = (r) => id === "la-eig-def-eigen" && [r.book, r.note].every((s) =>
+      s.sec === "性质" && s.station === "④" && !s.group && s.num === "1") &&
+      r.book.title === "实对称矩阵：凑齐，而且两两垂直" && r.note.title === "实对称矩阵：为什么天然轴一定垂直";
+    const enabled = pairs.length > 0 && pairs.every((r) => r.note.title === r.book.title || r.note.title.startsWith(r.book.title + "：") || approvedEigenPair(r));
+    rows.filter((r) => r.merged).forEach((r) => {
+      // 站名取已经渲染、转义的内容，不能把原文里的 < 或 & 当作新 HTML 插回去。
+      const head = r.kind === "station" && r.book.html.match(/<span class="station-no">[^<]*<\/span>([ \t]*)<span class="station-name">([\s\S]*?)<\/span><\/div>/);
+      const name = head ? r.book.station + head[1] + head[2] : escapeHtml(r.book.title);
+      r.html = r.kind === "station"
+        ? stationBarHtml(id, "book", r.book.sec, r.book.station, name, this.stationMap(id, texts), { book: r.book.sec, note: r.note.sec })
+        : r.book.html;
+    });
+    return { enabled, pairs, rows, book, note };
+  },
+
+  viewMode() {
+    if (!this._viewMode) {
+      let saved;
+      try { saved = localStorage.getItem("kaoyan-card-view"); } catch (_) { /* 默认对照 */ }
+      this._viewMode = saved === "original" ? "original" : "compare";
+    }
+    return this._viewMode;
+  },
+
+  setViewMode(mode) {
+    this._viewMode = mode === "original" ? "original" : "compare";
+    try { localStorage.setItem("kaoyan-card-view", this._viewMode); } catch (_) { /* 本次切换仍有效 */ }
+    this.clearSearchHighlight();
+    document.querySelectorAll("#chapter-item-groups .entry").forEach((entry) => this.maybeApplyDual(entry));
+    this.refreshDualLayout();
+  },
+
+  dualTrackHtml(model) {
+    const attrs = (s, part) => `data-part="${part}" data-sec="${escapeHtml(s.sec)}" data-station="${escapeHtml(s.station)}"`;
+    const cell = (s, part, numbered) => {
+      if (!s) return numbered ? `<div class="dual-cell dual-${part} dual-missing">${part === "book" ? "教材" : "笔记"}没有这一条</div>`
+        : `<div class="dual-cell dual-${part} dual-empty" aria-hidden="true"></div>`;
+      const body = part === "book" ? "entry-statement" : "mynote-body md";
+      return `<div class="dual-cell dual-${part}" ${attrs(s, part)}>` +
+        (part === "note" ? '<span class="dual-label">笔记</span>' : "") +
+        `<div class="${body}">${part === "book" ? '<div class="term-md">' + s.html + '</div>' : s.html}</div></div>`;
+    };
+    return '<div class="dual-track"><div class="dual-columns"><span>教材</span><span>笔记</span></div>' + model.rows.map((r) => {
+      const hasBook = !!(r.book && r.book.html.trim()), hasNote = !!(r.note && r.note.html.trim());
+      if (!hasBook && !hasNote) return "";
+      const s = hasBook ? r.book : r.note;
+      const wide = (!hasBook || !hasNote) && (r.kind === "content" || s.sec === "提示");
+      const cls = "dual-row kind-" + r.kind + (r.merged ? " is-merged" : wide ? " is-wide" : "");
+      if (r.merged) return `<div class="${cls}" data-sec="${escapeHtml(s.sec)}" data-station="${escapeHtml(s.station)}">` +
+        `<div class="dual-shared" data-book-sec="${escapeHtml(r.book.sec)}" data-note-sec="${escapeHtml(r.note.sec)}" data-station="${escapeHtml(s.station)}">${r.html}</div></div>`;
+      return `<div class="${cls}">` + (wide ? cell(s, hasBook ? "book" : "note") : cell(r.book, "book", r.kind === "entry") + cell(r.note, "note", r.kind === "entry")) + "</div>";
+    }).join("") + "</div>";
+  },
+
+  ensureEntryOriginal(entry) {
+    if (!entry || !entry.classList.contains("is-dual")) return;
+    const id = entry.id.slice(5);
+    const section = entry.querySelector("section.card-book");
+    const slot = entry.querySelector(".mynote-slot");
+    const controls = entry.querySelector(".dual-controls");
+    controls.before(section, slot);
+    controls.remove();
+    entry.querySelector(".dual-track").remove();
+    section.innerHTML = this.bookCardInner(id);
+    slot.innerHTML = this.myNoteHtml(id);
+    entry.classList.remove("is-dual");
+    renderMath(entry);
+  },
+
+  maybeApplyDual(entry) {
+    if (!entry || entry.querySelector(".mynote-editing")) return;
+    this.ensureEntryOriginal(entry);
+    if (this._printing || this.viewMode() !== "compare") return;
+    const id = entry.id.slice(5);
+    if (!Notes.has(id)) return;
+    const model = this.dualTrackModel(id, BookEdits.get(id), Notes.get(id));
+    if (!model.enabled) return;
+    const section = entry.querySelector("section.card-book");
+    const slot = entry.querySelector(".mynote-slot");
+    const head = section.querySelector(".card-book-head");
+    const noteHead = slot.querySelector(".mynote-head");
+    const figure = section.querySelector(".entry-figure");
+    section.replaceChildren(head);
+    slot.replaceChildren(noteHead);
+    const controls = document.createElement("div");
+    controls.className = "dual-controls";
+    section.before(controls);
+    controls.append(section, slot);
+    const projection = document.createElement("div");
+    projection.innerHTML = this.dualTrackHtml(model);
+    const track = projection.firstElementChild;
+    controls.after(track);
+    if (figure) {
+      const row = document.createElement("div"); row.className = "dual-row is-wide";
+      const cell = document.createElement("div"); cell.className = "dual-cell dual-book";
+      cell.dataset.part = "book"; cell.append(figure); row.append(cell);
+      const tip = [...track.querySelectorAll(".dual-cell[data-sec='提示']")].find((c) => c.dataset.part === "book");
+      if (tip) tip.closest(".dual-row").before(row); else track.append(row);
+    }
+    entry.classList.add("is-dual");
+    renderMath(track);
+  },
+
+  refreshDualLayout() {
+    const pane = document.getElementById("content-pane");
+    if (!pane) return;
+    (pane.closest(".content") || pane).classList.toggle("is-compare", !!pane.querySelector(".dual-track"));
+    pane.querySelectorAll("[data-view-mode]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.viewMode === this.viewMode())));
+    const measure = () => {
+      const toolbar = pane.querySelector(".toolbar");
+      const mobile = document.querySelector(".mobile-topbar");
+      const mobileHeight = mobile && getComputedStyle(mobile).display !== "none" ? mobile.offsetHeight : 0;
+      pane.style.setProperty("--dual-sticky-top", (mobileHeight + (toolbar ? toolbar.offsetHeight : 0) + 24) + "px");
+      this.updateHere();
+    };
+    if (this._dualResize) this._dualResize.disconnect();
+    if (typeof ResizeObserver !== "undefined") {
+      this._dualResize = new ResizeObserver(measure);
+      const toolbar = pane.querySelector(".toolbar");
+      if (toolbar) this._dualResize.observe(toolbar);
+    }
+    this._measureDual = measure;
+    measure();
+  },
 
   init() {
     const subjects = KaoyanData.subjects().slice().sort((a, b) => a.id.localeCompare(b.id));
@@ -302,7 +597,9 @@ const App = {
       requestAnimationFrame(() => { hereQueued = false; this.updateHere(); });
     };
     window.addEventListener("scroll", here, { passive: true });
-    window.addEventListener("resize", here);
+    window.addEventListener("resize", () => { if (this._measureDual) this._measureDual(); here(); });
+    window.addEventListener("beforeprint", () => this.preparePrint());
+    window.addEventListener("afterprint", () => this.finishPrint());
 
     const toTop = document.getElementById("to-top");
     if (toTop) {
@@ -548,9 +845,9 @@ const App = {
   // 不改笔记、教材原文，离开本页时清掉临时高亮。
   highlightSearchTerm(card, query, source) {
     const selectors = source === "title" ? [".entry-title, .chapter-summary-head"]
-      : source === "book" ? [".entry-statement, .entry-note"]
-      : source === "note" ? [".mynote-slot"] : [];
-    selectors.push(".entry-title, .entry-statement, .entry-note, .mynote-slot, .chapter-summary-head");
+      : source === "book" ? [".entry-statement, .entry-note, .dual-shared[data-book-sec]"]
+      : source === "note" ? [".dual-note .mynote-body, .dual-shared[data-note-sec], .mynote-slot"] : [];
+    selectors.push(".entry-title, .entry-statement, .entry-note, .dual-note .mynote-body, .dual-shared, .mynote-slot, .chapter-summary-head");
     const needle = String(query || "").trim().toLowerCase();
     if (!needle) return null;
     for (const selector of selectors) {
@@ -640,6 +937,7 @@ const App = {
   // ---------------- content ----------------
   renderContent() {
     const el = document.getElementById("content-pane");
+    (el.closest(".content") || el).classList.remove("is-compare");
     el.querySelectorAll(".mindmap-slot[data-preview-url]").forEach((slot) => {
       URL.revokeObjectURL(slot.dataset.previewUrl);
     });
@@ -926,6 +1224,10 @@ const App = {
             return n ? `<button class="chip" data-type="${t}">${TYPE_LABEL[t]}</button>` : "";
           }).join("")}
         </div>
+        <div class="chapter-view-mode" role="group" aria-label="卡片显示方式">
+          <button type="button" data-view-mode="compare" aria-pressed="${this.viewMode() === "compare"}">对照</button>
+          <button type="button" data-view-mode="original" aria-pressed="${this.viewMode() === "original"}">原样</button>
+        </div>
         <button class="here" id="chapter-here" type="button" hidden></button>
       </div>
 
@@ -949,12 +1251,24 @@ const App = {
       </div>`;
   },
 
-  // 打印前把页面整理成完整的一章：清掉筛选、展开目录、收起正在编辑的笔记
-  printChapter(subjectId, chapterId) {
+  // 打印临时原样，不改显示偏好或保存原文。未保存草稿单独快照，打印后重开编辑器。
+  preparePrint() {
+    if (this._printing) return;
+    const drafts = [];
+    document.querySelectorAll("section.card-book[data-book], .mynote-slot").forEach((box) => {
+      const ta = box.querySelector(".mynote-input");
+      if (!ta) return;
+      drafts.push({ part: box.dataset.book ? "book" : "note", id: box.dataset.book || box.dataset.note,
+        value: ta.value, start: ta.selectionStart, end: ta.selectionEnd, scroll: ta.scrollTop,
+        preview: ta.hidden, focused: document.activeElement === ta,
+        zoomed: !!box.querySelector(".fullscreen") });
+    });
+    this._printState = { drafts, query: this.chapterQuery, type: this.chapterTypeFilter, scroll: window.scrollY };
+    this._printing = true;
     this.exitZoom();
     this.closeRail();
     const needsReset = this.chapterQuery || (this.chapterTypeFilter && this.chapterTypeFilter !== "all");
-    if (needsReset) {
+    if (needsReset && this.current && this.current.type === "chapter") {
       this.chapterQuery = "";
       this.chapterTypeFilter = "all";
       const si = document.getElementById("chapter-search");
@@ -962,8 +1276,9 @@ const App = {
       document.querySelectorAll("#chapter-type-filter .chip").forEach((c) => {
         c.classList.toggle("active", c.dataset.type === "all");
       });
-      this.renderChapterGroups(subjectId, chapterId);
+      this.renderChapterGroups(this.current.subjectId, this.current.chapterId);
     }
+    document.querySelectorAll("#chapter-item-groups .entry").forEach((entry) => this.ensureEntryOriginal(entry));
     // 编辑中的笔记先还原成展示态，否则打印出来是个文本框
     document.querySelectorAll(".mynote-slot").forEach((slot) => {
       if (slot.querySelector(".mynote-editing")) {
@@ -978,7 +1293,46 @@ const App = {
       }
     });
     document.querySelectorAll("details.toc").forEach((d) => { d.open = true; });
-    setTimeout(() => window.print(), 60);
+    this.refreshDualLayout();
+  },
+
+  finishPrint() {
+    const state = this._printState;
+    if (!state) return;
+    this._printing = false; this._printState = null;
+    this.chapterQuery = state.query; this.chapterTypeFilter = state.type;
+    if (this.current && this.current.type === "chapter" && (state.query || state.type && state.type !== "all")) {
+      this.renderChapterGroups(this.current.subjectId, this.current.chapterId);
+      const search = document.getElementById("chapter-search");
+      if (search) search.value = state.query || "";
+      document.querySelectorAll("#chapter-type-filter .chip").forEach((c) => c.classList.toggle("active", c.dataset.type === (state.type || "all")));
+    } else document.querySelectorAll("#chapter-item-groups .entry").forEach((entry) => this.maybeApplyDual(entry));
+    state.drafts.forEach((d) => {
+      const selector = d.part === "book" ? "section.card-book[data-book]" : ".mynote-slot";
+      const box = [...document.querySelectorAll(selector)].find((el) => (el.dataset.book || el.dataset.note) === d.id);
+      if (!box) return;
+      const edit = box.querySelector(d.part === "book" ? '[data-book-action="edit"]' : '[data-action="edit"]');
+      if (!edit) return;
+      edit.click();
+      const ta = box.querySelector(".mynote-input");
+      ta.value = d.value;
+      ta.setSelectionRange(d.start, d.end);
+      ta.scrollTop = d.scroll;
+      if (d.part === "book") this.refreshBookWarn(box); else this.refreshEditorWarn(box);
+      const action = d.part === "book" ? "data-book-action" : "data-action";
+      if (d.preview) box.querySelector('[' + action + '="preview"]').click();
+      if (d.zoomed) box.querySelector('[' + action + '="zoom"]').click();
+      if (d.focused && !d.preview) ta.focus({ preventScroll: true });
+    });
+    this.refreshDualLayout();
+    window.scrollTo(0, state.scroll);
+  },
+
+  printChapter() {
+    this.preparePrint();
+    setTimeout(() => {
+      try { window.print(); } catch (e) { this.finishPrint(); throw e; }
+    }, 60);
   },
 
   // 章末固定卡：顺序固定，不属于模块，也不占知识点卡号。
@@ -1149,6 +1503,9 @@ const App = {
   },
 
   bindChapterControls(subjectId, chapterId) {
+    document.querySelectorAll("[data-view-mode]").forEach((button) => {
+      button.addEventListener("click", () => this.setViewMode(button.dataset.viewMode));
+    });
     const searchInput = document.getElementById("chapter-search");
     searchInput.addEventListener("input", (e) => {
       this.chapterQuery = e.target.value.trim();
@@ -1253,10 +1610,12 @@ const App = {
         </section>`;
     });
     wrap.innerHTML = html;
+    wrap.querySelectorAll(".entry").forEach((entry) => this.maybeApplyDual(entry));
     renderMath(wrap);
     this.bindNoteEditors(wrap);
     this.bindBookEditors(wrap);
     this.bindToc(wrap);
+    this.refreshDualLayout();
   },
 
   // 搜索时把正文以外的东西收起来：本章总结会作为一条结果出现在列表里，
@@ -1544,7 +1903,7 @@ const App = {
   },
 
   // 笔记：小节按最外层标题认，第一个小节之前的不算（与 sectionStations 一致）
-  stationizeNote(html, text, itemId) {
+  stationizeNote(html, text, itemId, texts) {
     const level = noteSections(text).level;
     let cur = null, map = null;
     return html.replace(/<h([1-6])\b[^>]*>([\s\S]*?)<\/h\1>|<p><strong>(([①-⑳]′?)[ \t]*[^<]*?)<\/strong><\/p>/g, (m, lv, head, name, mark) => {
@@ -1553,7 +1912,7 @@ const App = {
         return m;
       }
       if (!cur) return m;
-      map = map || this.stationMap(itemId, { note: text });
+      map = map || this.stationMap(itemId, Object.assign({}, texts, { note: text }));
       return stationBarHtml(itemId, "note", cur, mark, name, map);
     });
   },
@@ -1562,12 +1921,35 @@ const App = {
   updateHere() {
     const pill = document.getElementById("chapter-here");
     if (!pill) return;
-    const line = pill.parentElement.getBoundingClientRect().bottom + 30;
+    const columns = document.querySelector(".dual-columns");
+    let line = pill.parentElement.getBoundingClientRect().bottom + 30;
+    if (columns && columns.offsetHeight) {
+      const cs = getComputedStyle(columns);
+      line = Math.max(line, (parseFloat(cs.top) || 0) + columns.offsetHeight + 18);
+    }
     let hit = null;
+    let dual = null;
     document.querySelectorAll("#chapter-item-groups .entry").forEach((entry) => {
-      if (hit || !entry.querySelector(".station")) return;
+      if (hit || dual) return;
       const r = entry.getBoundingClientRect();
       if (r.top > line || r.bottom < line) return;
+      if (entry.classList.contains("is-dual")) {
+        let row = null;
+        for (const el of entry.querySelectorAll(".dual-row")) {
+          if (el.getBoundingClientRect().top > line) break;
+          row = el;
+        }
+        const cell = row && row.querySelector(".dual-shared, .dual-cell[data-sec]");
+        if (cell) {
+          const sec = cell.dataset.bookSec || cell.dataset.sec;
+          const station = cell.dataset.station || "";
+          const bar = [...entry.querySelectorAll(".station")].find((s) => s.dataset.station === station && s.dataset.sec === sec);
+          dual = { sec, station, name: bar && bar.querySelector(".station-name").innerHTML,
+            part: row.querySelector(".dual-book") && row.querySelector(".dual-note") || cell.classList.contains("dual-shared") ? "对照" : cell.dataset.part === "book" ? "教材" : "笔记" };
+        }
+        return;
+      }
+      if (!entry.querySelector(".station")) return;
       const body = entry.querySelector(".mynote-body");
       const heads = body ? [...body.children].filter((h) => /^H[1-6]$/.test(h.tagName)) : [];
       const kinded = heads.filter((h) => sectionKind(h.textContent));
@@ -1584,15 +1966,15 @@ const App = {
       if (cur) hit = cur;
     });
     const st = hit && hit.classList.contains("station");
-    const sec = hit && (st ? hit.dataset.sec : sectionKind(hit.textContent));
+    const sec = dual ? dual.sec : hit && (st ? hit.dataset.sec : sectionKind(hit.textContent));
     if (!sec) { pill.hidden = true; pill.dataset.key = ""; return; }
-    const part = hit.closest("section.card-book") ? "教材" : "笔记";
-    const no = st ? hit.querySelector(".station-no").textContent : "";
+    const part = dual ? dual.part : hit.closest("section.card-book") ? "教材" : "笔记";
+    const no = dual ? dual.station : st ? hit.querySelector(".station-no").textContent : "";
     const key = part + sec + no;
     if (pill.dataset.key !== key) {
       pill.dataset.key = key;
       pill.innerHTML = `<span class="here-part">${part}</span><span class="here-sec ${BOOK_CLASS[sec] || ""}">〔${sec}〕</span>` +
-        (st ? `<span class="here-no">${no}</span><span class="here-name">${hit.querySelector(".station-name").innerHTML}</span>` : "");
+        (no ? `<span class="here-no">${no}</span><span class="here-name">${dual ? dual.name || "" : hit.querySelector(".station-name").innerHTML}</span>` : "");
       pill.title = "打开本章目录";
     }
     pill.hidden = false;
@@ -1692,7 +2074,11 @@ const App = {
   scrollToItem(node) {
     // 吸顶的只有手机顶栏和章节工具栏；按「吸住的位置 + 自身高度」算出会挡住多少
     let covered = 0;
-    document.querySelectorAll(".mobile-topbar, .toolbar").forEach((el) => {
+    const host = node.closest ? node : node.commonAncestorContainer && (node.commonAncestorContainer.nodeType === 1 ? node.commonAncestorContainer : node.commonAncestorContainer.parentElement);
+    const entry = host && host.closest(".entry");
+    const covers = [...document.querySelectorAll(".mobile-topbar, .toolbar")];
+    if (entry) covers.push(...entry.querySelectorAll(".dual-columns"));
+    covers.forEach((el) => {
       const cs = getComputedStyle(el);
       if (!el.offsetHeight || cs.display === "none" || cs.position !== "sticky") return;
       covered = Math.max(covered, (parseFloat(cs.top) || 0) + el.offsetHeight);
@@ -1703,6 +2089,7 @@ const App = {
 
   bindToc(scope) {
     scope.querySelectorAll("[data-goto]").forEach((a) => {
+      if (a.closest(".station-links")) return; // 站牌由 document 委托，避免重复跳转
       a.addEventListener("click", (e) => {
         e.preventDefault();
         this.gotoLink(a);
@@ -1727,6 +2114,16 @@ const App = {
     if (!part) return null;
     const box = node.querySelector(part === "book" ? "section.card-book" : ".mynote-slot");
     if (!box || !sec) return box;
+    const track = node.querySelector(".dual-track");
+    if (track) {
+      const targets = [...track.querySelectorAll(".dual-shared, .dual-cell[data-sec]")].filter((el) =>
+        (el.classList.contains("dual-shared") ? el.dataset[part + "Sec"] : el.dataset.part === part && el.dataset.sec) === sec);
+      const stationHead = station && targets.find((el) => el.dataset.station === station && el.closest(".kind-station"));
+      if (stationHead) return stationHead.closest(".dual-row");
+      const head = targets.find((el) => el.closest(".kind-section")) || targets[0];
+      if (head) return head.classList.contains("dual-shared") ? head.closest(".dual-row") : head;
+      return box;
+    }
     // 站名行显示成站牌（.station）；万一没换成站牌，就认只含一个 <strong> 的 <p>。「⑤」不能认成「⑤′」
     const isStation = (p) => {
       if (p.classList.contains("station")) return p.dataset.station === station;
@@ -1855,7 +2252,11 @@ const App = {
       if (section.dataset.bound) return;
       section.dataset.bound = "1";
       const id = section.dataset.book;
-      const show = (html) => { section.innerHTML = html; renderMath(section); };
+      const show = (html) => {
+        section.innerHTML = html; renderMath(section);
+        this.maybeApplyDual(section.closest(".entry"));
+        this.refreshDualLayout();
+      };
       const fit = (ta) => { ta.style.height = Math.min(ta.scrollHeight + 4, 640) + "px"; };
 
       section.addEventListener("click", (e) => {
@@ -1864,6 +2265,7 @@ const App = {
         const action = btn.dataset.bookAction;
 
         if (action === "edit") {
+          this.ensureEntryOriginal(section.closest(".entry"));
           show(this.bookEditorHtml());
           const ta = section.querySelector(".mynote-input");
           // 直接赋值而不是写进 HTML：textarea 会吞掉开头的换行，赋值才能逐字节原样
@@ -2065,7 +2467,11 @@ const App = {
       if (slot.dataset.bound) return;
       slot.dataset.bound = "1";
       const id = slot.dataset.note;
-      const show = (html) => { slot.innerHTML = html; renderMath(slot); };
+      const show = (html) => {
+        slot.innerHTML = html; renderMath(slot);
+        this.maybeApplyDual(slot.closest(".entry"));
+        this.refreshDualLayout();
+      };
 
       slot.addEventListener("click", (e) => {
         const btn = e.target.closest("[data-action]");
@@ -2073,8 +2479,10 @@ const App = {
         const action = btn.dataset.action;
 
         if (action === "edit") {
+          this.ensureEntryOriginal(slot.closest(".entry"));
           show(this.editorHtml(id));
           const ta = slot.querySelector(".mynote-input");
+          ta.value = Notes.get(id);
           // 已有内容的话，先把输入框撑到刚好放下（最高 560px），省得一上来就在小窗里翻
           if (ta.value) ta.style.height = Math.min(ta.scrollHeight + 4, 560) + "px";
           this.bindMdFile(slot, id);
