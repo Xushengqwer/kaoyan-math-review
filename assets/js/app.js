@@ -205,10 +205,10 @@ function sectionStations(text, part) {
   return out;
 }
 
-// 大纲视图的骨架：按站（没有站就整张卡一块）列出教材〔定义〕〔性质〕「意义」和笔记〔例题〕〔提示〕里每一条的标题，
-// 一眼看到每一站里有什么（右侧目录的条数也从这里来）。认法与对照视图相同：站名行要独立成段；分组行是整行加粗、后面（隔空行）紧跟「#### n.」的一行。
+// 一张卡的骨架：按站（没有站就整张卡一块）列出教材〔定义〕〔性质〕「意义」和笔记〔例题〕〔提示〕里每一条的标题，
+// 站卡上的小标题、右侧目录的条数、章节头的统计都从这里来。认法与对照视图相同：站名行要独立成段；分组行是整行加粗、后面（隔空行）紧跟「#### n.」的一行。
 // 条目：〔定义〕〔性质〕〔提示〕是「#### n. 标题」，意义是顶格的「* **n. 标题**」，例题是「#### 例题 n：标题」。
-// ord：这一条在「这一节的这一站」里排第几（从 0 起），展开时在渲染好的原文里按同样的规则数到它（outlineItemNodes）。
+// ord：这一条在「这一节的这一站」里排第几（从 0 起），点站卡上的小标题时按它在页面上数到那张卡片（App.stationChipTarget）。
 // → { structured: 有站或有分组（都没有就不用大纲）, blocks: [{ mark, name, rows: { 部分+小节: { part, sec, items: [{ title, num, ord, group }] } } }] }
 const OUTLINE_SECS = [["book", "定义"], ["book", "性质"], ["book", "意义"], ["note", "例题"], ["note", "提示"]];
 
@@ -236,7 +236,7 @@ function cardOutline(book, note) {
         const h = line.match(/^(#{1,6})[ \t]+(.*?)[ \t]*$/);
         if (h && h[1].length <= level) { sec = sectionKind(h[2]); station = group = ""; return; }
       }
-      // 笔记的〔定义〕〔性质〕和教材一一对应，不单列；只记下标题，给大纲每一行配上笔记的那半句（rows 里的 note定义 / note性质）
+      // 笔记的〔定义〕〔性质〕和教材一一对应，也记下标题（rows 里的 note定义 / note性质）
       const noteDef = part === "note" && (sec === "定义" || sec === "性质");
       if (!noteDef && !OUTLINE_SECS.some(([p, s]) => p === part && s === sec)) return;
       const independent = i === 0 || !lines[i - 1].trim() || /^#{1,6}[ \t]/.test(lines[i - 1]);
@@ -267,7 +267,7 @@ function cardOutline(book, note) {
   return { structured, blocks: blocks.filter((b) => b.mark || Object.keys(b.rows).length) };
 }
 
-// 「本卡主线」那一段：开头一句（lead）和每一站的一句话（st），大纲和对照的站名下面用。没有就是空的。
+// 「本卡主线」那一段：开头一句（lead，章节标题下面用）和每一站的一句话（st，站卡上用）。没有就是空的。
 function cardStory(book) {
   const out = { lead: "", st: {} };
   String(book == null ? "" : book).split("\n").forEach((raw) => {
@@ -280,67 +280,19 @@ function cardStory(book) {
   return out;
 }
 
-// 大纲一行里笔记的那半句：笔记标题是「教材标题：一句话」时取后半句；冒号前相同、后面不同时取冒号后面；都不是就整句
-function outlineGist(bookTitle, noteTitle) {
-  if (!noteTitle || noteTitle === bookTitle) return "";
-  if (noteTitle.startsWith(bookTitle + "：")) return noteTitle.slice(bookTitle.length + 1);
-  const i = noteTitle.indexOf("：");
-  if (i > 0 && bookTitle.startsWith(noteTitle.slice(0, i + 1))) return noteTitle.slice(i + 1);
-  return noteTitle;
+// 单张小卡片编辑：一格对应原文里 [start, end) 这一段。前面的空行（lead）和末尾的空白（tail）原样保留，
+// 只把中间的正文（core）交给用户改，拼回去时下一个标题不会粘上来。core 不改就原样拼回，和原文一字不差。
+function cellSource(full, start, end) {
+  const piece = String(full).slice(start, end);
+  const lead = piece.match(/^(?:[ \t]*\r?\n)*/)[0];
+  const core = piece.slice(lead.length).replace(/\s+$/, "");
+  return { lead, core, tail: piece.slice(lead.length + core.length) };
 }
 
-// 大纲里展开一条：在这张卡渲染好的教材（bookParts）或笔记（noteMdHtml）里，按小节、站、序号找到这一条，返回它的几块（复制品）。
-// 认法与 cardOutline 一致：站名行是只含一个加粗、圈号开头的段落；分组行是只含一个加粗、后面紧跟「n.」标题的段落。
-// 返回的块不含这一条自己的标题（大纲那一行已经有了）；找不到返回 null。
-function outlineItemNodes(root, part, sec, station, ord, noteLevel) {
-  const strongOnly = (el) => el.tagName === "P" && el.childElementCount === 1 && el.firstElementChild.tagName === "STRONG" &&
-    el.textContent.trim() === el.firstElementChild.textContent.trim();
-  const isHead = (el) => /^H[2-6]$/.test(el.tagName);
-  const blocks = [];
-  let cur = null, st = "";
-  const push = (el) => {
-    if (part === "note" && /^H[1-6]$/.test(el.tagName) && +el.tagName.charAt(1) <= noteLevel) { cur = sectionKind(el.textContent); st = ""; return; }
-    const m = strongOnly(el) && el.textContent.trim().match(/^([①-⑳]′?)/);
-    if (m) { st = m[1]; return; }
-    blocks.push({ el, sec: cur, station: st });
-  };
-  if (part === "book") {
-    [...root.children].forEach((t) => {
-      const label = t.querySelector(":scope > .term-label");
-      cur = label ? sectionKind(label.textContent) : null;
-      st = "";
-      const md = t.classList.contains("term-md") ? t : t.querySelector(":scope > .term-md");
-      if (md) [...md.children].forEach(push);
-    });
-  } else [...root.children].forEach(push);
-  const scope = blocks.filter((b) => b.sec === sec && b.station === (station || "")).map((b) => b.el);
-  if (sec === "意义") {
-    const lis = scope.filter((el) => el.tagName === "UL" || el.tagName === "OL").flatMap((list) => [...list.children].filter((li) =>
-      li.tagName === "LI" && li.firstElementChild && li.firstElementChild.tagName === "STRONG" && /^\d+\./.test(li.firstElementChild.textContent.trim())));
-    const li = lis[ord];
-    if (!li) return null;
-    const list = document.createElement(li.parentElement.tagName);
-    const copy = li.cloneNode(true);
-    copy.firstElementChild.remove();
-    list.append(copy);
-    return [list];
-  }
-  const start = (el) => {
-    const t = el.textContent.trim();
-    if (sec === "例题") return isHead(el) && /^例题\s*\d+(?![\d.])/.test(t);
-    if (sec === "定义" || sec === "性质") return el.tagName === "H4" && /^\d+\./.test(t);
-    return isHead(el) && /^\d+\./.test(t);
-  };
-  const group = (el) => strongOnly(el) && el.nextElementSibling && el.nextElementSibling.tagName === "H4" && /^\d+\./.test(el.nextElementSibling.textContent.trim());
-  let n = -1, head = null;
-  const out = [];
-  for (const el of scope) {
-    if (head) {
-      if (start(el) || group(el) || (isHead(el) && +el.tagName.charAt(1) <= +head.tagName.charAt(1))) break;
-      out.push(el.cloneNode(true));
-    } else if (start(el) && ++n === ord) head = el;
-  }
-  return head ? out : null;
+function cellSplice(full, start, end, val) {
+  const { lead, tail } = cellSource(full, start, end);
+  const v = String(val).replace(/^(?:[ \t]*\r?\n)*/, "").replace(/\s+$/, "");
+  return String(full).slice(0, start) + lead + v + tail + String(full).slice(end);
 }
 
 // 站牌：站名行渲染后是「<p><strong>⑥ 读出符号</strong></p>」，显示时换成醒目的一块：
@@ -558,8 +510,6 @@ function dualRows(book, note) {
   return rows;
 }
 
-const VIEW_MODES = ["outline", "compare", "original"];
-
 const App = {
   openSubjects: new Set(),
 
@@ -586,35 +536,14 @@ const App = {
     return { enabled, pairs, rows, book, note };
   },
 
-  // 卡片的显示方式：大纲（outline，默认）/ 对照（compare）/ 原样（original），记在本机。
-  // 从搜索结果跳进来时，大纲里看不到命中的那句话，这一次临时按对照显示（_viewOverride，不记）。
-  viewMode() {
-    if (this._viewOverride) return this._viewOverride;
-    if (!this._viewMode) {
-      let saved;
-      try { saved = localStorage.getItem("kaoyan-view"); } catch (_) { /* 默认大纲 */ }
-      this._viewMode = VIEW_MODES.includes(saved) ? saved : "outline";
-    }
-    return this._viewMode;
-  },
-
-  setViewMode(mode) {
-    this._viewOverride = null;
-    this._viewMode = VIEW_MODES.includes(mode) ? mode : "outline";
-    try { localStorage.setItem("kaoyan-view", this._viewMode); } catch (_) { /* 本次切换仍有效 */ }
-    this.clearSearchHighlight();
-    document.querySelectorAll("#chapter-item-groups .entry").forEach((entry) => this.maybeApplyDual(entry));
-    this.refreshDualLayout();
-    this.updateHere();
-  },
-
   dualTrackHtml(model) {
     const attrs = (s, part) => `data-part="${part}" data-sec="${escapeHtml(s.sec)}" data-station="${escapeHtml(s.station)}"`;
     const cell = (s, part, numbered) => {
       if (!s) return numbered ? `<div class="dual-cell dual-${part} dual-missing">${part === "book" ? "教材" : "笔记"}没有这一条</div>`
         : `<div class="dual-cell dual-${part} dual-empty" aria-hidden="true"></div>`;
       const body = part === "book" ? "entry-statement" : "mynote-body md";
-      return `<div class="dual-cell dual-${part}" ${attrs(s, part)}>` +
+      const src = s.sourcePieces.length ? ` data-src="${s.sourcePieces[0].start}-${s.sourcePieces[s.sourcePieces.length - 1].end}"` : "";
+      return `<div class="dual-cell dual-${part}" ${attrs(s, part)}${src}>` +
         (part === "note" ? '<span class="dual-label">笔记</span>' : "") +
         `<div class="${body}">${part === "book" ? '<div class="term-md">' + s.html + '</div>' : s.html}</div></div>`;
     };
@@ -631,31 +560,25 @@ const App = {
   },
 
   ensureEntryOriginal(entry) {
-    if (!entry || !(entry.classList.contains("is-dual") || entry.classList.contains("is-outline"))) return;
+    if (!entry || !entry.classList.contains("is-dual")) return;
     const id = entry.id.slice(5);
     const section = entry.querySelector("section.card-book");
     const slot = entry.querySelector(".mynote-slot");
     const controls = entry.querySelector(".dual-controls");
     controls.before(section, slot);
     controls.remove();
-    const view = entry.querySelector(".dual-track, .outline-view");
-    if (view) view.remove();
+    entry.querySelector(".dual-track").remove();
     section.innerHTML = this.bookCardInner(id);
     slot.innerHTML = this.myNoteHtml(id);
-    entry.classList.remove("is-dual", "is-outline");
+    entry.classList.remove("is-dual");
     renderMath(entry);
   },
 
   maybeApplyDual(entry) {
-    if (!entry || entry.querySelector(".mynote-editing")) return;
+    if (!entry || entry.querySelector(".mynote-editing, .cell-editing")) return;
     this.ensureEntryOriginal(entry);
-    const mode = this.viewMode();
-    if (this._printing || mode === "original") return;
+    if (this._printing) return;
     const id = entry.id.slice(5);
-    if (mode === "outline" && cardOutline(BookEdits.get(id), Notes.has(id) ? Notes.get(id) : "").structured) {
-      this.applyOutline(entry, id);
-      return;
-    }
     if (!Notes.has(id)) return;
     const model = this.dualTrackModel(id, BookEdits.get(id), Notes.get(id));
     if (!model.enabled) return;
@@ -674,13 +597,10 @@ const App = {
     projection.innerHTML = this.dualTrackHtml(model);
     const track = projection.firstElementChild;
     controls.after(track);
-    // 每一站第一次出现时，站名下面加上「本卡主线」里这一站的那句话（只加显示，原文不动）
-    const story = cardStory(BookEdits.get(id)).st, seen = new Set();
-    track.querySelectorAll(".dual-row.kind-station .station").forEach((bar) => {
-      const mark = bar.dataset.station;
-      if (seen.has(mark) || !story[mark]) return;
-      seen.add(mark);
-      bar.insertAdjacentHTML("beforeend", `<div class="station-story">${mdHtml(story[mark], true)}</div>`);
+    this.decorateStations(track, id);
+    // 每张小卡片右上角一个「编辑」：只改这一格对应的那段原文（editCell）
+    track.querySelectorAll(".dual-row.kind-entry > .dual-cell[data-src], .dual-row.kind-content > .dual-cell[data-src]").forEach((cell) => {
+      cell.insertAdjacentHTML("afterbegin", '<button type="button" class="cell-edit" title="只改这一张卡片">编辑</button>');
     });
     if (figure) {
       const row = document.createElement("div"); row.className = "dual-row is-wide";
@@ -693,112 +613,148 @@ const App = {
     renderMath(track);
   },
 
-  // ---------------- 大纲 ----------------
-  // 按站（或分组）组织的卡：一站一块，站名、本卡主线里这一站的一句话、各节条数；
-  // 下面每节一行行列出标题，〔定义〕〔性质〕后面跟笔记标题的那半句。点一行就在原地展开教材和笔记，不跳走。
-  applyOutline(entry, id) {
-    const section = entry.querySelector("section.card-book");
-    const slot = entry.querySelector(".mynote-slot");
-    const head = section.querySelector(".card-book-head");
-    const noteHead = slot.querySelector(".mynote-head");
-    section.replaceChildren(head);
-    if (noteHead) slot.replaceChildren(noteHead);
-    const controls = document.createElement("div");
-    controls.className = "dual-controls";
-    section.before(controls);
-    controls.append(section, slot);
-    const box = document.createElement("div");
-    box.innerHTML = this.outlineHtml(id);
-    const view = box.firstElementChild;
-    controls.after(view);
-    entry.classList.add("is-outline");
-    renderMath(view);
-  },
-
-  outlineHtml(id) {
-    const book = BookEdits.get(id), note = Notes.has(id) ? Notes.get(id) : "";
-    const o = cardOutline(book, note);
-    const story = cardStory(book).st;
+  // 站卡：站名下面是「本卡主线」里这一站的那句话（每站只在第一次出现时加），再下面是这一站这一节的小标题，
+  // 点一个跳到那张卡片。意义那一行和笔记的例题同在一张站卡上，两组各占一行。
+  // 没有站、按分组组织的卡（第 3 章卡②），小标题放在分组那一行。只加显示，原文不动。
+  decorateStations(track, id) {
+    const book = BookEdits.get(id);
+    const o = cardOutline(book, Notes.has(id) ? Notes.get(id) : "");
+    const story = cardStory(book).st, seen = new Set();
     const attr = (v) => escapeHtml(v).replace(/"/g, "&quot;");
-    const blocks = o.blocks.map((b) => {
-      const counts = OUTLINE_SECS.map(([p, sec]) => [sec, (b.rows[p + sec] || { items: [] }).items.length]).filter((c) => c[1]);
-      const head = b.mark ? `<div class="ov-head" role="button" tabindex="0" aria-expanded="true">` +
-        `<span class="ov-no">${escapeHtml(b.mark)}</span>` +
-        `<span class="ov-head-main"><span class="ov-name">${mdHtml(b.name.slice(b.mark.length).trim(), true)}</span>` +
-        (story[b.mark] ? `<span class="ov-story">${mdHtml(story[b.mark], true)}</span>` : "") + `</span>` +
-        `<span class="ov-counts">${counts.map(([sec, n]) => `<span class="ov-cnt ${BOOK_CLASS[sec]}">${sec}<b>${n}</b></span>`).join("")}</span></div>` : "";
-      const secs = OUTLINE_SECS.map(([part, sec]) => {
-        const r = b.rows[part + sec];
-        if (!r) return "";
-        const notes = (b.rows["note" + sec] || { items: [] }).items;
+    const chips = (lists, station) => {
+      if (!lists.length) return "";
+      const label = lists.length > 1;
+      return `<div class="st-titles">` + lists.map((l) => {
         let group = "";
-        const lines = r.items.map((it) => {
-          const g = it.group && it.group !== group ? `<div class="ov-grp">${mdHtml(it.group, true)}</div>` : "";
+        const items = l.items.map((it, k) => {
+          const g = it.group && it.group !== group && !l.inGroup ? `<span class="st-grp">${mdHtml(it.group, true)}</span>` : "";
           group = it.group;
-          const pair = notes.find((x) => x.ord === it.ord);
-          const gist = part === "book" && pair ? outlineGist(it.title, pair.title) : "";
-          return g + `<div class="ov-line${gist ? "" : " no-gist"}" role="button" tabindex="0" aria-expanded="false" ` +
-            `data-part="${part}" data-sec="${sec}" data-station="${attr(b.mark)}" data-ord="${it.ord}">` +
-            `<span class="ov-num">${escapeHtml(it.num)}</span><span class="ov-t">${mdHtml(it.title, true)}</span>` +
-            (gist ? `<span class="ov-g">${mdHtml(gist, true)}</span>` : "") + `<span class="ov-chev" aria-hidden="true"></span></div>`;
+          return g + `<button type="button" class="st-chip" data-part="${l.part}" data-sec="${l.sec}" data-station="${attr(station)}" data-ord="${l.inGroup ? k : it.ord}">${mdHtml(it.title, true)}</button>`;
         }).join("");
-        return `<div class="ov-sec" data-sec="${sec}"><div class="ov-label ${BOOK_CLASS[sec]}">${sec}</div><div class="ov-items">${lines}</div></div>`;
-      }).join("");
-      return `<section class="ov-station"${b.mark ? ` data-station="${attr(b.mark)}"` : ""}>${head}<div class="ov-body">${secs}</div></section>`;
-    }).join("");
-    return `<div class="outline-view" data-outline="${attr(id)}">${blocks}</div>`;
-  },
-
-  // 展开用的原文渲染，按卡缓存；原文改了就重算
-  outlineSource(id) {
-    const book = BookEdits.get(id), note = Notes.has(id) ? Notes.get(id) : "";
-    this._ovSrc = this._ovSrc || {};
-    const c = this._ovSrc[id];
-    if (c && c.bookText === book && c.noteText === note) return c;
-    const dom = (html) => { const t = document.createElement("template"); t.innerHTML = html; return t.content; };
-    return (this._ovSrc[id] = { bookText: book, noteText: note, book: dom(bookParts(book).main), note: dom(noteMdHtml(note)), level: noteSections(note).level });
-  },
-
-  outlinePanelHtml(line) {
-    const id = line.closest(".outline-view").dataset.outline;
-    const { part, sec, station } = line.dataset;
-    const ord = +line.dataset.ord;
-    const src = this.outlineSource(id);
-    const take = (p) => {
-      const nodes = outlineItemNodes(p === "book" ? src.book : src.note, p, sec, station, ord, src.level);
-      if (!nodes) return null;
-      const div = document.createElement("div");
-      nodes.forEach((n) => div.append(n));
-      return div.innerHTML;
+        return `<div class="st-line" data-sec="${l.sec}">${label ? `<span class="st-label ${BOOK_CLASS[l.sec]}">${l.sec}</span>` : ""}${items}</div>`;
+      }).join("") + `</div>`;
     };
-    const cell = (p, html, tag) => `<div class="ov-cell ov-${p}">${tag ? `<span class="ov-cell-tag">${tag}</span>` : ""}` +
-      (p === "book" ? `<div class="entry-statement"><div class="term-md">${html}</div></div>` : `<div class="mynote-body md">${html}</div>`) + `</div>`;
-    const book = part === "book" ? take("book") : null;
-    const note = sec === "定义" || sec === "性质" ? take("note") : part === "note" ? take("note") : null;
-    if (book == null && note == null) return `<p class="ov-missing">没找到这一条的正文，切到「对照」或「原样」看。</p>`;
-    return `<div class="ov-pair${book != null && note != null ? " is-pair" : ""}">` +
-      (book != null ? cell("book", book, "") : "") + (note != null ? cell("note", note, book != null ? "笔记" : "") : "") + `</div>`;
+    const listsFor = (b, secs) => {
+      const lists = [];
+      [...new Set(secs)].forEach((sec) => {
+        const part = sec === "例题" || sec === "提示" ? "note" : "book";
+        const r = b && b.rows[part + sec];
+        if (r && r.items.length) lists.push({ part, sec, items: r.items });
+      });
+      return lists;
+    };
+    const stationRows = track.querySelectorAll(".dual-row.kind-station");
+    stationRows.forEach((row) => {
+      row.querySelectorAll(".station").forEach((bar) => {
+        const mark = bar.dataset.station;
+        const shared = bar.closest(".dual-shared");
+        const secs = shared ? [shared.dataset.bookSec, shared.dataset.noteSec] : [bar.closest(".dual-cell").dataset.sec];
+        let html = "";
+        if (!seen.has(mark) && story[mark]) {
+          seen.add(mark);
+          html += `<div class="station-story">${mdHtml(story[mark], true)}</div>`;
+        }
+        html += chips(listsFor(o.blocks.find((x) => x.mark === mark), secs), mark);
+        if (html) bar.insertAdjacentHTML("beforeend", html);
+      });
+    });
+    if (stationRows.length) return;
+    track.querySelectorAll(".dual-row.kind-group").forEach((row) => {
+      const head = row.querySelector(".dual-shared") || row.querySelector(".dual-cell");
+      const sec = row.dataset.sec || (head && head.dataset.sec);
+      const name = head && head.textContent.trim();
+      const b = o.blocks.find((x) => x.mark === (row.dataset.station || ""));
+      const r = b && b.rows["book" + sec];
+      const items = r ? r.items.filter((it) => it.group && mdHtml(it.group, true).replace(HTML_TAG, "").trim() === name) : [];
+      if (head && items.length) head.insertAdjacentHTML("beforeend", chips([{ part: "book", sec, items, inGroup: true }], ""));
+    });
   },
 
-  toggleOutlineLine(line) {
-    const open = line.getAttribute("aria-expanded") !== "true";
-    line.setAttribute("aria-expanded", String(open));
-    let panel = line.nextElementSibling;
-    if (!panel || !panel.classList.contains("ov-panel")) {
-      if (!open) return;
-      panel = document.createElement("div");
-      panel.className = "ov-panel";
-      panel.innerHTML = this.outlinePanelHtml(line);
-      line.after(panel);
-      renderMath(panel);
+  // 站卡上的小标题对应的那张卡片：从站卡（或分组行）往下，到下一站、下一节之前，按同样的规则数到第 ord 张
+  stationChipTarget(chip) {
+    const start = chip.closest(".dual-row");
+    if (!start) return null;
+    const { part, sec } = chip.dataset;
+    const ord = +chip.dataset.ord;
+    const rows = [];
+    for (let r = start.nextElementSibling; r; r = r.nextElementSibling) {
+      if (r.classList.contains("kind-station") || r.classList.contains("kind-section")) break;
+      if (start.classList.contains("kind-group") && r.classList.contains("kind-group")) break;
+      rows.push(r);
     }
-    panel.hidden = !open;
+    if (sec === "定义" || sec === "性质") return rows.filter((r) => r.classList.contains("kind-entry"))[ord] || null;
+    const cells = rows.map((r) => r.querySelector('.dual-cell[data-part="' + part + '"]')).filter(Boolean);
+    const items = sec === "意义"
+      ? cells.flatMap((c) => [...c.querySelectorAll(".term-md > ul > li, .term-md > ol > li")].filter((li) =>
+        li.firstElementChild && li.firstElementChild.tagName === "STRONG" && /^\d+\./.test(li.firstElementChild.textContent.trim())))
+      : cells.flatMap((c) => [...c.querySelectorAll("h2, h3, h4, h5, h6")].filter((h) => /^例题\s*\d+(?![\d.])/.test(h.textContent.trim())));
+    return items[ord] || null;
   },
 
-  toggleOutlineStation(head) {
-    const st = head.closest(".ov-station");
-    const folded = st.classList.toggle("folded");
-    head.setAttribute("aria-expanded", String(!folded));
+  // 单张小卡片的编辑：只改这一格对应的那段原文（教材或笔记），拼回整张卡的原文存在本机，
+  // 和整卡编辑一样标成「本地已改」，导出待提交文件交给 Claude 提交。前后的空行原样保留，免得把下一个标题粘上来。
+  editCell(cell) {
+    const entry = cell && cell.closest(".entry");
+    if (!entry || !cell.dataset.src || entry.querySelector(".cell-editing, .mynote-editing")) return;
+    const id = entry.id.slice(5), part = cell.dataset.part;
+    const full = part === "book" ? BookEdits.get(id) : Notes.get(id);
+    const [start, end] = cell.dataset.src.split("-").map(Number);
+    const { core } = cellSource(full, start, end);
+    this._cellEdit = { id, part, full, start, end, core, html: cell.innerHTML };
+    cell.classList.add("cell-editing");
+    cell.innerHTML = `<div class="cell-editor">
+      <div class="cell-editor-head">${part === "book" ? "教材" : "笔记"} · 只改这一张</div>
+      <textarea class="mynote-input cell-input" spellcheck="false"></textarea>
+      <div class="mynote-actions"><button class="mynote-save" data-cell-action="save">保存</button><button class="mynote-cancel" data-cell-action="cancel">取消</button></div>
+    </div>`;
+    const ta = cell.querySelector(".cell-input");
+    ta.value = core;
+    const fit = () => { ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight + 4, 640) + "px"; };
+    ta.addEventListener("input", fit);
+    fit();
+    ta.focus();
+  },
+
+  cellAction(btn) {
+    const cell = btn.closest(".dual-cell");
+    const ed = this._cellEdit;
+    const entry = cell && cell.closest(".entry");
+    if (!ed || !entry || entry.id !== "item-" + ed.id) return;
+    const ta = cell.querySelector(".cell-input");
+    const close = () => { cell.classList.remove("cell-editing"); cell.innerHTML = ed.html; this._cellEdit = null; };
+    const val = ta.value.replace(/^(?:[ \t]*\r?\n)*/, "").replace(/\s+$/, "");
+    if (btn.dataset.cellAction === "cancel") {
+      if (val !== ed.core && !confirm("改动还没保存，确定放弃吗？")) return;
+      close();
+      return;
+    }
+    if (val === ed.core) { close(); return; }
+    if ((ed.part === "book" ? BookEdits.get(ed.id) : Notes.get(ed.id)) !== ed.full) {
+      alert("这张卡的原文在别处改过了，刷新页面后再改。");
+      return;
+    }
+    if (!val && !confirm("这一张清空以后，这段原文就没有了。确定吗？")) return;
+    const chk = this.codeBlockCheck(val);
+    if (chk && !confirm("第 " + chk.lines.slice(0, 8).join("、") + " 行的缩进会显示成代码块。内容不会丢，要继续保存吗？")) return;
+    const next = cellSplice(ed.full, ed.start, ed.end, val);
+    if (!(ed.part === "book" ? BookEdits.set(ed.id, next) : Notes.set(ed.id, next))) {
+      alert("保存失败：浏览器存储空间不足或被禁用。");
+      return;
+    }
+    const at = [...entry.querySelectorAll(".dual-row")].indexOf(cell.closest(".dual-row"));
+    this._cellEdit = null;
+    cell.classList.remove("cell-editing");
+    this.maybeApplyDual(entry);
+    this.refreshDualLayout();
+    this.refreshNoteCount();
+    this.refreshTocSub(ed.id);
+    if (ed.part === "note") this.refreshTocState(ed.id);
+    const row = entry.querySelectorAll(".dual-row")[at];
+    const back = row || entry;
+    this.scrollToItem(back);
+    back.classList.add("toc-flash");
+    setTimeout(() => back.classList.remove("toc-flash"), 1800);
+    if (ed.part === "note") this.askDownload(ed.id);
   },
 
   // 一章只有一张按站组织的超级卡：章节头、右侧目录都按站来
@@ -811,8 +767,7 @@ const App = {
   refreshDualLayout() {
     const pane = document.getElementById("content-pane");
     if (!pane) return;
-    (pane.closest(".content") || pane).classList.toggle("is-compare", !!pane.querySelector(".dual-track, .outline-view"));
-    pane.querySelectorAll("[data-view-mode]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.viewMode === this.viewMode())));
+    (pane.closest(".content") || pane).classList.toggle("is-compare", !!pane.querySelector(".dual-track"));
     const measure = () => {
       const toolbar = pane.querySelector(".toolbar");
       const mobile = document.querySelector(".mobile-topbar");
@@ -867,18 +822,18 @@ const App = {
       if (el.id === "chapter-here") this.openRail();
       else this.gotoLink(el);
     });
-    // 大纲：点一行展开 / 收起这一条，点站名收起 / 展开这一站
-    const outlineToggle = (t) => (t.classList.contains("ov-line") ? this.toggleOutlineLine(t) : this.toggleOutlineStation(t));
+    // 站卡上的小标题：点了跳到那张卡片；小卡片右上角的「编辑」和它的保存 / 取消（卡片会重画，挂在 document 上）
     document.addEventListener("click", (e) => {
-      const t = e.target.closest && e.target.closest(".ov-line, .ov-head");
-      if (t && !e.target.closest("a")) outlineToggle(t);
-    });
-    document.addEventListener("keydown", (e) => {
-      if (e.key !== "Enter" && e.key !== " ") return;
-      const t = e.target.closest && e.target.closest(".ov-line, .ov-head");
-      if (!t || t !== e.target) return;
-      e.preventDefault();
-      outlineToggle(t);
+      const t = e.target.closest && e.target.closest(".st-chip, .cell-edit, [data-cell-action]");
+      if (!t) return;
+      if (t.classList.contains("st-chip")) {
+        const target = this.stationChipTarget(t);
+        if (!target) return;
+        this.scrollToItem(target);
+        target.classList.add("toc-flash");
+        setTimeout(() => target.classList.remove("toc-flash"), 1800);
+      } else if (t.classList.contains("cell-edit")) this.editCell(t.closest(".dual-cell"));
+      else this.cellAction(t);
     });
     let hereQueued = false;
     const here = () => {
@@ -1106,9 +1061,6 @@ const App = {
     this.chapterQuery = "";
     this.chapterTypeFilter = "all";
     this.renderSidebar();
-    // 从搜索结果跳进来：大纲里看不到命中的那句话，这一次临时按对照显示（不改记住的选择）
-    this._viewOverride = null;
-    if (this._pendingSearchJump && this.viewMode() === "outline") this._viewOverride = "compare";
     this.renderContent();
     if (this._closeMobileSidebar) this._closeMobileSidebar();
 
@@ -1526,10 +1478,6 @@ const App = {
             return n ? `<button class="chip" data-type="${t}">${TYPE_LABEL[t]}</button>` : "";
           }).join("")}
         </div>`}
-        <div class="chapter-view-mode" role="group" aria-label="卡片显示方式">
-          ${[["outline", "大纲"], ["compare", "对照"], ["original", "原样"]].map(([m, label]) =>
-            `<button type="button" data-view-mode="${m}" aria-pressed="${this.viewMode() === m}">${label}</button>`).join("")}
-        </div>
         <button class="here" id="chapter-here" type="button" hidden></button>
       </div>
 
@@ -1805,9 +1753,6 @@ const App = {
   },
 
   bindChapterControls(subjectId, chapterId) {
-    document.querySelectorAll("[data-view-mode]").forEach((button) => {
-      button.addEventListener("click", () => this.setViewMode(button.dataset.viewMode));
-    });
     const searchInput = document.getElementById("chapter-search");
     searchInput.addEventListener("input", (e) => {
       this.chapterQuery = e.target.value.trim();
@@ -2275,22 +2220,12 @@ const App = {
     }
     let hit = null;
     let dual = null;
-    let ov = null;
     let hereId = "";
     document.querySelectorAll("#chapter-item-groups .entry").forEach((entry) => {
-      if (hit || dual || ov) return;
+      if (hit || dual) return;
       const r = entry.getBoundingClientRect();
       if (r.top > line || r.bottom < line) return;
       hereId = entry.id.slice(5);
-      if (entry.classList.contains("is-outline")) {
-        let cur = null;
-        for (const s of entry.querySelectorAll(".ov-station[data-station]")) {
-          if (s.getBoundingClientRect().top > line) break;
-          cur = s;
-        }
-        if (cur) ov = { station: cur.dataset.station, name: cur.querySelector(".ov-name").innerHTML };
-        return;
-      }
       if (entry.classList.contains("is-dual")) {
         let row = null;
         for (const el of entry.querySelectorAll(".dual-row")) {
@@ -2303,7 +2238,7 @@ const App = {
           const station = cell.dataset.station || "";
           const bar = [...entry.querySelectorAll(".station")].find((s) => s.dataset.station === station && s.dataset.sec === sec);
           dual = { sec, station, name: bar && bar.querySelector(".station-name").innerHTML,
-            part: row.querySelector(".dual-book") && row.querySelector(".dual-note") || cell.classList.contains("dual-shared") ? "对照" : cell.dataset.part === "book" ? "教材" : "笔记" };
+            part: row.querySelector(".dual-book") && row.querySelector(".dual-note") || cell.classList.contains("dual-shared") ? "" : cell.dataset.part === "book" ? "教材" : "笔记" };
         }
         return;
       }
@@ -2323,16 +2258,6 @@ const App = {
       }
       if (cur) hit = cur;
     });
-    if (ov) {
-      this.markRailHere(hereId, ov.station);
-      if (pill.dataset.key !== "大纲" + ov.station) {
-        pill.dataset.key = "大纲" + ov.station;
-        pill.innerHTML = `<span class="here-part">大纲</span><span class="here-no">${ov.station}</span><span class="here-name">${ov.name}</span>`;
-        pill.title = "打开本章目录";
-      }
-      pill.hidden = false;
-      return;
-    }
     const st = hit && hit.classList.contains("station");
     const sec = dual ? dual.sec : hit && (st ? hit.dataset.sec : sectionKind(hit.textContent));
     this.markRailHere(hereId, dual ? dual.station : st ? hit.dataset.station : "");
@@ -2342,7 +2267,7 @@ const App = {
     const key = part + sec + no;
     if (pill.dataset.key !== key) {
       pill.dataset.key = key;
-      pill.innerHTML = `<span class="here-part">${part}</span><span class="here-sec ${BOOK_CLASS[sec] || ""}">〔${sec}〕</span>` +
+      pill.innerHTML = (part ? `<span class="here-part">${part}</span>` : "") + `<span class="here-sec ${BOOK_CLASS[sec] || ""}">〔${sec}〕</span>` +
         (no ? `<span class="here-no">${no}</span><span class="here-name">${dual ? dual.name || "" : hit.querySelector(".station-name").innerHTML}</span>` : "");
       pill.title = "打开本章目录";
     }
@@ -2486,15 +2411,6 @@ const App = {
   // 带站（station）时再往下找这一节里的站名行，找不到就停在这一节。
   tocTarget(node, part, sec, station) {
     if (!part) return null;
-    // 大纲：跳到这一站（收起了就展开）；这一站的第一节就停在站名，其余停在那一节
-    const ov = node.querySelector(".outline-view");
-    if (ov) {
-      const st = station ? [...ov.querySelectorAll(".ov-station")].find((x) => x.dataset.station === station) : null;
-      if (st && st.classList.contains("folded")) this.toggleOutlineStation(st.querySelector(".ov-head"));
-      const box = sec && (st || ov).querySelector('.ov-sec[data-sec="' + sec + '"]');
-      if (box && st && box === st.querySelector(".ov-sec")) return st;
-      return box || st || ov;
-    }
     const box = node.querySelector(part === "book" ? "section.card-book" : ".mynote-slot");
     if (!box || !sec) return box;
     const track = node.querySelector(".dual-track");

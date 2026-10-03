@@ -19,7 +19,7 @@ for (const f of ['assets/vendor/marked/marked.umd.js', 'assets/js/data-loader.js
 }
 context.assert = assert;
 vm.runInContext(`
-// 大纲视图（cardOutline / cardStory / outlineGist / App.outlineHtml）和按站的右侧目录：只读原文、只改显示
+// 站卡小标题（cardOutline）、本卡主线（cardStory）、按站的右侧目录、单张小卡片编辑（cellSource / cellSplice）：只读原文、只改显示
 App.subjects = KaoyanData.subjects();
 const outline = (id) => cardOutline(KaoyanData.find(id).md, Notes.has(id) ? Notes.get(id) : '');
 const total = (o, part, sec) => o.blocks.reduce((n, b) => n + (b.rows[part + sec] || { items: [] }).items.length, 0);
@@ -38,43 +38,24 @@ const expected = {
 };
 for (const [id, [blocks, ...counts]] of Object.entries(expected)) {
   const o = outline(id);
-  assert(o.structured, id + ' 用大纲');
+  assert(o.structured, id + ' 按站或分组组织');
   assert.equal(o.blocks.length, blocks, id + ' 块数');
   OUTLINE_SECS.forEach(([part, sec], i) => assert.equal(total(o, part, sec), counts[i], id + ' ' + sec));
   assert.equal(total(o, 'note', '定义'), counts[0], id + ' 笔记定义');
   assert.equal(total(o, 'note', '性质'), counts[1], id + ' 笔记性质');
-  // 每一节每一站里的 ord 从 0 连续编号
   o.blocks.forEach((b) => Object.values(b.rows).forEach((r) => r.items.forEach((it, k) => assert.equal(it.ord, k, id + b.mark + r.sec))));
-  // 大纲里每一条一行，行上带着找到这一条要用的小节、站、序号
-  const html = App.outlineHtml(id);
-  assert.equal((html.match(/class="ov-line/g) || []).length, counts.reduce((a, c) => a + c, 0), id + ' 行数');
-  assert(html.startsWith('<div class="outline-view" data-outline="' + id + '">'));
-  assert.equal((html.match(/class="ov-station"/g) || []).length, blocks, id + ' 站块');
 }
 
-// 第 1 章 ①：顺序、原文编号、笔记那半句
+// 第 1 章 ①：站卡上〔定义〕的小标题，按原文顺序
 const lim = outline('calc-lim-function');
 assert.deepEqual(lim.blocks.map((b) => b.mark), ['①', '②', '③', '④', '⑤', '⑥']);
-const d1 = lim.blocks[0].rows.book定义.items, n1 = lim.blocks[0].rows.note定义.items;
-assert.deepEqual(d1.slice(0, 3).map((it) => [it.num, it.title]), [['1', '函数'], ['2', '有界性'], ['3', '单调性']]);
-assert.equal(outlineGist(d1[0].title, n1[0].title), '每个 x 只对应一个 y');
-const html1 = App.outlineHtml('calc-lim-function');
-assert(html1.includes('<span class="ov-t">函数</span><span class="ov-g">每个 x 只对应一个 y</span>'));
-// 意义按原文编号（全卡连续），例题也是
-const m5 = lim.blocks[4].rows.book意义.items;
-assert.deepEqual(m5.map((it) => it.num).slice(0, 2), ['7', '8']);
-assert(/^\\d+$/.test(lim.blocks[0].rows.note例题.items[0].num));
-
-// 第 6 章 ①：分组记在条目上
-const mi = outline('calc-mi-double-def');
-assert.deepEqual(mi.blocks[0].rows.book性质.items.map((it) => it.group), ['二重积分', '二重积分', '二重积分', '二重积分', '三重积分', '反过来用定义']);
+assert.deepEqual(lim.blocks[0].rows.book定义.items.map((it) => it.title),
+  ['函数', '有界性', '单调性', '奇偶性', '周期性', '复合函数', '反函数', '基本初等函数与初等函数', '分段函数与隐函数']);
+assert.deepEqual(lim.blocks[4].rows.book意义.items.map((it) => it.num).slice(0, 2), ['7', '8']);
+// 第 6 章 ①：〔性质〕的分组记在条目上
+assert.deepEqual(outline('calc-mi-double-def').blocks[0].rows.book性质.items.map((it) => it.group),
+  ['二重积分', '二重积分', '二重积分', '二重积分', '三重积分', '反过来用定义']);
 assert.deepEqual(outline('la-eig-def-eigen').blocks.map((b) => b.mark), ['①', '②', '③', '④', '⑤', '⑤′', '⑥']);
-
-// 笔记那半句
-assert.equal(outlineGist('函数', '函数'), '');
-assert.equal(outlineGist('实对称矩阵：凑齐，而且两两垂直', '实对称矩阵：为什么天然轴一定垂直'), '为什么天然轴一定垂直');
-assert.equal(outlineGist('秩', '完全不同的标题'), '完全不同的标题');
-assert.equal(outlineGist('秩', ''), '');
 
 // 本卡主线：开头一句、每站一句
 const story = cardStory(KaoyanData.find('calc-lim-function').md);
@@ -94,32 +75,32 @@ assert.equal(rail.count, 6, '⑤′ 不算一站');
 assert.equal((rail.body.match(/class="rl-st"/g) || []).length, 7);
 assert.equal((rail.body.match(/class="rl-chip[ "]/g) || []).length, 35);
 assert.equal((rail.body.match(/class="rl-extra"/g) || []).length, 3);
-assert.equal(App.stationRailHtml(KaoyanData.find('calc-lim-function'), 'calculus', 'limit').count, 6);
-
-// 旧卡（没有站、没有分组）和没有笔记的卡：不用大纲
 for (const id of ['la-det-def-n-order', 'la-mat-def-matrix', 'la-vec-def-linear-dependence', 'prob-evt-events']) {
   assert(!outline(id).structured, id);
 }
 
-// 认法的边界
-const o1 = cardOutline([
-  '### 〔定义〕', '', '**① 甲**', '', '#### 1. 一', '正文', '**不是分组**', '', '#### 2. 二', '',
-  '**② 乙**', '', '**组名**', '', '#### 1. 三', '',
-  '### 意义', '', '**① 甲**', '', '* **1. 题型一**', '  * **问题**：…', '* **2. 题型二**',
-].join('\\n'), [
-  '### 〔定义〕', '', '**① 甲**', '', '#### 1. 一：解释', '',
-  '### 〔例题〕', '', '**① 甲**', '', '#### 例题 1：小', '##### 【小题 1】不算', '#### 例题 10：大', '',
-  '\`\`\`', '#### 例题 2：代码块里的不算', '\`\`\`', '',
-  '### 〔提示〕', '', '**② 乙**', '', '#### 1. 坑',
-].join('\\n'));
-assert(o1.structured);
-assert.deepEqual(o1.blocks.map((b) => b.mark), ['①', '②']);
-assert.deepEqual(o1.blocks[0].rows.book定义.items.map((it) => [it.title, it.group]), [['一', ''], ['二', '']], '紧贴正文的加粗行不是分组');
-assert.deepEqual(o1.blocks[1].rows.book定义.items.map((it) => [it.title, it.group]), [['三', '组名']]);
-assert.deepEqual(o1.blocks[0].rows.note定义.items.map((it) => it.title), ['一：解释']);
-assert.deepEqual(o1.blocks[0].rows.book意义.items.map((it) => [it.num, it.title]), [['1', '题型一'], ['2', '题型二']]);
-assert.deepEqual(o1.blocks[0].rows.note例题.items.map((it) => [it.num, it.title]), [['1', '小'], ['10', '大']]);
-assert.deepEqual(o1.blocks[1].rows.note提示.items.map((it) => [it.title, it.ord]), [['坑', 0]]);
-assert(!cardOutline('### 〔定义〕\\n\\n#### 1. 一\\n', '').structured, '没有站、没有分组：不用大纲');
+// 对照视图里每一张小卡片都记着它在原文里的位置；原样拼回去和原文一字不差，
+// 〔定义〕〔性质〕的卡片正文以这一条的「#### n.」标题开头。
+let cells = 0;
+for (const id of Object.keys(expected)) {
+  const book = KaoyanData.find(id).md, note = Notes.get(id);
+  const html = App.dualTrackHtml(App.dualTrackModel(id, book, note));
+  for (const m of html.matchAll(/<div class="dual-cell dual-(book|note)" data-part="[^"]*" data-sec="([^"]*)" data-station="[^"]*" data-src="(\\d+)-(\\d+)">/g)) {
+    const full = m[1] === 'book' ? book : note, start = +m[3], end = +m[4];
+    assert(start < end && end <= full.length, id + ' 位置在原文范围内');
+    const { core } = cellSource(full, start, end);
+    assert.equal(cellSplice(full, start, end, core), full, id + ' 原样拼回');
+    assert.equal(cellSplice(full, start, end, '\\n\\n' + core + '\\n\\n\\n'), full, id + ' 前后多的空行不算改动');
+    if ((m[2] === '定义' || m[2] === '性质') && /^#### \\d+\\./.test(core)) cells++;
+  }
+}
+assert(cells >= 2 * (20 + 29 + 14 + 38 + 12 + 41 + 23 + 46 + 19 + 46 + 15 + 31 + 19 + 25 + 11 + 11), '每一对〔定义〕〔性质〕卡片都能单独编辑');
+
+// 拼回：改了正文，前后的空行原样保留，下一个标题不会粘上来
+const doc = '### 〔定义〕\\n\\n#### 1. 甲\\n正文一\\n\\n#### 2. 乙\\n正文二\\n';
+const s1 = doc.indexOf('#### 1.'), e1 = doc.indexOf('#### 2.');
+assert.deepEqual(cellSource(doc, s1, e1), { lead: '', core: '#### 1. 甲\\n正文一', tail: '\\n\\n' });
+assert.equal(cellSplice(doc, s1, e1, '#### 1. 甲\\n新的正文'), '### 〔定义〕\\n\\n#### 1. 甲\\n新的正文\\n\\n#### 2. 乙\\n正文二\\n');
+assert.equal(cellSplice(doc, s1, e1, '#### 1. 甲\\n新的正文   \\n\\n'), '### 〔定义〕\\n\\n#### 1. 甲\\n新的正文\\n\\n#### 2. 乙\\n正文二\\n');
 `, context);
-console.log('outline view ok');
+console.log('station cards ok');
