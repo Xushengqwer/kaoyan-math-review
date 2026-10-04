@@ -1316,9 +1316,9 @@ body.mynote-zoomed { overflow: hidden; }
 .dual-shared > .term-head { color: var(--dual-color); }
 .dual-shared > .station { padding: 0; border: 0; background: transparent; }
 
-/* 教材 4、笔记 6。840px 起并排：教材一栏 (840 − 16) × 0.4 ≈ 330px，正文约 302px；更长的公式在格子里横向滚动。 */
+/* 教材 3、笔记 7。840px 起并排：教材一栏 (840 − 16) × 0.3 ≈ 247px；更长的公式在格子里横向滚动。 */
 @container review-card (min-width: 840px) {
-  .dual-controls, .dual-row { grid-template-columns: minmax(0, 4fr) minmax(0, 6fr); gap: 16px; }
+  .dual-controls, .dual-row { grid-template-columns: minmax(0, 3fr) minmax(0, 7fr); gap: 16px; }
   .dual-missing { display: block; }
   .dual-empty { display: block; padding: 0; border: 0; background: transparent; box-shadow: none; }
 }
@@ -1355,7 +1355,7 @@ body.mynote-zoomed { overflow: hidden; }
 #chapter-item-groups.is-super .type-group { margin-top: 8px; }
 #chapter-item-groups.is-super .entry { grid-template-columns: minmax(0, 1fr); padding-top: 0; }
 
-/* 教材一栏占 4/10：保持紧凑的页面留白和教材内边距，给公式多留一点宽度。 */
+/* 教材一栏占 3/10：保持紧凑的页面留白和教材内边距。 */
 @media (min-width: 901px) { .content.is-compare { padding-left: 24px; padding-right: 36px; } }
 .dual-cell.dual-book { padding-left: 12px; padding-right: 12px; }
 
