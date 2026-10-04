@@ -268,14 +268,18 @@ function cardOutline(book, note) {
 }
 
 // 「本卡主线」那一段：开头一句（lead，章节标题下面用）和每一站的一句话（st，站卡上用）。没有就是空的。
+// 两种写法都认：「**本卡主线**：……」「* **① 站名**：一句话」，
+// 以及「**本卡主线：……**」「- **① 问句** $\to$ **答案**：一句话」（后者站卡上显示问句和后面整句）。
 function cardStory(book) {
   const out = { lead: "", st: {} };
   String(book == null ? "" : book).split("\n").forEach((raw) => {
     const l = raw.replace(/\r$/, "");
-    const lead = l.match(/^\*\*本卡主线\*\*[：:][ \t]*(.*)$/);
+    const lead = l.match(/^\*\*本卡主线\*\*[：:][ \t]*(.*)$/) || l.match(/^\*\*本卡主线[：:][ \t]*(.*?)\*\*[ \t]*$/);
     if (lead && !out.lead) out.lead = lead[1].replace(/[ \t]*整张卡.*$/, "").trim();
     const m = l.match(/^[*-][ \t]+\*\*([①-⑳]′?)[ \t]*[^*]*?\*\*[：:][ \t]*(.*)$/);
+    const arrow = !m && l.match(/^[*-][ \t]+\*\*([①-⑳]′?)[ \t]*([^*]*?)\*\*[ \t]*((?:\$\\to\$|→)[ \t]*\S.*)$/);
     if (m && !(m[1] in out.st)) out.st[m[1]] = m[2].trim();
+    if (arrow && !(arrow[1] in out.st)) out.st[arrow[1]] = (arrow[2].trim() + " " + arrow[3].trim()).trim();
   });
   return out;
 }

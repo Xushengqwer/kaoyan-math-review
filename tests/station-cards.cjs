@@ -61,10 +61,15 @@ assert.deepEqual(outline('calc-mi-double-def').blocks[0].rows.book性质.items.m
 assert.deepEqual(outline('la-eig-def-eigen').blocks.map((b) => b.mark), ['①', '②', '③', '④', '⑤', '⑤′', '⑥']);
 
 // 本卡主线：开头一句、每站一句
-const story = cardStory(KaoyanData.find('calc-lim-function').md);
-assert.equal(story.lead, '$x$ 靠近某点时，$f(x)$ 靠近谁。');
+// 写法一：「**本卡主线**：……」「* **① 站名**：一句话」
+const story = cardStory(KaoyanData.find('calc-der-derivative').md);
+assert.equal(story.lead, '从一点的变化率，看清整个函数。');
 assert.deepEqual(Object.keys(story.st), ['①', '②', '③', '④', '⑤', '⑥']);
-assert(story.st['①'].startsWith('函数——它的定义'));
+// 写法二：「**本卡主线：……**」「- **① 问句** $\to$ **答案**：一句话」
+const story2 = cardStory(KaoyanData.find('calc-lim-function').md);
+assert.equal(story2.lead, '$x$ 靠近某点时，$f(x)$ 靠近谁？');
+assert.deepEqual(Object.keys(story2.st), ['①', '②', '③', '④', '⑤', '⑥']);
+assert.equal(story2.st['①'], '谁在靠近？ $\\\\to$ **函数**：研究对象、构造与四大性态');
 assert.deepEqual(cardStory('没有主线').st, {});
 
 // 一张超级卡的章：章节头、右侧目录按站；其余的章照旧
