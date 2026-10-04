@@ -85,7 +85,15 @@ assert.equal(sup('linalg', 'determinant'), null);
 const rail = App.stationRailHtml(KaoyanData.find('la-eig-def-eigen'), 'linalg', 'eigen');
 assert.equal(rail.count, 6, '⑤′ 不算一站');
 assert.equal((rail.body.match(/class="rl-st"/g) || []).length, 7);
-assert.equal((rail.body.match(/class="rl-chip[ "]/g) || []).length, 35);
+// 每站列出定义、性质的小标题（rl-item），意义、例题、提示只给条数（rl-mini）
+assert.equal((rail.body.match(/class="rl-item"/g) || []).length, 44);
+assert.equal((rail.body.match(/class="rl-mini /g) || []).length, 18);
+assert(!rail.body.includes('rl-types'), '旧写法没有「题型」一组');
+// 题型写法（第 1 章）：六站后面一组「题型」，17 个题型、4 个分组；各站不再有意义、例题、提示的条数
+const limRail = App.stationRailHtml(KaoyanData.find('calc-lim-function'), 'calculus', 'limit');
+assert.equal((limRail.body.match(/class="rl-st rl-types"/g) || []).length, 1);
+assert.equal((limRail.body.match(/data-sec="意义" data-station="" data-ord=/g) || []).length, 17);
+assert.equal((limRail.body.match(/class="rl-mini /g) || []).length, 0);
 assert.equal((rail.body.match(/class="rl-extra"/g) || []).length, 3);
 for (const id of ['la-det-def-n-order', 'la-mat-def-matrix', 'la-vec-def-linear-dependence', 'prob-evt-events']) {
   assert(!outline(id).structured, id);

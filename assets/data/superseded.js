@@ -237,7 +237,7 @@ registerSuperseded({
     "calc-int-thm-variable-limit": ["eurzfeyqu"],
     "calc-int-thm-wallis": ["1pipfrqdggk"],
     "calc-lim-composite-inverse": ["16739nmt3la"],
-    "calc-lim-function": ["v0ic3z0btt","1qhdjz21gmj","1hvjmosqeg7","1dfqbr37uiv","u7tb7m3314"],
+    "calc-lim-function": ["v0ic3z0btt","1qhdjz21gmj","1hvjmosqeg7","1dfqbr37uiv","u7tb7m3314","rpjdva67ak"],
     "calc-limit-def-continuity": ["an2gopyfr0"],
     "calc-limit-def-discontinuity-types": ["1j97vm55213"],
     "calc-limit-def-eps-delta": ["1hvlg1xj97o"],

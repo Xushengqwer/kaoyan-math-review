@@ -1432,20 +1432,36 @@ body.mynote-zoomed { overflow: hidden; }
 .rl-st.open .rl-name { font-weight: 700; }
 .rl-st.open .rl-name:hover { background: transparent; color: var(--accent); }
 .rl-no { font-weight: 700; color: var(--accent); }
-.rl-chips { display: none; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; padding: 2px 10px 12px; }
-.rl-st.open .rl-chips { display: grid; }
-.rl-chip {
-  padding: 6px 0 5px; border-radius: 9px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border);
-  text-align: center; font-size: 12.5px; font-weight: 700; line-height: 1.3;
-}
-.rl-chip b { display: block; font-size: 11px; font-weight: 500; color: var(--text-3); }
-.rl-chip.def { color: var(--def); }
-.rl-chip.prp { color: var(--prp); }
-.rl-chip.meaning { color: var(--meaning); }
-.rl-chip.ex { color: var(--example); }
-.rl-chip.tip { color: var(--tip); }
-a.rl-chip:hover { box-shadow: inset 0 0 0 1.5px currentColor; }
-.rl-chip.off { color: var(--text-3); opacity: .45; box-shadow: none; background: transparent; }
+/* 展开的站：定义、性质逐条列出小标题；意义、例题、提示只给条数 */
+.rl-name { grid-template-columns: 26px minmax(0, 1fr) auto; column-gap: 0; }
+.rl-sum { display: flex; gap: 8px; padding-left: 8px; font-size: 11.5px; font-weight: 500; white-space: nowrap; }
+.rl-sum .def { color: var(--def); }
+.rl-sum .prp { color: var(--prp); }
+.rl-st.open .rl-sum, .rail.all-open .rl-sum { display: none; }
+.rl-detail { display: none; padding: 0 10px 12px 36px; }
+.rl-st.open .rl-detail, .rail.all-open .rl-detail { display: block; }
+.rail.all-open .rl-st { margin-bottom: 6px; }
+.rl-sec + .rl-sec { margin-top: 10px; }
+.rl-sec-head { display: inline-flex; align-items: baseline; gap: 6px; padding: 2px 0; font-size: 12px; font-weight: 700; letter-spacing: .04em; }
+.rl-sec-head b { font-weight: 500; color: var(--text-3); }
+.rl-sec.def .rl-sec-head { color: var(--def); }
+.rl-sec.prp .rl-sec-head { color: var(--prp); }
+.rl-items { list-style: none; margin: 4px 0 0; padding: 0 0 0 10px; border-left: 2px solid var(--border); }
+.rl-sec.def .rl-items { border-left-color: color-mix(in srgb, var(--def) 35%, transparent); }
+.rl-sec.prp .rl-items { border-left-color: color-mix(in srgb, var(--prp) 35%, transparent); }
+.rl-item { display: block; padding: 3px 8px; border-radius: 7px; font-size: 13px; line-height: 1.55; color: var(--text-2); }
+.rl-item:hover { color: var(--text); background: color-mix(in srgb, var(--text) 6%, transparent); }
+.rl-item.is-here { color: var(--text); font-weight: 600; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); }
+.rl-grp { padding: 6px 8px 1px; font-size: 11px; font-weight: 600; color: var(--text-3); }
+.rl-minis { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.rl-mini { display: inline-flex; align-items: baseline; gap: 5px; padding: 3px 11px; border-radius: 999px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--border); font-size: 12px; font-weight: 700; }
+.rl-mini b { font-weight: 500; color: var(--text-3); }
+.rl-mini.meaning { color: var(--meaning); }
+.rl-mini.ex { color: var(--example); }
+.rl-mini.tip { color: var(--tip); }
+a.rl-mini:hover { box-shadow: inset 0 0 0 1.5px currentColor; }
+.rail-all { flex: none; margin-left: 4px; padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 600; color: var(--accent); background: var(--accent-soft); }
+.rail-all:hover { box-shadow: inset 0 0 0 1px currentColor; }
 .rl-extras { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 0 6px 4px 0; }
 .rl-extra { padding: 9px 0; border-radius: 10px; background: color-mix(in srgb, var(--text) 5%, transparent); text-align: center; font-size: 13px; color: var(--text-2); }
 .rl-extra:hover { color: var(--accent); background: var(--accent-soft); }
@@ -1486,3 +1502,10 @@ a.rl-chip:hover { box-shadow: inset 0 0 0 1.5px currentColor; }
 
   @page { margin: 16mm 14mm; }
 }
+/* 「题型」一组：意义与例题，按分组列出题型名 */
+.rl-types .rl-no { color: var(--meaning); }
+.rl-types .rl-sum span { color: var(--meaning); }
+.rl-types .rl-items { border-left-color: color-mix(in srgb, var(--meaning) 35%, transparent); }
+.rl-tno { display: inline-block; min-width: 1.7em; font-size: 12px; font-weight: 600; color: var(--text-3); }
+/* 例题之间的分隔线（---）在对照里落在上一格末尾，不显示；同一格里两道例题之间的照常 */
+.dual-cell hr:last-child { display: none; }

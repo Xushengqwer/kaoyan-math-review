@@ -243,7 +243,8 @@ function cardOutline(book, note) {
       const st = independent && line.match(STATION_LINE);
       if (st) { station = st[2]; group = ""; structured = true; block(station, st[1]); return; }
       let m = null;
-      if (sec === "定义" || sec === "性质") {
+      // 题型写法的〔意义〕和〔定义〕〔性质〕一样：「#### n. 题型名」，可用整行加粗分组
+      if (sec === "定义" || sec === "性质" || (sec === "意义" && !station)) {
         const bold = independent && line.match(/^\*\*([^*]+)\*\*[ \t]*$/);
         if (bold) {
           let j = i + 1;
@@ -251,6 +252,7 @@ function cardOutline(book, note) {
           if (j < lines.length && /^####[ \t]+\d+\./.test(lines[j])) { group = bold[1]; structured = true; return; }
         }
         m = line.match(/^####[ \t]+(\d+)\.[ \t]*(.*?)[ \t]*$/);
+        if (!m && sec === "意义") m = line.match(/^[*-][ \t]+\*\*(\d+)\.[ \t]*(.*?)\*\*/);
       } else if (sec === "意义") m = line.match(/^[*-][ \t]+\*\*(\d+)\.[ \t]*(.*?)\*\*/);
       // 「例题 1-2」是题型 1 的第 2 道，编号仍记 1
       else if (sec === "例题") m = line.match(/^#{2,6}[ \t]+例题[ \t]*(\d+)(?:-\d+)?(?![\d.])[ \t]*[：:]?[ \t]*(.*?)[ \t]*$/);
@@ -260,7 +262,7 @@ function cardOutline(book, note) {
       const row = rows[part + sec] || (rows[part + sec] = { part, sec, items: [] });
       const n = counts[sec + station] || 0;
       counts[sec + station] = n + 1;
-      row.items.push({ title: m[2], num: m[1], ord: n, group: sec === "定义" || sec === "性质" ? group : "" });
+      row.items.push({ title: m[2], num: m[1], ord: n, group: sec === "定义" || sec === "性质" || sec === "意义" ? group : "" });
     });
   };
   scan(book, "book");
@@ -383,7 +385,20 @@ function dualHtmlBlocks(html, start = 0, end = html.length) {
   return blocks;
 }
 
-function dualSource(raw, part) {
+// 题型写法：教材〔意义〕里每个题型是「#### n. 题型名」（不挂站，可用整行加粗分组），笔记〔例题〕是「#### 例题 n：…」，
+// 同一题型的第二道写「例题 n-2」。这样的卡，意义 n 和例题 n 在对照里并排；旧写法（意义是列表、按站排）照旧。
+const APP_ENTRY = /^####[ \t]+(\d+)\.[ \t]*(.*?)[ \t]*$/;
+const EX_ENTRY = /^####[ \t]+例题[ \t]*(\d+)(?:-\d+)?(?![\d.])[ \t]*[：:]?[ \t]*(.*?)[ \t]*$/;
+function appByType(book) {
+  const t = String(book == null ? "" : book).replace(/\r/g, "");
+  const i = t.search(/^### 意义[ \t]*$/m);
+  if (i < 0) return false;
+  const rest = t.slice(i).split("\n").slice(1);
+  const end = rest.findIndex((l) => /^### /.test(l));
+  return (end < 0 ? rest : rest.slice(0, end)).some((l) => APP_ENTRY.test(l));
+}
+
+function dualSource(raw, part, byType) {
   const lines = [], re = /[^\n]*(?:\n|$)/g;
   let m;
   while ((m = re.exec(raw)) && m[0]) lines.push({ start: m.index, end: re.lastIndex, line: m[0].replace(/\r?\n$/, "") });
@@ -409,8 +424,15 @@ function dualSource(raw, part) {
       make(l.end, "content");
       return;
     }
-    const numbered = (sec === "定义" || sec === "性质") && l.line.match(/^####[ \t]+(\d+)\.[ \t]*(.*?)[ \t]*$/);
+    const numbered = (sec === "定义" || sec === "性质" || (byType && sec === "意义" && !station)) && l.line.match(APP_ENTRY);
     if (numbered) { make(l.start, "entry", l.line, numbered[1], numbered[2]); return; }
+    const ex = byType && sec === "例题" && !station && l.line.match(EX_ENTRY);
+    if (ex) {
+      // 「例题 n-2」接在同一题型那一格里，不另起一格
+      const prev = records[records.length - 1];
+      if (!(prev && prev.kind === "entry" && prev.sec === "例题" && prev.num === ex[1])) make(l.start, "entry", l.line, ex[1], ex[2]);
+      return;
+    }
     if (!sec || sec === "提示") return;
     // 独立段落才能成为标题边界；紧贴上一段的加粗仍属于原段落。
     const independent = i === 0 || !lines[i - 1].line.trim() || /^#{1,6}[ \t]/.test(lines[i - 1].line);
@@ -424,7 +446,9 @@ function dualSource(raw, part) {
     const bold = l.line.match(/^\*\*([^*]+)\*\*[ \t]*$/);
     let j = i + 1;
     while (j < lines.length && !lines[j].line.trim()) j++;
-    if (bold && !st && independent && (sec === "定义" || sec === "性质") && j < lines.length && /^####[ \t]+\d+\./.test(lines[j].line)) {
+    const nextEntry = j < lines.length && (/^####[ \t]+\d+\./.test(lines[j].line) || (byType && EX_ENTRY.test(lines[j].line)));
+    const groupSec = sec === "定义" || sec === "性质" || (byType && (sec === "意义" || sec === "例题"));
+    if (bold && !st && independent && groupSec && nextEntry) {
       group = bold[1];
       make(l.start, "group", l.line, "", group); make(l.end, "content");
     }
@@ -438,8 +462,8 @@ function dualSource(raw, part) {
   return distinct;
 }
 
-function dualSide(raw, html, part) {
-  const segments = dualSource(raw, part);
+function dualSide(raw, html, part, byType) {
+  const segments = dualSource(raw, part, byType);
   const leaves = [];
   dualHtmlBlocks(html).forEach((n) => {
     if (part === "book" && /class="(?:term|term-md|note-body)"/.test(n.open)) {
@@ -464,7 +488,7 @@ function dualSide(raw, html, part) {
     if (s.kind === "group") return text === mdHtml(s.line).trim();
     if (s.kind === "entry") {
       const h = text.match(/^<h4\b[^>]*>([\s\S]*?)<\/h4>$/);
-      return h && h[1] === mdHtml(s.num + ". " + s.title, true);
+      return h && h[1] === mdHtml(s.sec === "例题" ? s.line.replace(/^####[ 	]+/, "").trim() : s.num + ". " + s.title, true);
     }
     return false;
   };
@@ -521,8 +545,9 @@ const App = {
   dualTrackModel(id, bookRaw, noteRaw) {
     const texts = { book: String(bookRaw || ""), note: String(noteRaw || "") };
     const parts = bookParts(texts.book, this.stationDeco(id, texts));
-    const book = dualSide(texts.book, parts.main + parts.tip, "book");
-    const note = dualSide(texts.note, this.stationizeNote(noteMdHtml(texts.note), texts.note, id, texts), "note");
+    const byType = appByType(texts.book);
+    const book = dualSide(texts.book, parts.main + parts.tip, "book", byType);
+    const note = dualSide(texts.note, this.stationizeNote(noteMdHtml(texts.note), texts.note, id, texts), "note", byType);
     const rows = dualRows(book, note);
     const pairs = rows.filter((r) => r.book && r.note && r.kind === "entry");
     // 按站或分组组织的卡（重构过的）按「小节 + 站 + 分组 + 编号」配对就可靠：本机改了某条标题、两边标题不再相同，
@@ -678,9 +703,9 @@ const App = {
     const texts = { book: BookEdits.get(id), note: Notes.get(id) };
     const repo = { book: BookEdits.seed(id), note: window.__KAOYAN_SEED_NOTES__[id] || "" };
     const pending = { book: BookEdits.isPending(id), note: Notes.isPending(id) };
-    const index = (raw, part) => {
+    const index = (raw, part, byType) => {
       const seen = {}, byStart = new Map(), byKey = new Map();
-      dualSource(raw, part).forEach((r) => {
+      dualSource(raw, part, byType).forEach((r) => {
         const first = r.sourcePieces[0], last = r.sourcePieces[r.sourcePieces.length - 1];
         if (!first) return;
         const k = r.key + "#" + (seen[r.key] = (seen[r.key] || 0) + 1);
@@ -691,7 +716,7 @@ const App = {
       return { byStart, byKey };
     };
     const now = {}, base = {}, local = { book: 0, note: 0 };
-    ["book", "note"].forEach((p) => { if (pending[p]) { now[p] = index(texts[p], p); base[p] = index(repo[p], p); } });
+    ["book", "note"].forEach((p) => { if (pending[p]) { now[p] = index(texts[p], p, appByType(texts.book)); base[p] = index(repo[p], p, appByType(repo.book)); } });
     this._cellRepo = {};
     track.querySelectorAll(".dual-row.kind-entry > .dual-cell[data-src], .dual-row.kind-content > .dual-cell[data-src]").forEach((cell) => {
       const p = cell.dataset.part, start = +cell.dataset.src.split("-")[0];
@@ -2109,6 +2134,7 @@ const App = {
             <span class="rail-head-no">${String(c.order).padStart(2, "0")}</span>
             <span class="rail-head-name">${escapeHtml(c.name)}</span>
             <span class="rail-head-count">${sup ? st.count + " 站" : items.length + " 条"}</span>
+            ${sup ? `<button type="button" class="rail-all" aria-pressed="false">全部展开</button>` : ""}
           </div>
           <div class="rail-body">${cols}${foot}</div>
         </div>
@@ -2125,6 +2151,19 @@ const App = {
       if (rail.classList.contains("open")) this.closeRail();
       else this.openRail();
     });
+    // 「全部展开」：每一站都列出定义、性质的小标题，方便整章一起看；开关记在本机
+    const all = rail.querySelector(".rail-all");
+    if (all) {
+      const set = (on) => { rail.classList.toggle("all-open", on); all.setAttribute("aria-pressed", String(on)); all.textContent = on ? "只看当前站" : "全部展开"; };
+      let saved = false;
+      try { saved = localStorage.getItem("kaoyan-rail-all") === "1"; } catch (e) {}
+      set(saved);
+      all.addEventListener("click", () => {
+        const on = !rail.classList.contains("all-open");
+        set(on);
+        try { localStorage.setItem("kaoyan-rail-all", on ? "1" : "0"); } catch (e) {}
+      });
+    }
     this.bindToc(rail);
     // 点了条目就收起（触屏钉住的情况下尤其需要）
     rail.querySelectorAll("[data-goto]").forEach((a) => {
@@ -2132,28 +2171,59 @@ const App = {
     });
   },
 
-  // 按站的目录：一站一行；正在读的那一站（.open）下面是定义 / 性质 / 意义 / 例题 / 提示五个入口，带条数；最下面是本章三件
+  // 按站的目录：一站一行，右边是这一站定义、性质的条数；展开的站（正在读的那一站，或「全部展开」时每一站）
+  // 列出定义、性质的每个小标题，点一个跳到那张小卡片；意义、例题、提示只给条数。最下面是本章三件
   stationRailHtml(it, subjectId, chapterId) {
     const id = it.id;
     const o = cardOutline(BookEdits.get(id), Notes.has(id) ? Notes.get(id) : "");
     const attr = (v) => escapeHtml(v).replace(/"/g, "&quot;");
-    const link = (cls, part, sec, mark, html) =>
-      `<a class="${cls}" href="#item-${id}" data-goto="${id}" data-part="${part}" data-sec="${sec}" data-station="${attr(mark)}">${html}</a>`;
+    const link = (cls, part, sec, mark, html, ord) =>
+      `<a class="${cls}" href="#item-${id}" data-goto="${id}" data-part="${part}" data-sec="${sec}" data-station="${attr(mark)}"${ord == null ? "" : ` data-ord="${ord}"`}>${html}</a>`;
     const sts = o.blocks.filter((b) => b.mark);
     const rows = sts.map((b) => {
       const first = OUTLINE_SECS.find(([p, sec]) => b.rows[p + sec]) || ["book", "定义"];
-      const chips = OUTLINE_SECS.map(([p, sec]) => {
-        const n = (b.rows[p + sec] || { items: [] }).items.length;
-        return n ? link("rl-chip " + BOOK_CLASS[sec], p, sec, b.mark, `${sec}<b>${n}</b>`) : `<span class="rl-chip off">${sec}</span>`;
-      }).join("");
+      const n = (p, sec) => (b.rows[p + sec] || { items: [] }).items.length;
+      const sum = ["定义", "性质"].filter((sec) => n("book", sec))
+        .map((sec) => `<span class="${BOOK_CLASS[sec]}">${sec} ${n("book", sec)}</span>`).join("");
+      const list = (sec) => {
+        const r = b.rows["book" + sec];
+        if (!r || !r.items.length) return "";
+        let group = "";
+        const lis = r.items.map((x) => {
+          const g = x.group && x.group !== group ? `<li class="rl-grp">${mdHtml(x.group, true)}</li>` : "";
+          group = x.group;
+          return g + `<li>${link("rl-item", "book", sec, b.mark, mdHtml(x.title, true), x.ord)}</li>`;
+        }).join("");
+        return `<div class="rl-sec ${BOOK_CLASS[sec]}">${link("rl-sec-head", "book", sec, b.mark, `${sec}<b>${r.items.length}</b>`)}<ol class="rl-items">${lis}</ol></div>`;
+      };
+      const minis = [["book", "意义"], ["note", "例题"], ["note", "提示"]]
+        .map(([p, sec]) => n(p, sec) ? link("rl-mini " + BOOK_CLASS[sec], p, sec, b.mark, `${sec}<b>${n(p, sec)}</b>`) : "").join("");
       return `<div class="rl-st" data-station="${attr(b.mark)}">` +
-        link("rl-name", first[0], first[1], b.mark, `<span class="rl-no">${escapeHtml(b.mark)}</span><span class="rl-label">${mdHtml(b.name.slice(b.mark.length).trim(), true)}</span>`) +
-        `<div class="rl-chips">${chips}</div></div>`;
+        link("rl-name", first[0], first[1], b.mark, `<span class="rl-no">${escapeHtml(b.mark)}</span><span class="rl-label">${mdHtml(b.name.slice(b.mark.length).trim(), true)}</span><span class="rl-sum">${sum}</span>`) +
+        `<div class="rl-detail">${list("定义")}${list("性质")}${minis ? `<div class="rl-minis">${minis}</div>` : ""}</div></div>`;
     }).join("");
+    // 题型写法的卡：意义 + 例题不挂站，六站后面单独一组「题型」，按分组列出题型名；读到意义时它展开
+    const app = o.blocks.find((b) => !b.mark && b.rows.book意义);
+    let types = "";
+    if (app) {
+      const its = app.rows.book意义.items;
+      const short = (g) => g.replace(/^[一二三四五六七八九十]+、/, "").split(/[：:]/)[0];
+      const groups = [...new Set(its.map((x) => x.group).filter(Boolean))];
+      const sum = groups.map((g) => `<span>${escapeHtml(short(g))} ${its.filter((x) => x.group === g).length}</span>`).join("");
+      let group = "";
+      const lis = its.map((x) => {
+        const g = x.group && x.group !== group ? `<li class="rl-grp">${mdHtml(x.group, true)}</li>` : "";
+        group = x.group;
+        return g + `<li>${link("rl-item", "book", "意义", "", `<span class="rl-tno">${escapeHtml(x.num)}</span>${mdHtml(x.title, true)}`, x.ord)}</li>`;
+      }).join("");
+      types = `<div class="rl-cap">题型 · ${its.length}</div><div class="rl-st rl-types" data-station="题型">` +
+        link("rl-name", "book", "意义", "", `<span class="rl-no">题</span><span class="rl-label">意义与例题</span><span class="rl-sum">${sum}</span>`) +
+        `<div class="rl-detail"><ol class="rl-items">${lis}</ol></div></div>`;
+    }
     const extras = this.chapterExtras(subjectId, chapterId).map(({ noteId, imageId, title, label }) =>
       `<a class="rl-extra" href="#item-${imageId || noteId}" data-goto="${imageId || noteId}">${escapeHtml(label || title)}</a>`).join("");
     const count = sts.filter((b) => !b.mark.includes("′")).length;
-    return { count, body: `<div class="rl-cap">主线 · ${count} 站</div>${rows}<div class="rl-cap">本章</div><div class="rl-extras">${extras}</div>` };
+    return { count, body: `<div class="rl-cap">主线 · ${count} 站</div>${rows}${types}<div class="rl-cap">本章</div><div class="rl-extras">${extras}</div>` };
   },
 
   hideRail() {
@@ -2229,15 +2299,23 @@ const App = {
   },
 
   // 右侧目录里标出正在读的那一站（顶部位置条算出来的），这一站下面的五个入口跟着出现
-  markRailHere(itemId, station) {
+  // 正在读的那张定义、性质小卡片（cell = 「定义|2」这样的 小节|第几张）在展开的站里高亮
+  markRailHere(itemId, station, cell) {
     const rail = document.getElementById("chapter-rail");
     if (!rail) return;
-    const key = itemId && station ? itemId + "|" + station : "";
+    // 意义、例题不挂站：读到它们时展开「题型」那一组
+    const st = station || (/^(意义|例题)\|/.test(cell || "") ? "题型" : "");
+    const key = itemId && st ? itemId + "|" + st + "|" + (cell || "") : "";
     if (rail.dataset.here === key) return;
     rail.dataset.here = key;
     rail.querySelectorAll(".rl-st.open").forEach((b) => b.classList.remove("open"));
-    const b = key && [...rail.querySelectorAll(".rl-st")].find((x) => x.dataset.station === station);
-    if (b) b.classList.add("open");
+    rail.querySelectorAll(".rl-item.is-here").forEach((a) => a.classList.remove("is-here"));
+    const b = key && [...rail.querySelectorAll(".rl-st")].find((x) => x.dataset.station === st);
+    if (!b) return;
+    b.classList.add("open");
+    const [sec, ord] = (cell || "").split("|");
+    const a = sec && [...b.querySelectorAll(".rl-item")].find((x) => x.dataset.sec === sec && x.dataset.ord === ord);
+    if (a) a.classList.add("is-here");
   },
 
   // 站牌要用：这张卡教材、笔记各有哪些小节，每节里有哪些站。编辑预览时传正在编辑的原文（texts.book / texts.note）。
@@ -2304,7 +2382,14 @@ const App = {
           const sec = cell.dataset.bookSec || cell.dataset.sec;
           const station = cell.dataset.station || "";
           const bar = [...entry.querySelectorAll(".station")].find((s) => s.dataset.station === station && s.dataset.sec === sec);
-          dual = { sec, station, name: bar && bar.querySelector(".station-name").innerHTML,
+          // 正在读的是定义、性质的哪一张小卡片：从它往上数到站卡（与 railItemTarget 同一规则）
+          let ord = -1;
+          if (row.classList.contains("kind-entry")) {
+            ord = 0;
+            for (let r = row.previousElementSibling; r && !r.classList.contains("kind-station") && !r.classList.contains("kind-section"); r = r.previousElementSibling)
+              if (r.classList.contains("kind-entry")) ord++;
+          }
+          dual = { sec, station, ord, name: bar && bar.querySelector(".station-name").innerHTML,
             part: row.querySelector(".dual-book") && row.querySelector(".dual-note") || cell.classList.contains("dual-shared") ? "" : cell.dataset.part === "book" ? "教材" : "笔记" };
         }
         return;
@@ -2327,7 +2412,7 @@ const App = {
     });
     const st = hit && hit.classList.contains("station");
     const sec = dual ? dual.sec : hit && (st ? hit.dataset.sec : sectionKind(hit.textContent));
-    this.markRailHere(hereId, dual ? dual.station : st ? hit.dataset.station : "");
+    this.markRailHere(hereId, dual ? dual.station : st ? hit.dataset.station : "", dual ? dual.sec + "|" + dual.ord : "");
     if (!sec) { pill.hidden = true; pill.dataset.key = ""; return; }
     const part = dual ? dual.part : hit.closest("section.card-book") ? "教材" : "笔记";
     const no = dual ? dual.station : st ? hit.querySelector(".station-no").textContent : "";
@@ -2347,6 +2432,14 @@ const App = {
     rail.classList.add("open");
     const tab = document.getElementById("rail-tab");
     if (tab) tab.setAttribute("aria-expanded", "true");
+    // 打开时把正在读的那一站滚到目录顶上，正在读的那张若还在下面看不见，再往下滚到露出来；只滚目录自己，不动页面
+    const body = rail.querySelector(".rail-body");
+    const st = rail.querySelector(".rl-st.open"), item = rail.querySelector(".rl-item.is-here");
+    if (body && st) {
+      body.scrollTop += st.getBoundingClientRect().top - body.getBoundingClientRect().top - 8;
+      const over = item ? item.getBoundingClientRect().bottom - body.getBoundingClientRect().bottom + 12 : 0;
+      if (over > 0) body.scrollTop += over;
+    }
   },
 
   // 教材或笔记改完后，只重画目录里这张卡的两行（页面顶部和右侧导轨各一份）
@@ -2467,11 +2560,26 @@ const App = {
   gotoLink(a) {
     const node = document.getElementById("item-" + a.dataset.goto);
     if (!node) return;
-    const target = this.tocTarget(node, a.dataset.part, a.dataset.sec, a.dataset.station);
+    const target = (a.dataset.ord != null && this.railItemTarget(node, a.dataset.sec, a.dataset.station, +a.dataset.ord)) ||
+      this.tocTarget(node, a.dataset.part, a.dataset.sec, a.dataset.station);
     this.scrollToItem(target || node);
     const cls = target ? "toc-flash" : "flash";
     (target || node).classList.add(cls);
     setTimeout(() => (target || node).classList.remove(cls), 1800);
+  },
+
+  // 右侧目录里定义、性质的一个小标题对应的那张小卡片：从这一节这一站的站卡往下，数到第 ord 张（与站卡小标题同一规则）
+  // 题型（意义，不挂站）：从〔意义〕这一节的开头往下数，分组行不算
+  railItemTarget(node, sec, station, ord) {
+    if (sec !== "定义" && sec !== "性质" && sec !== "意义") return null;
+    const head = this.tocTarget(node, "book", sec, station);
+    if (!head || !(head.classList.contains("kind-station") || (sec === "意义" && head.classList.contains("kind-section")))) return null;
+    let k = 0;
+    for (let r = head.nextElementSibling; r; r = r.nextElementSibling) {
+      if (r.classList.contains("kind-station") || r.classList.contains("kind-section")) break;
+      if (r.classList.contains("kind-entry") && k++ === ord) return r;
+    }
+    return null;
   },
 
   // 目录里「教材 / 笔记」和其下小节对应的位置；找不到（比如正在编辑）就退回那一块，再不行退回整张卡。
