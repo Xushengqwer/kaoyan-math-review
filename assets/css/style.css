@@ -1236,7 +1236,19 @@ body.mynote-zoomed { overflow: hidden; }
 }
 .is-dual .entry-main { container: review-card / inline-size; }
 
-.dual-track { --dual-color: var(--accent); min-width: 0; max-width: 100%; }
+.dual-track {
+  --dual-color: var(--accent); --dual-edge: 20%;
+  --dual-shared-tint: 10%; --dual-label-tint: 8%;
+  --dual-shadow: 0 2px 5px rgba(31, 47, 76, .035), 0 8px 24px rgba(31, 47, 76, .045);
+  min-width: 0; max-width: 100%;
+}
+@media (prefers-color-scheme: dark) {
+  .dual-track {
+    --dual-edge: 36%;
+    --dual-shared-tint: 12%; --dual-label-tint: 16%;
+    --dual-shadow: 0 2px 8px rgba(0, 0, 0, .22), 0 8px 24px rgba(0, 0, 0, .18);
+  }
+}
 .dual-controls { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin-bottom: 14px; }
 .dual-controls > .card-book, .dual-controls > .mynote-slot {
   min-width: 0; margin: 0; padding: 10px 16px;
@@ -1251,19 +1263,18 @@ body.mynote-zoomed { overflow: hidden; }
 .dual-columns { display: none; }
 .dual-row {
   display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px;
-  min-width: 0; margin: 10px 0;
+  min-width: 0; margin: 14px 0;
 }
 .dual-cell, .dual-shared {
-  min-width: 0; max-width: 100%; padding: 12px 16px;
-  border: 1px solid color-mix(in srgb, var(--dual-color) 18%, var(--border));
-  border-left: 3px solid var(--dual-color); border-radius: var(--r-sm);
-  background: color-mix(in srgb, var(--dual-color) 3%, var(--surface));
+  min-width: 0; max-width: 100%; padding: 16px;
+  border: 1px solid color-mix(in srgb, var(--dual-color) var(--dual-edge), var(--border));
+  border-left: 3px solid var(--dual-color); border-radius: var(--r-md);
+  background: var(--surface); box-shadow: var(--dual-shadow);
   overflow-wrap: anywhere;
 }
-.dual-note { background: color-mix(in srgb, var(--dual-color) 8%, var(--surface)); }
 .dual-shared {
   grid-column: 1 / -1;
-  background: color-mix(in srgb, var(--dual-color) 6%, var(--surface));
+  background: color-mix(in srgb, var(--dual-color) var(--dual-shared-tint), var(--surface));
   overflow-x: auto;
 }
 .dual-row[data-sec="定义"], .dual-cell[data-sec="定义"] { --dual-color: var(--def); }
@@ -1275,12 +1286,19 @@ body.mynote-zoomed { overflow: hidden; }
 .dual-row[data-sec="提示"], .dual-cell[data-sec="提示"] { --dual-color: var(--tip); }
 .dual-row.is-wide > .dual-cell { grid-column: 1 / -1; }
 .dual-label {
-  display: block; width: fit-content; margin-bottom: 6px;
-  font-size: 11px; font-weight: 700; letter-spacing: .04em; color: var(--dual-color);
+  display: flex; align-items: center; gap: 5px; width: fit-content; max-width: 100%;
+  margin-bottom: 10px; padding: 3px 9px;
+  border-radius: 999px; font-size: 11px; font-weight: 700; line-height: 1.6; letter-spacing: .04em;
+  color: color-mix(in srgb, var(--dual-color) 85%, var(--text));
+  background: color-mix(in srgb, var(--dual-color) var(--dual-label-tint), var(--surface));
+}
+.dual-label::before {
+  content: ""; flex: 0 0 5px; width: 5px; height: 5px;
+  border-radius: 50%; background: currentColor;
 }
 .dual-missing {
   display: block; border: 1px dashed var(--border);
-  background: transparent; color: var(--text-3); font-size: 12px; line-height: 1.7;
+  background: transparent; box-shadow: none; color: var(--text-3); font-size: 12px; line-height: 1.7;
 }
 .dual-empty { display: none; }
 .dual-cell .entry-statement, .dual-cell .mynote-body {
@@ -1297,22 +1315,11 @@ body.mynote-zoomed { overflow: hidden; }
 .dual-shared > .term-head { color: var(--dual-color); }
 .dual-shared > .station { padding: 0; border: 0; background: transparent; }
 
-/* 教材 4.5、笔记 5.5。840px 起并排：教材一栏 (840 − 16) × 0.45 ≈ 371px，正文约 345px；更长的公式在格子里横向滚动。 */
+/* 教材 4、笔记 6。840px 起并排：教材一栏 (840 − 16) × 0.4 ≈ 330px，正文约 302px；更长的公式在格子里横向滚动。 */
 @container review-card (min-width: 840px) {
-  .dual-controls, .dual-row { grid-template-columns: minmax(0, 4.5fr) minmax(0, 5.5fr); gap: 16px; }
-  .dual-columns {
-    position: sticky; top: var(--dual-sticky-top, 100px); z-index: 11;
-    display: grid; grid-template-columns: minmax(0, 4.5fr) minmax(0, 5.5fr); gap: 16px;
-    padding: 6px 0; margin-bottom: 10px;
-    background: var(--bg);
-  }
-  .dual-columns > span {
-    min-width: 0; padding: 8px 16px; border-bottom: 2px solid var(--border);
-    background: var(--surface); color: var(--text-2); font-size: 12px; font-weight: 700;
-  }
-  .dual-columns > span:last-child { border-color: var(--note-border); color: var(--accent); background: var(--accent-soft); }
+  .dual-controls, .dual-row { grid-template-columns: minmax(0, 4fr) minmax(0, 6fr); gap: 16px; }
   .dual-missing { display: block; }
-  .dual-empty { display: block; padding: 0; border: 0; background: transparent; }
+  .dual-empty { display: block; padding: 0; border: 0; background: transparent; box-shadow: none; }
 }
 @media (max-width: 900px) {
   .content.is-compare {
@@ -1347,7 +1354,7 @@ body.mynote-zoomed { overflow: hidden; }
 #chapter-item-groups.is-super .type-group { margin-top: 8px; }
 #chapter-item-groups.is-super .entry { grid-template-columns: minmax(0, 1fr); padding-top: 0; }
 
-/* 教材一栏占 4.5/10：保持紧凑的页面留白和教材内边距，给公式多留一点宽度。 */
+/* 教材一栏占 4/10：保持紧凑的页面留白和教材内边距，给公式多留一点宽度。 */
 @media (min-width: 901px) { .content.is-compare { padding-left: 24px; padding-right: 36px; } }
 .dual-cell.dual-book { padding-left: 12px; padding-right: 12px; }
 
@@ -1355,15 +1362,17 @@ body.mynote-zoomed { overflow: hidden; }
 .dual-cell .entry-statement, .dual-cell .mynote-body { font-size: 15px; line-height: 2.05; }
 .dual-cell .term-md > :first-child, .dual-cell .mynote-body > :first-child { margin-top: 0; }
 .dual-row.kind-entry .term-md > h4:first-child, .dual-row.kind-entry .mynote-body > h4:first-child {
-  margin: 0 0 10px; font-size: 16px; font-weight: 700; line-height: 1.5; color: var(--text);
+  margin: 0 0 12px; padding-bottom: 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--dual-color) 10%, var(--border));
+  font-size: 16px; font-weight: 700; line-height: 1.5; color: var(--text);
 }
 
 /* 小卡片右上角的「编辑」：只改这一张 */
 .dual-cell[data-src] { position: relative; }
-.cell-tools { position: absolute; top: 8px; right: 8px; z-index: 1; display: flex; align-items: center; gap: 2px; }
+.cell-tools { position: absolute; top: 12px; right: 8px; z-index: 1; display: flex; align-items: center; gap: 2px; }
 .cell-edit { padding: 2px 9px; border-radius: 7px; font-size: 12px; line-height: 1.6; color: var(--text-3); }
 .cell-state { padding: 1px 8px; border-radius: 999px; font-size: 11.5px; line-height: 1.6; white-space: nowrap; }
-.cell-state.repo { color: var(--text-3); }
+.cell-state.repo { color: var(--text-2); background: color-mix(in srgb, var(--text) 4%, var(--surface)); }
 .cell-state.local { font-weight: 600; color: var(--pend); background: var(--pend-bg); }
 .cell-preview { margin-top: 2px; padding: 12px 14px; border: 1px dashed var(--border); border-radius: var(--r-sm); background: var(--surface); }
 .cell-preview > :first-child > :first-child { margin-top: 0; }
@@ -1471,6 +1480,7 @@ a.rl-chip:hover { box-shadow: inset 0 0 0 1.5px currentColor; }
   .mynote-body { font-size: 11pt; line-height: 1.7; }
   .toc { box-shadow: none; border: 1px solid #ddd; break-inside: avoid; page-break-inside: avoid; }
   .toc-foot { display: none; }
+  .dual-cell, .dual-shared { box-shadow: none; }
   .chapter-summary { box-shadow: none; border: 1px solid #ddd; break-before: auto; }
   a { color: inherit; text-decoration: none; }
 
