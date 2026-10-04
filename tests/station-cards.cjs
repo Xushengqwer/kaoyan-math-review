@@ -33,6 +33,7 @@ const expected = {
   'calc-vec-coordinates':           [6, 23, 46, 15, 8, 18],
   'calc-mvd-limit-continuity':      [6, 19, 46, 15, 9, 19],
   'calc-mi-double-def':             [6, 15, 31, 18, 11, 19],
+  'calc-ls-line-first': [6,16,39,20,10,18],
   'la-eig-def-eigen':               [7, 19, 25, 19, 14, 30],
   'la-vec-def-max-independent-set': [1, 11, 11, 9, 6, 14],
 };

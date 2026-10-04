@@ -1,6 +1,7 @@
 // 已提交到仓库的思维导图：id -> { path, name, type, size, sha256 }。
 // 用户上传的新图片先保存在浏览器，提交时再登记到这里。
 registerMindMaps({
+  "map:calculus/line-surface-integral": {"path":"assets/images/mindmaps/calculus-line-surface-integral-4ec55aa0bc70.webp","name":"calculus-line-surface-integral-mindmap-v1.webp","type":"image/webp","size":562532,"sha256":"4ec55aa0bc70751f5ed5d758d9b6ff854154dc1501f44fdb57722711ce629414"},
   "map:calculus/multiple-integral": {"path":"assets/images/mindmaps/calculus-multiple-integral-14682d4c8ce2.webp","name":"calculus-multiple-integral-mindmap-v2.webp","type":"image/webp","size":601372,"sha256":"14682d4c8ce21c1e652a2a3c5d7914a57c905716097d1c02fa581b48a3825d5a"},
   "map:calculus/multivar-derivative": {"path":"assets/images/mindmaps/calculus-multivar-derivative-a3dab851a3cd.webp","name":"calculus-multivar-derivative-mindmap-v1.webp","type":"image/webp","size":685580,"sha256":"a3dab851a3cd793ce3c37e6b85b906af7e93712c5dd4fa6de8c4db25b890619d"},
   "map:calculus/vector-geometry": {"path":"assets/images/mindmaps/calculus-vector-geometry-5223811a0f48.webp","name":"calculus-vector-geometry-mindmap-v1.webp","type":"image/webp","size":558916,"sha256":"5223811a0f484c4e27b5e1778e2b4c30a64eeec34f0dff2ad34fb84fc186c2de"},
