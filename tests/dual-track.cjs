@@ -282,9 +282,9 @@ const partialHtml = assertVisible(partial, 'missing corresponding entries');
 assert(partialHtml.includes('dual-missing'));
 assert(partialHtml.includes('笔记没有这一条'), 'an absent note gets an explicit placeholder');
 assert(partialHtml.includes('教材没有这一条'), 'an absent textbook entry gets an explicit placeholder');
-assert(/<div\b(?=[^>]*class="[^"]*\bdual-note\b)(?=[^>]*class="[^"]*\bdual-missing\b)[^>]*>笔记没有这一条<\/div>/.test(partialHtml),
+assert(/<div\b(?=[^>]*class="[^"]*\bdual-note\b)(?=[^>]*class="[^"]*\bdual-missing\b)[^>]*><span class="missing-text">笔记没有这一条<\/span><\/div>/.test(partialHtml),
   'the missing note prompt is in the note column');
-assert(/<div\b(?=[^>]*class="[^"]*\bdual-book\b)(?=[^>]*class="[^"]*\bdual-missing\b)[^>]*>教材没有这一条<\/div>/.test(partialHtml),
+assert(/<div\b(?=[^>]*class="[^"]*\bdual-book\b)(?=[^>]*class="[^"]*\bdual-missing\b)[^>]*><span class="missing-text">教材没有这一条<\/span><\/div>/.test(partialHtml),
   'the missing textbook prompt is in the textbook column');
 
 const groupedBook = '### 〔定义〕\n\n**① 同站**\n\n**共同组**\n\n#### 1. 第一条\n\n教材。\n\n**下一组**\n\n#### 1. 第二条\n\n另一条教材。';

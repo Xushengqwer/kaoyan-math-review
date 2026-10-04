@@ -1383,7 +1383,8 @@ body.mynote-zoomed { overflow: hidden; }
 .cell-preview { margin-top: 2px; padding: 12px 14px; border: 1px dashed var(--border); border-radius: var(--r-sm); background: var(--surface); }
 .cell-preview > :first-child > :first-child { margin-top: 0; }
 /* 改动都落在卡片上时，顶上那一栏不再显示状态（每张卡片自己标） */
-.dual-controls .flags-in-cells .mynote-flag, .dual-controls .flags-in-cells .mynote-restore { display: none; }
+/* 状态只在小卡片上显示一次；整条「用仓库版」一直留着，万一某一格改坏了也有退路 */
+.dual-controls .flags-in-cells .mynote-flag { display: none; }
 .cell-edit:hover { color: var(--accent); background: var(--accent-soft); }
 .cell-editor-head { margin-bottom: 8px; font-size: 12px; font-weight: 700; color: var(--text-3); }
 .cell-editor .cell-input { width: 100%; min-height: 160px; }

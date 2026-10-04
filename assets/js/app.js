@@ -296,6 +296,14 @@ function cellSource(full, start, end) {
   return { lead, core, tail: piece.slice(lead.length + core.length) };
 }
 
+// 补写一格：插在 at（下一段的开头）之前，前后各留一个空行，别的字一个不动
+function cellInsert(full, at, val) {
+  const before = String(full).slice(0, at), after = String(full).slice(at);
+  const v = String(val).replace(/^(?:[ \t]*\r?\n)*/, "").replace(/\s+$/, "");
+  const lead = !before || /\n[ \t]*\n[ \t]*$/.test(before) ? "" : before.endsWith("\n") ? "\n" : "\n\n";
+  return before + lead + v + (after ? "\n\n" : "") + after;
+}
+
 function cellSplice(full, start, end, val) {
   const { lead, tail } = cellSource(full, start, end);
   const v = String(val).replace(/^(?:[ \t]*\r?\n)*/, "").replace(/\s+$/, "");
@@ -567,8 +575,18 @@ const App = {
 
   dualTrackHtml(model) {
     const attrs = (s, part) => `data-part="${part}" data-sec="${escapeHtml(s.sec)}" data-station="${escapeHtml(s.station)}"`;
-    const cell = (s, part, numbered) => {
-      if (!s) return numbered ? `<div class="dual-cell dual-${part} dual-missing">${part === "book" ? "教材" : "笔记"}没有这一条</div>`
+    // 缺的那一格记下：另一边这一条的配对键（到仓库原文里找同一条），以及补写时插到原文的哪个位置（这一边下一段的开头）
+    let rowAt = 0;
+    const insertAt = (part) => {
+      for (let j = rowAt + 1; j < model.rows.length; j++) {
+        const x = model.rows[j][part];
+        if (x && x.sourcePieces.length) return x.sourcePieces[0].start;
+      }
+      return model[part].raw.length;
+    };
+    const cell = (s, part, numbered, other) => {
+      if (!s) return numbered ? `<div class="dual-cell dual-${part} dual-missing" ${attrs(other, part)} data-key="${escapeHtml(other.key).replace(/"/g, "&quot;")}" data-at="${insertAt(part)}">` +
+        `<span class="missing-text">${part === "book" ? "教材" : "笔记"}没有这一条</span></div>`
         : `<div class="dual-cell dual-${part} dual-empty" aria-hidden="true"></div>`;
       const body = part === "book" ? "entry-statement" : "mynote-body md";
       const src = s.sourcePieces.length ? ` data-src="${s.sourcePieces[0].start}-${s.sourcePieces[s.sourcePieces.length - 1].end}"` : "";
@@ -576,7 +594,8 @@ const App = {
         (part === "note" ? '<span class="dual-label">笔记</span>' : "") +
         `<div class="${body}">${part === "book" ? '<div class="term-md">' + s.html + '</div>' : s.html}</div></div>`;
     };
-    return '<div class="dual-track"><div class="dual-columns"><span>教材</span><span>笔记</span></div>' + model.rows.map((r) => {
+    return '<div class="dual-track"><div class="dual-columns"><span>教材</span><span>笔记</span></div>' + model.rows.map((r, i) => {
+      rowAt = i;
       const hasBook = !!(r.book && r.book.html.trim()), hasNote = !!(r.note && r.note.html.trim());
       if (!hasBook && !hasNote) return "";
       const s = hasBook ? r.book : r.note;
@@ -584,7 +603,8 @@ const App = {
       const cls = "dual-row kind-" + r.kind + (r.merged ? " is-merged" : wide ? " is-wide" : "");
       if (r.merged) return `<div class="${cls}" data-sec="${escapeHtml(s.sec)}" data-station="${escapeHtml(s.station)}">` +
         `<div class="dual-shared" data-book-sec="${escapeHtml(r.book.sec)}" data-note-sec="${escapeHtml(r.note.sec)}" data-station="${escapeHtml(s.station)}">${r.html}</div></div>`;
-      return `<div class="${cls}">` + (wide ? cell(s, hasBook ? "book" : "note") : cell(r.book, "book", r.kind === "entry") + cell(r.note, "note", r.kind === "entry")) + "</div>";
+      return `<div class="${cls}">` + (wide ? cell(s, hasBook ? "book" : "note")
+        : cell(r.book, "book", r.kind === "entry", r.note) + cell(r.note, "note", r.kind === "entry", r.book)) + "</div>";
     }).join("") + "</div>";
   },
 
@@ -735,6 +755,10 @@ const App = {
       const label = cell.querySelector(":scope > .dual-label");
       if (label) cell.querySelector(":scope > .cell-tools").prepend(label);
     });
+    // 「没有这一条」的格子也能编辑：补写（先填好仓库里的这一条），免得标题改坏以后连改回来的入口都没有
+    track.querySelectorAll(".dual-row.kind-entry > .dual-missing[data-at]").forEach((cell) => {
+      cell.insertAdjacentHTML("afterbegin", `<div class="cell-tools"><button type="button" class="cell-edit" title="把这一条补回来：先填好仓库里的那一版，可以改完再保存">补写这一条</button></div>`);
+    });
     const section = entry.querySelector(".dual-controls > section.card-book");
     const slot = entry.querySelector(".dual-controls > .mynote-slot");
     if (section) section.classList.toggle("flags-in-cells", !pending.book || local.book > 0);
@@ -766,17 +790,30 @@ const App = {
   // 和整卡编辑一样标成「本地已改」，导出待提交文件交给 Claude 提交。前后的空行原样保留，免得把下一个标题粘上来。
   editCell(cell) {
     const entry = cell && cell.closest(".entry");
-    if (!entry || !cell.dataset.src || entry.querySelector(".cell-editing, .mynote-editing")) return;
+    const insert = !!cell && cell.classList.contains("dual-missing");
+    if (!entry || !(cell.dataset.src || insert) || entry.querySelector(".cell-editing, .mynote-editing")) return;
     const id = entry.id.slice(5), part = cell.dataset.part;
     const full = part === "book" ? BookEdits.get(id) : Notes.get(id);
-    const [start, end] = cell.dataset.src.split("-").map(Number);
-    const { core } = cellSource(full, start, end);
-    const repo = this._cellRepo ? this._cellRepo[id + "|" + part + "|" + start] : undefined;
+    let start, end, core, fill = null;
+    if (insert) {
+      // 补写：插在这一边下一段的开头；先填好仓库里配对键相同的那一条（仓库里也没有就空着）
+      start = end = Math.min(+cell.dataset.at || 0, full.length);
+      core = "";
+      const repoBook = BookEdits.seed(id) || "";
+      const repoFull = part === "book" ? repoBook : (window.__KAOYAN_SEED_NOTES__[id] || "");
+      const seg = dualSource(repoFull, part, appByType(repoBook)).find((r) => r.key === cell.dataset.key && r.sourcePieces.length);
+      fill = seg ? cellSource(repoFull, seg.sourcePieces[0].start, seg.sourcePieces[seg.sourcePieces.length - 1].end).core : "";
+    } else {
+      [start, end] = cell.dataset.src.split("-").map(Number);
+      core = cellSource(full, start, end).core;
+    }
+    const repo = !insert && this._cellRepo ? this._cellRepo[id + "|" + part + "|" + start] : undefined;
     const entryCard = cell.closest(".dual-row").classList.contains("kind-entry");
-    this._cellEdit = { id, part, full, start, end, core, repo, entryCard, html: cell.innerHTML };
+    this._cellEdit = { id, part, full, start, end, core, repo, entryCard, insert, html: cell.innerHTML };
     cell.classList.add("cell-editing");
+    const head = !insert ? "只改这一张" : fill ? "补写这一条 · 已填好仓库里的那一版" : "补写这一条 · 第一行写「#### 编号. 标题」";
     cell.innerHTML = `<div class="cell-editor">
-      <div class="cell-editor-head">${part === "book" ? "教材" : "笔记"} · 只改这一张</div>
+      <div class="cell-editor-head">${part === "book" ? "教材" : "笔记"} · ${head}</div>
       <textarea class="mynote-input cell-input" spellcheck="false"></textarea>
       <div class="cell-preview" hidden></div>
       <div class="mynote-actions">
@@ -787,7 +824,7 @@ const App = {
       </div>
     </div>`;
     const ta = cell.querySelector(".cell-input");
-    ta.value = core;
+    ta.value = insert ? fill : core;
     const fit = () => { ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight + 4, 640) + "px"; };
     ta.addEventListener("input", fit);
     fit();
@@ -831,7 +868,9 @@ const App = {
     if (!val && !confirm("这一张清空以后，这段原文就没有了。确定吗？")) return;
     const chk = this.codeBlockCheck(val);
     if (chk && !confirm("第 " + chk.lines.slice(0, 8).join("、") + " 行的缩进会显示成代码块。内容不会丢，要继续保存吗？")) return;
-    const next = cellSplice(ed.full, ed.start, ed.end, val);
+    if (ed.insert && !/^#{4}[ \t]+\S/.test(val) &&
+      !confirm("第一行不是「#### 编号. 标题」。这样保存，它还是对不上另一边的那一条。要继续保存吗？")) return;
+    const next = ed.insert ? cellInsert(ed.full, ed.start, val) : cellSplice(ed.full, ed.start, ed.end, val);
     if (!(ed.part === "book" ? BookEdits.set(ed.id, next) : Notes.set(ed.id, next))) {
       alert("保存失败：浏览器存储空间不足或被禁用。");
       return;

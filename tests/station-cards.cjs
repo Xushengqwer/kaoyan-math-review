@@ -122,5 +122,27 @@ const s1 = doc.indexOf('#### 1.'), e1 = doc.indexOf('#### 2.');
 assert.deepEqual(cellSource(doc, s1, e1), { lead: '', core: '#### 1. 甲\\n正文一', tail: '\\n\\n' });
 assert.equal(cellSplice(doc, s1, e1, '#### 1. 甲\\n新的正文'), '### 〔定义〕\\n\\n#### 1. 甲\\n新的正文\\n\\n#### 2. 乙\\n正文二\\n');
 assert.equal(cellSplice(doc, s1, e1, '#### 1. 甲\\n新的正文   \\n\\n'), '### 〔定义〕\\n\\n#### 1. 甲\\n新的正文\\n\\n#### 2. 乙\\n正文二\\n');
+// 补写：插在下一段开头之前，前后各一个空行
+assert.equal(cellInsert(doc, e1, '#### 1′. 丙\\n正文三\\n\\n'), '### 〔定义〕\\n\\n#### 1. 甲\\n正文一\\n\\n#### 1′. 丙\\n正文三\\n\\n#### 2. 乙\\n正文二\\n');
+assert.equal(cellInsert('甲\\n', 2, '乙'), '甲\\n\\n乙');
+
+// 标题改坏（「#### 1. 唯一性：」被去掉）：这一条落进上一格，右栏显示「笔记没有这一条」。
+// 那一格带着配对键和插入位置，「补写这一条」填好仓库里的那一版，插回去就又配上了，原文其他地方不动。
+{
+  const id = 'calc-lim-function', book = KaoyanData.find(id).md, note = Notes.get(id);
+  const broken = note.replace('#### 1. 唯一性：', '唯一性：');
+  const html = App.dualTrackHtml(App.dualTrackModel(id, book, broken));
+  const m = html.match(/<div class="dual-cell dual-note dual-missing" [^>]*data-key="([^"]*)" data-at="(\\d+)">/);
+  assert(m, '缺的那一格带配对键和插入位置');
+  const key = m[1].replace(/&quot;/g, '"');
+  const seg = dualSource(note, 'note', appByType(book)).find((r) => r.key === key);
+  const fill = cellSource(note, seg.sourcePieces[0].start, seg.sourcePieces[seg.sourcePieces.length - 1].end).core;
+  assert(fill.startsWith('#### 1. 唯一性：'), '填好的是仓库里的那一条');
+  const fixed = cellInsert(broken, +m[2], fill);
+  assert(fixed.includes(fill + '\\n\\n#### 2. 局部有界性'), '插在下一条前面');
+  assert.equal(fixed.replace(fill + '\\n\\n', ''), broken, '除了插进去的这一段，原文一字不变');
+  const after = App.dualTrackModel(id, book, fixed);
+  assert(!after.rows.some((r) => r.kind === 'entry' && (!r.book || !r.note)), '补写以后不再缺');
+}
 `, context);
 console.log('station cards ok');
