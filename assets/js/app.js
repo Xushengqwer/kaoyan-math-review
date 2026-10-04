@@ -597,10 +597,7 @@ const App = {
     const track = projection.firstElementChild;
     controls.after(track);
     this.decorateStations(track, id);
-    // 每张小卡片右上角一个「编辑」：只改这一格对应的那段原文（editCell）
-    track.querySelectorAll(".dual-row.kind-entry > .dual-cell[data-src], .dual-row.kind-content > .dual-cell[data-src]").forEach((cell) => {
-      cell.insertAdjacentHTML("afterbegin", '<button type="button" class="cell-edit" title="只改这一张卡片">编辑</button>');
-    });
+    this.decorateCells(track, entry, id);
     if (figure) {
       const row = document.createElement("div"); row.className = "dual-row is-wide";
       const cell = document.createElement("div"); cell.className = "dual-cell dual-book";
@@ -669,6 +666,48 @@ const App = {
     });
   },
 
+  // 每张小卡片右上角：一个状态（仓库版 / 本地版 · 待提交）和「编辑」（只改这一格对应的那段原文，editCell）。
+  // 状态按这一格的原文和仓库里「同一位置」那一格比：同一位置 = 同一个配对键（小节、站、分组、编号）的第几次出现，教材、笔记各自比。
+  // 改动都落在某张卡片上时，顶上那一栏不再重复显示状态；改的是卡片以外的地方（比如站名行）才留着。
+  decorateCells(track, entry, id) {
+    const texts = { book: BookEdits.get(id), note: Notes.get(id) };
+    const repo = { book: BookEdits.seed(id), note: window.__KAOYAN_SEED_NOTES__[id] || "" };
+    const pending = { book: BookEdits.isPending(id), note: Notes.isPending(id) };
+    const index = (raw, part) => {
+      const seen = {}, byStart = new Map(), byKey = new Map();
+      dualSource(raw, part).forEach((r) => {
+        const first = r.sourcePieces[0], last = r.sourcePieces[r.sourcePieces.length - 1];
+        if (!first) return;
+        const k = r.key + "#" + (seen[r.key] = (seen[r.key] || 0) + 1);
+        const core = cellSource(raw, first.start, last.end).core;
+        byStart.set(first.start, { k, core });
+        byKey.set(k, core);
+      });
+      return { byStart, byKey };
+    };
+    const now = {}, base = {}, local = { book: 0, note: 0 };
+    ["book", "note"].forEach((p) => { if (pending[p]) { now[p] = index(texts[p], p); base[p] = index(repo[p], p); } });
+    this._cellRepo = {};
+    track.querySelectorAll(".dual-row.kind-entry > .dual-cell[data-src], .dual-row.kind-content > .dual-cell[data-src]").forEach((cell) => {
+      const p = cell.dataset.part, start = +cell.dataset.src.split("-")[0];
+      let state = "repo";
+      if (pending[p]) {
+        const me = now[p].byStart.get(start);
+        const was = me ? base[p].byKey.get(me.k) : undefined;
+        if (!me || was !== me.core) { state = "local"; local[p]++; }
+        this._cellRepo[id + "|" + p + "|" + start] = was;
+      }
+      cell.dataset.state = state;
+      cell.insertAdjacentHTML("afterbegin", `<div class="cell-tools"><span class="cell-state ${state}" title="${state === "local"
+        ? "这一张在这台设备上改过，导出待提交文件交给 Claude 提交" : "和仓库里的一样"}">${state === "local" ? "本地版 · 待提交" : "仓库版"}</span>` +
+        `<button type="button" class="cell-edit" title="只改这一张卡片">编辑</button></div>`);
+    });
+    const section = entry.querySelector(".dual-controls > section.card-book");
+    const slot = entry.querySelector(".dual-controls > .mynote-slot");
+    if (section) section.classList.toggle("flags-in-cells", !pending.book || local.book > 0);
+    if (slot) slot.classList.toggle("flags-in-cells", !pending.note || local.note > 0);
+  },
+
   // 站卡上的小标题对应的那张卡片：从站卡（或分组行）往下，到下一站、下一节之前，按同样的规则数到第 ord 张
   stationChipTarget(chip) {
     const start = chip.closest(".dual-row");
@@ -699,12 +738,20 @@ const App = {
     const full = part === "book" ? BookEdits.get(id) : Notes.get(id);
     const [start, end] = cell.dataset.src.split("-").map(Number);
     const { core } = cellSource(full, start, end);
-    this._cellEdit = { id, part, full, start, end, core, html: cell.innerHTML };
+    const repo = this._cellRepo ? this._cellRepo[id + "|" + part + "|" + start] : undefined;
+    const entryCard = cell.closest(".dual-row").classList.contains("kind-entry");
+    this._cellEdit = { id, part, full, start, end, core, repo, entryCard, html: cell.innerHTML };
     cell.classList.add("cell-editing");
     cell.innerHTML = `<div class="cell-editor">
       <div class="cell-editor-head">${part === "book" ? "教材" : "笔记"} · 只改这一张</div>
       <textarea class="mynote-input cell-input" spellcheck="false"></textarea>
-      <div class="mynote-actions"><button class="mynote-save" data-cell-action="save">保存</button><button class="mynote-cancel" data-cell-action="cancel">取消</button></div>
+      <div class="cell-preview" hidden></div>
+      <div class="mynote-actions">
+        <button class="mynote-save" data-cell-action="save">保存</button>
+        <button class="mynote-preview-btn" data-cell-action="preview">预览</button>
+        <button class="mynote-cancel" data-cell-action="cancel">取消</button>
+        ${cell.dataset.state === "local" && repo != null ? `<button class="mynote-restore" data-cell-action="restore" title="丢掉本机对这一张的改动">改回仓库版</button>` : ""}
+      </div>
     </div>`;
     const ta = cell.querySelector(".cell-input");
     ta.value = core;
@@ -721,12 +768,28 @@ const App = {
     if (!ed || !entry || entry.id !== "item-" + ed.id) return;
     const ta = cell.querySelector(".cell-input");
     const close = () => { cell.classList.remove("cell-editing"); cell.innerHTML = ed.html; this._cellEdit = null; };
-    const val = ta.value.replace(/^(?:[ \t]*\r?\n)*/, "").replace(/\s+$/, "");
-    if (btn.dataset.cellAction === "cancel") {
+    const act = btn.dataset.cellAction;
+    let val = ta.value.replace(/^(?:[ \t]*\r?\n)*/, "").replace(/\s+$/, "");
+    if (act === "preview") {
+      // 预览：用和卡片显示一样的渲染，看完点「继续改」回到输入框
+      const pv = cell.querySelector(".cell-preview");
+      if (!pv.hidden) { pv.hidden = true; ta.hidden = false; btn.textContent = "预览"; ta.focus(); return; }
+      pv.innerHTML = ed.part === "book" ? `<div class="entry-statement">${bookParts(ta.value).main}</div>`
+        : `<div class="mynote-body md">${noteMdHtml(ta.value)}</div>`;
+      renderMath(pv);
+      pv.hidden = false; ta.hidden = true; btn.textContent = "继续改";
+      return;
+    }
+    if (act === "cancel") {
       if (val !== ed.core && !confirm("改动还没保存，确定放弃吗？")) return;
       close();
       return;
     }
+    if (act === "restore") {
+      if (!confirm("把这一张改回仓库里的那一版？本机对这一张的改动会丢掉。")) return;
+      val = ed.repo;
+    } else if (ed.entryCard && /^#{4}[ \t]+\d+\./.test(ed.core) && !/^#{4}[ \t]+\d+\./.test(val) &&
+      !confirm("这一张第一行原来是「#### 编号. 标题」，现在不是了。保存后它会和另一边的卡片对不上，要继续保存吗？")) return;
     if (val === ed.core) { close(); return; }
     if ((ed.part === "book" ? BookEdits.get(ed.id) : Notes.get(ed.id)) !== ed.full) {
       alert("这张卡的原文在别处改过了，刷新页面后再改。");
