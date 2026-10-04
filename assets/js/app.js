@@ -38,7 +38,7 @@ function plainText(raw) {
 // 写法约定（教材和笔记通用）：
 // - 「### 〔定义〕名字」小标题按〔〕里的字上色：
 //   定义 蓝 / 定理、推论 橙 / 性质 绿 / 方法 红 / 例题 青 / 提示 紫
-// - ==重点== 显示为下划线（Markdown 本身没有下划线，这是本站约定），公式也能划
+// - ==重点== 文字显示为荧光笔底，公式仍使用下划线（本站约定）
 // 教材额外一条：「### 〔提示〕」那一节放进卡片底部的提示区（笔记里留在原位）。
 // 公式先挖出来再交给 Markdown，保护流水线只有这一份。
 const TERM_KINDS = "定义|定理|性质|推论|方法|例题|意义|提示";
@@ -731,6 +731,9 @@ const App = {
       cell.insertAdjacentHTML("afterbegin", `<div class="cell-tools"><span class="cell-state ${state}" title="${state === "local"
         ? "这一张在这台设备上改过，导出待提交文件交给 Claude 提交" : "和仓库里的一样"}">${state === "local" ? "本地版 · 待提交" : "仓库版"}</span>` +
         `<button type="button" class="cell-edit" title="只改这一张卡片">编辑</button></div>`);
+      // 只挪显示 DOM：笔记徽标与状态、编辑同排，双轨 HTML 和原文定位不变。
+      const label = cell.querySelector(":scope > .dual-label");
+      if (label) cell.querySelector(":scope > .cell-tools").prepend(label);
     });
     const section = entry.querySelector(".dual-controls > section.card-book");
     const slot = entry.querySelector(".dual-controls > .mynote-slot");
@@ -2714,7 +2717,7 @@ const App = {
     const list = (arr) => arr.slice(0, 6).join("、") + (arr.length > 6 ? " …" : "");
     const bits = [
       '<span class="mynote-fmt md">Markdown</span>',
-      '<span class="mynote-fmt-why">「### 〔定义〕名字」开一个小节，按〔〕里的字自动上色 · 「### 〔提示〕」放提示 · ==重点== 显示下划线</span>',
+      '<span class="mynote-fmt-why">「### 〔定义〕名字」开一个小节，按〔〕里的字自动上色 · 「### 〔提示〕」放提示 · ==重点== 文字显示荧光底，公式保持下划线</span>',
     ];
     if (is.heads.length) bits.push('<span class="mynote-codewarn">⚠ 第 ' + list(is.heads) + " 行的标题没按〔定义〕这类写法，不会上色</span>");
     if (is.code.length) bits.push('<span class="mynote-codewarn">⚠ 第 ' + list(is.code) + " 行会显示成代码块</span>");
@@ -3073,7 +3076,7 @@ const App = {
     const chk = this.codeBlockCheck(ta.value);
     const bits = [
       '<span class="mynote-fmt md">Markdown</span>',
-      '<span class="mynote-fmt-why">「### 〔定义〕名字」小标题按〔〕里的字自动上色 · ==重点== 显示下划线</span>',
+      '<span class="mynote-fmt-why">「### 〔定义〕名字」小标题按〔〕里的字自动上色 · ==重点== 文字显示荧光底，公式保持下划线</span>',
     ];
     if (chk) {
       bits.push('<span class="mynote-codewarn">⚠ 第 ' +

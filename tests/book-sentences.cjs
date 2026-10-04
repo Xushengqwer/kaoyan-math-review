@@ -13,16 +13,22 @@ const display = (text) => {
   return out + text.slice(start);
 };
 const cases = [
-  ['说明，补充。后续；结论！再问？结束。', '说明，\n补充。\n后续；\n结论！\n再问？\n结束。'],
-  ['“定义，条件。”下一句。', '“定义，\n条件。”\n下一句。'],
+  ['说明，补充。后续；结论！再问？结束。', '说明，补充。\n后续；\n结论！\n再问？\n结束。'],
+  ['“定义，条件。”下一句。', '“定义，条件。”\n下一句。'],
   ['甲！？） 乙。', '甲！？）\n 乙。'],
   ['甲，  ', '甲，  '],
   ['0.5, interval=(0,1); next.', '0.5, interval=(0,1); next.'],
   // U+FFFC 代表完整的行内公式，U+0000 代表已有换行或块边界。
-  ['甲，\uFFFC', '甲，\n\uFFFC'],
-  ['甲。\u0000乙，继续。', '甲。\u0000乙，\n继续。'],
+  ['甲，\uFFFC', '甲，\uFFFC'],
+  ['甲。\u0000乙，继续。', '甲。\u0000乙，继续。'],
   ['甲， \u0000乙。', '甲， \u0000乙。'],
+  ['甲，乙、丙：说明。结论。', '甲，乙、丙：说明。\n结论。'],
+  ['范围 (0,1)，数值 0.5；下一步。', '范围 (0,1)，数值 0.5；\n下一步。'],
+  ['甲。\uFFFC', '甲。\n\uFFFC'],
+  ['\uFFFC，继续。\uFFFC；结论。', '\uFFFC，继续。\n\uFFFC；\n结论。'],
+  ['甲； \u0000乙！\u0000丙？  \u0000丁。', '甲； \u0000乙！\u0000丙？  \u0000丁。'],
 ];
 for (const [input, want] of cases) assert.equal(display(input), want, input);
-assert.deepEqual(Array.from(context.bookSentenceBreaks('甲，\n乙。')), [2], 'Markdown soft newline still needs a display break');
-console.log('PASS: textbook punctuation breaks preserve closers, existing breaks, decimals and inline math boundaries.');
+assert.deepEqual(Array.from(context.bookSentenceBreaks('甲，\n乙。')), [], 'comma before a Markdown soft newline must not add a display break');
+assert.deepEqual(Array.from(context.bookSentenceBreaks('甲。\n乙。')), [2], 'sentence end before a Markdown soft newline still needs a display break');
+console.log('PASS: textbook sentence ends preserve closers, existing breaks and math boundaries without breaking at commas, list separators or colons.');

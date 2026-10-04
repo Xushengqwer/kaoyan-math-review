@@ -10,6 +10,7 @@
   --accent: #0071e3;
   --accent-soft: #eaf3fd;
   --note-border: #cfe3f9;
+  --highlight-bg: #fff0ad;
 
   --def: #0068d6;
   --def-bg: #eaf2fc;
@@ -56,6 +57,7 @@
     --accent: #2997ff;
     --accent-soft: #15263c;
     --note-border: #24405f;
+    --highlight-bg: #54451c;
 
     --def: #63aaff;
     --def-bg: #15263c;
@@ -676,12 +678,11 @@ button { font: inherit; border: none; background: none; color: inherit; cursor: 
 .entry-statement { font-size: 15.5px; line-height: 2.05; color: var(--text); }
 .entry-statement strong { font-weight: 600; }
 .entry-statement u, .entry-note u, .mynote-body u, .mynote-preview u {
-  text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--accent) 55%, transparent);
-  text-decoration-thickness: 2px;
-  text-underline-offset: 4px;
+  text-decoration: none; color: inherit; background: var(--highlight-bg);
+  border-radius: 3px; padding: .06em .12em;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
 }
-/* ==重点== 里的公式：显示时换成了 KaTeX 的 \underline，线的颜色粗细和文字下划线一致 */
+/* 公式里的 KaTeX \underline 保持现有下划线样式。 */
 .katex .underline-line {
   border-bottom-color: color-mix(in srgb, var(--accent) 55%, transparent);
   border-bottom-width: 2px !important;
@@ -1369,7 +1370,12 @@ body.mynote-zoomed { overflow: hidden; }
 
 /* 小卡片右上角的「编辑」：只改这一张 */
 .dual-cell[data-src] { position: relative; }
-.cell-tools { position: absolute; top: 12px; right: 8px; z-index: 1; display: flex; align-items: center; gap: 2px; }
+/* 工具行参与正文排版，长状态可以换排，不压住标题。 */
+.cell-tools {
+  display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap;
+  min-height: 24px; gap: 4px; margin: -4px -8px 10px 0;
+}
+.cell-tools > .dual-label { margin: 0 4px 0 0; flex: 0 0 auto; }
 .cell-edit { padding: 2px 9px; border-radius: 7px; font-size: 12px; line-height: 1.6; color: var(--text-3); }
 .cell-state { padding: 1px 8px; border-radius: 999px; font-size: 11.5px; line-height: 1.6; white-space: nowrap; }
 .cell-state.repo { color: var(--text-2); background: color-mix(in srgb, var(--text) 4%, var(--surface)); }
@@ -1378,9 +1384,6 @@ body.mynote-zoomed { overflow: hidden; }
 .cell-preview > :first-child > :first-child { margin-top: 0; }
 /* 改动都落在卡片上时，顶上那一栏不再显示状态（每张卡片自己标） */
 .dual-controls .flags-in-cells .mynote-flag, .dual-controls .flags-in-cells .mynote-restore { display: none; }
-/* 状态和「编辑」压在第一行右端：教材那一格给第一行留出位置（笔记那一格第一行是「笔记」两个字，不用留） */
-.dual-book[data-src] .term-md > :first-child { padding-right: 100px; }
-.dual-book[data-state="local"] .term-md > :first-child { padding-right: 160px; }
 .cell-edit:hover { color: var(--accent); background: var(--accent-soft); }
 .cell-editor-head { margin-bottom: 8px; font-size: 12px; font-weight: 700; color: var(--text-3); }
 .cell-editor .cell-input { width: 100%; min-height: 160px; }

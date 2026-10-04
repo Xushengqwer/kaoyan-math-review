@@ -20,7 +20,7 @@ function renderMath(container) {
 // 中文断句只用于教材显示；公式由 KaTeX 先渲染成完整节点，原文和双轨分段模型不动。
 function bookSentenceBreaks(text) {
   const ends = [];
-  const punctuation = /[，。；！？]+[”’」』）》】〕）"')\]]*/gu;
+  const punctuation = /[。；！？]+[”’」』）》】〕）"')\]]*/gu;
   for (const match of text.matchAll(punctuation)) {
     const end = match.index + match[0].length;
     // U+0000 是已有换行/块边界；Markdown 文本里的软换行仍需要主动断行。
