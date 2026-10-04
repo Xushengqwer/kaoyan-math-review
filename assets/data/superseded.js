@@ -8,7 +8,7 @@ registerSuperseded({
     "map:linalg/vector-space": ["5ec107105d39a923071208cbac70bd8414ceb355e691cc30030207339a0d28c2"],
   },
   notes: {
-    "calc-lim-function": ["1gm1we686ls","hppjqg2tc","1q95eppecol","1be0xko3hyb","1g14r2a5g4j"],
+    "calc-lim-function": ["1gm1we686ls","hppjqg2tc","1q95eppecol","1be0xko3hyb","1g14r2a5g4j","1j9fgkmtqpz"],
     "ch:linalg/eigen": ["1h32fa17l0z"],
     "flow:linalg/eigen": ["1h3p2d178s"],
     "la-qf-thm-semi-positive-definite": ["5v8qxlj8bq"],
