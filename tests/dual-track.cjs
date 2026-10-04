@@ -49,6 +49,7 @@ const approved = site.App.dualTrackModel('la-eig-def-eigen',
 assert.equal(approved.enabled, true, 'the exact user-approved eigen pair may bypass the title guard');
 assert.equal(approved.pairs.length, 1);
 assert(approvedTitleException('la-eig-def-eigen', approved.pairs[0]));
+// 按站或分组组织的卡按位置配对：标题对不上（比如本机改了标题）也照样对照，不会整卡退回原样。
 for (const [id, book, note, label] of [
   ['calc-mi-double-def', exceptionSource(exceptionBookTitle), exceptionSource(exceptionNoteTitle), 'another card'],
   ['la-eig-def-eigen', exceptionSource(exceptionBookTitle, '⑤'), exceptionSource(exceptionNoteTitle, '⑤'), 'another station'],
@@ -58,11 +59,14 @@ for (const [id, book, note, label] of [
   ['la-eig-def-eigen', exceptionSource(exceptionBookTitle), exceptionSource(exceptionNoteTitle.replace('天然', '天燃')), 'a changed note character'],
   ['la-eig-def-eigen', exceptionSource(exceptionBookTitle.replace('凑齐', '凑全')), exceptionSource(exceptionNoteTitle), 'a changed textbook character'],
 ]) {
-  const rejected = site.App.dualTrackModel(id, book, note);
-  assert.equal(rejected.pairs.length, 1, label + ': the structurally matching pair remains available for the guard');
-  assert.equal(rejected.enabled, false,
-    label + ' cannot borrow the user-approved title exception');
+  const kept = site.App.dualTrackModel(id, book, note);
+  assert.equal(kept.pairs.length, 1, label + ': the structurally matching pair is found');
+  assert.equal(kept.enabled, true, label + ': a station card stays in comparison even when titles differ');
 }
+// 没有站、没有分组的旧卡：标题对不上就不对照（编号可能对错位）
+const plain = (title) => '### 〔性质〕\n\n#### 1. ' + title + '\n\n正文。';
+assert.equal(site.App.dualTrackModel('la-eig-def-eigen', plain(exceptionBookTitle), plain(exceptionNoteTitle)).enabled, false,
+  'an unstructured card with a mismatched title keeps its original display');
 
 function assertCoverage(model, id) {
   const texts = { book: model.book.raw, note: model.note.raw };

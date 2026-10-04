@@ -520,11 +520,10 @@ const App = {
     const note = dualSide(texts.note, this.stationizeNote(noteMdHtml(texts.note), texts.note, id, texts), "note");
     const rows = dualRows(book, note);
     const pairs = rows.filter((r) => r.book && r.note && r.kind === "entry");
-    // 用户逐对核对后只批准这一处标题例外；不能扩大到其他卡、站或近似标题。
-    const approvedEigenPair = (r) => id === "la-eig-def-eigen" && [r.book, r.note].every((s) =>
-      s.sec === "性质" && s.station === "④" && !s.group && s.num === "1") &&
-      r.book.title === "实对称矩阵：凑齐，而且两两垂直" && r.note.title === "实对称矩阵：为什么天然轴一定垂直";
-    const enabled = pairs.length > 0 && pairs.every((r) => r.note.title === r.book.title || r.note.title.startsWith(r.book.title + "：") || approvedEigenPair(r));
+    // 按站或分组组织的卡（重构过的）按「小节 + 站 + 分组 + 编号」配对就可靠：本机改了某条标题、两边标题不再相同，
+    // 也照样对照，每张小卡片的「编辑」都还在。旧卡没有站和分组，编号可能对错位，仍要求每一对标题对得上。
+    const titled = (r) => r.note.title === r.book.title || r.note.title.startsWith(r.book.title + "：");
+    const enabled = pairs.length > 0 && (cardOutline(texts.book, texts.note).structured || pairs.every(titled));
     rows.filter((r) => r.merged).forEach((r) => {
       // 站名取已经渲染、转义的内容，不能把原文里的 < 或 & 当作新 HTML 插回去。
       const head = r.kind === "station" && r.book.html.match(/<span class="station-no">[^<]*<\/span>([ \t]*)<span class="station-name">([\s\S]*?)<\/span><\/div>/);
