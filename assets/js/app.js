@@ -252,7 +252,8 @@ function cardOutline(book, note) {
         }
         m = line.match(/^####[ \t]+(\d+)\.[ \t]*(.*?)[ \t]*$/);
       } else if (sec === "意义") m = line.match(/^[*-][ \t]+\*\*(\d+)\.[ \t]*(.*?)\*\*/);
-      else if (sec === "例题") m = line.match(/^#{2,6}[ \t]+例题[ \t]*(\d+)(?![\d.])[ \t]*[：:]?[ \t]*(.*?)[ \t]*$/);
+      // 「例题 1-2」是题型 1 的第 2 道，编号仍记 1
+      else if (sec === "例题") m = line.match(/^#{2,6}[ \t]+例题[ \t]*(\d+)(?:-\d+)?(?![\d.])[ \t]*[：:]?[ \t]*(.*?)[ \t]*$/);
       else m = line.match(/^#{2,6}[ \t]+(\d+)\.[ \t]*(.*?)[ \t]*$/);
       if (!m) return;
       const rows = block(station, "").rows;

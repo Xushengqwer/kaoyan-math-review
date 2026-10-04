@@ -27,7 +27,7 @@ const total = (o, part, sec) => o.blocks.reduce((n, b) => n + (b.rows[part + sec
 // 重构过的卡：块数（站数，⑤′ 单独一块；没有站的整张卡一块）和各节条数。
 // 〔定义〕+〔性质〕的条数等于对照视图的配对数（tests/dual-track.cjs），笔记的〔定义〕〔性质〕条数与教材相同。
 const expected = {
-  'calc-lim-function':              [6, 20, 22, 16, 16, 0],
+  'calc-lim-function':              [7, 20, 22, 17, 18, 0],
   'calc-der-derivative':            [6, 14, 38, 21, 8, 9],
   'calc-int-antiderivative':        [6, 12, 41, 18, 11, 15],
   'calc-vec-coordinates':           [6, 23, 46, 15, 8, 18],
@@ -51,10 +51,14 @@ for (const [id, [blocks, ...counts]] of Object.entries(expected)) {
 
 // 第 1 章 ①：站卡上〔定义〕的小标题，按原文顺序
 const lim = outline('calc-lim-function');
-assert.deepEqual(lim.blocks.map((b) => b.mark), ['①', '②', '③', '④', '⑤', '⑥']);
+// 意义、例题按题型分组，不挂在站里：都在最后那个没有站名的块
+assert.deepEqual(lim.blocks.map((b) => b.mark), ['①', '②', '③', '④', '⑤', '⑥', '']);
 assert.deepEqual(lim.blocks[0].rows.book定义.items.map((it) => it.title),
   ['函数', '有界性', '单调性', '奇偶性', '周期性', '复合函数', '反函数', '基本初等函数与初等函数', '分段函数与隐函数']);
-assert.deepEqual(lim.blocks[4].rows.book意义.items.map((it) => it.num).slice(0, 2), ['7', '8']);
+assert.deepEqual(lim.blocks[6].rows.book意义.items.map((it) => it.num).slice(0, 2), ['1', '2']);
+// 「例题 1-1」「例题 1-2」都记在题型 1 下
+assert.deepEqual(lim.blocks[6].rows.note例题.items.map((it) => it.num).slice(0, 3), ['1', '1', '2']);
+assert.equal(lim.blocks[6].rows.note例题.items[1].title, '判断奇偶性与周期性');
 // 第 6 章 ①：〔性质〕的分组记在条目上
 assert.deepEqual(outline('calc-mi-double-def').blocks[0].rows.book性质.items.map((it) => it.group),
   ['二重积分', '二重积分', '二重积分', '二重积分', '三重积分', '反过来用定义']);
