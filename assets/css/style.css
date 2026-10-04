@@ -1297,12 +1297,12 @@ body.mynote-zoomed { overflow: hidden; }
 .dual-shared > .term-head { color: var(--dual-color); }
 .dual-shared > .station { padding: 0; border: 0; background: transparent; }
 
-/* 教材 4、笔记 6（笔记通常更长）。840：教材一栏 (840 − 16) × 0.4 ≈ 330px，减去内边距和边线约 294px 正文；更长的公式在格子里横向滚动。 */
+/* 教材 4.5、笔记 5.5。840px 起并排：教材一栏 (840 − 16) × 0.45 ≈ 371px，正文约 345px；更长的公式在格子里横向滚动。 */
 @container review-card (min-width: 840px) {
-  .dual-controls, .dual-row { grid-template-columns: minmax(0, 4fr) minmax(0, 6fr); gap: 16px; }
+  .dual-controls, .dual-row { grid-template-columns: minmax(0, 4.5fr) minmax(0, 5.5fr); gap: 16px; }
   .dual-columns {
     position: sticky; top: var(--dual-sticky-top, 100px); z-index: 11;
-    display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 6fr); gap: 16px;
+    display: grid; grid-template-columns: minmax(0, 4.5fr) minmax(0, 5.5fr); gap: 16px;
     padding: 6px 0; margin-bottom: 10px;
     background: var(--bg);
   }
@@ -1347,12 +1347,12 @@ body.mynote-zoomed { overflow: hidden; }
 #chapter-item-groups.is-super .type-group { margin-top: 8px; }
 #chapter-item-groups.is-super .entry { grid-template-columns: minmax(0, 1fr); padding-top: 0; }
 
-/* 教材一栏只占 4/10：页面两侧留白、教材格子内边距都收一点，教材正文宽度回到手机正文那么宽（公式是按它排的） */
+/* 教材一栏占 4.5/10：保持紧凑的页面留白和教材内边距，给公式多留一点宽度。 */
 @media (min-width: 901px) { .content.is-compare { padding-left: 24px; padding-right: 36px; } }
 .dual-cell.dual-book { padding-left: 12px; padding-right: 12px; }
 
 /* 小卡片：教材、笔记正文和条目标题同一规格 */
-.dual-cell .entry-statement, .dual-cell .mynote-body { font-size: 15px; line-height: 1.9; }
+.dual-cell .entry-statement, .dual-cell .mynote-body { font-size: 15px; line-height: 2.05; }
 .dual-cell .term-md > :first-child, .dual-cell .mynote-body > :first-child { margin-top: 0; }
 .dual-row.kind-entry .term-md > h4:first-child, .dual-row.kind-entry .mynote-body > h4:first-child {
   margin: 0 0 10px; font-size: 16px; font-weight: 700; line-height: 1.5; color: var(--text);
@@ -1375,9 +1375,9 @@ body.mynote-zoomed { overflow: hidden; }
 .dual-track .station-links { display: none; }
 .dual-track .station-name { font-size: 19px; }
 .station-story { margin: 6px 0 0 30px; font-size: 13.5px; font-weight: 400; line-height: 1.75; color: var(--text-2); }
-.st-titles { display: grid; gap: 6px; margin: 10px 0 2px 30px; }
+.st-titles { display: grid; gap: 8px; margin: 12px 0 2px 30px; }
 .dual-row.kind-group .st-titles { margin-left: 0; }
-.st-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.st-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .st-label { margin-right: 4px; font-size: 12px; font-weight: 700; }
 .st-label.meaning { color: var(--meaning); }
 .st-label.ex { color: var(--example); }
@@ -1385,11 +1385,25 @@ body.mynote-zoomed { overflow: hidden; }
 .st-grp { margin: 0 2px 0 8px; font-size: 12px; font-weight: 600; color: var(--text-3); }
 .st-line > .st-grp:first-child { margin-left: 0; }
 .st-chip {
-  padding: 3px 11px; border-radius: 999px;
-  font-size: 13px; line-height: 1.55; color: var(--text); background: var(--surface);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--st, var(--accent)) 28%, var(--border));
+  --chip-color: var(--st, var(--dual-color, var(--accent)));
+  position: relative; min-width: 0; max-width: 100%;
+  padding: 5px 12px 5px 25px; border-radius: var(--r-sm);
+  font-size: 13px; line-height: 1.65; text-align: left; overflow-wrap: anywhere;
+  color: var(--text); background: color-mix(in srgb, var(--chip-color) 4%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--chip-color) 22%, var(--border));
+  transition: background .15s, box-shadow .15s, color .15s;
 }
-.st-chip:hover { color: var(--st, var(--accent)); box-shadow: inset 0 0 0 1.5px var(--st, var(--accent)); }
+.st-chip::before {
+  content: ""; position: absolute; top: calc(5px + .825em); left: 11px;
+  width: 5px; height: 5px; border-radius: 50%; transform: translateY(-50%);
+  background: var(--chip-color);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--chip-color) 9%, transparent);
+}
+.st-chip:hover {
+  color: var(--chip-color); background: color-mix(in srgb, var(--chip-color) 9%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--chip-color) 48%, var(--border));
+}
+.st-chip:focus-visible { outline: 2px solid var(--chip-color); outline-offset: 3px; }
 
 /* ---------- 一张超级卡的章：右侧目录只列各站，正在读的那一站下面是五个入口 ---------- */
 .rl-cap { margin: 14px 0 6px 10px; font-size: 11.5px; font-weight: 700; letter-spacing: .08em; color: var(--text-3); }
