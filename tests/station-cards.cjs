@@ -35,6 +35,7 @@ const expected = {
   'calc-mi-double-def':             [6, 15, 31, 18, 11, 19],
   'calc-ls-line-first': [6,16,39,20,10,18],
   'calc-ser-convergence': [6,16,36,19,10,18],
+  'calc-ode-concepts': [6,15,29,17,8,15],
   'la-eig-def-eigen':               [7, 19, 25, 19, 14, 30],
   'la-vec-def-max-independent-set': [1, 11, 11, 9, 6, 14],
 };

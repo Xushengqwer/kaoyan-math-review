@@ -1,6 +1,7 @@
 // 已提交到仓库的思维导图：id -> { path, name, type, size, sha256 }。
 // 用户上传的新图片先保存在浏览器，提交时再登记到这里。
 registerMindMaps({
+  "map:calculus/ode": {"path":"assets/images/mindmaps/calculus-ode-10afd702285f.webp","name":"calculus-ode-mindmap-v1.webp","type":"image/webp","size":547474,"sha256":"10afd702285f69d9e02acba0630a7a6aa0e64aafe324be80d37e1316309c3455"},
   "map:calculus/series": {"path":"assets/images/mindmaps/calculus-series-c9e67d208f3b.webp","name":"calculus-series-mindmap-v1.webp","type":"image/webp","size":578152,"sha256":"c9e67d208f3b340fa4cb3c3ab1d0fbb102e5ca16c19978cead9cda485e99191a"},
   "map:calculus/line-surface-integral": {"path":"assets/images/mindmaps/calculus-line-surface-integral-4ec55aa0bc70.webp","name":"calculus-line-surface-integral-mindmap-v1.webp","type":"image/webp","size":562532,"sha256":"4ec55aa0bc70751f5ed5d758d9b6ff854154dc1501f44fdb57722711ce629414"},
   "map:calculus/multiple-integral": {"path":"assets/images/mindmaps/calculus-multiple-integral-14682d4c8ce2.webp","name":"calculus-multiple-integral-mindmap-v2.webp","type":"image/webp","size":601372,"sha256":"14682d4c8ce21c1e652a2a3c5d7914a57c905716097d1c02fa581b48a3825d5a"},

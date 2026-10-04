@@ -19,6 +19,7 @@ const expected = new Map([
   ['calc-mi-double-def', 46],
   ['calc-ls-line-first', 55],
   ['calc-ser-convergence', 52],
+  ['calc-ode-concepts', 44],
   ['la-eig-def-eigen', 44],
   ['la-vec-def-max-independent-set', 22],
 ]);
@@ -166,7 +167,7 @@ for (const subject of subjects) {
   }
 }
 assert.deepEqual(enabled.sort(), [...expected.keys()].sort(),
-  'exactly the ten reconstructed cards currently enable comparison');
+  'exactly the eleven reconstructed cards currently enable comparison');
 
 const fixtureId = 'calc-mi-double-def';
 const simpleBook = '### 〔定义〕\n\n#### 1. 标题甲\n\n教材甲。\n\n#### 2. 标题乙\n\n教材乙。';
