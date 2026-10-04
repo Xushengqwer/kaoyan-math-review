@@ -27,7 +27,7 @@ const total = (o, part, sec) => o.blocks.reduce((n, b) => n + (b.rows[part + sec
 // 重构过的卡：块数（站数，⑤′ 单独一块；没有站的整张卡一块）和各节条数。
 // 〔定义〕+〔性质〕的条数等于对照视图的配对数（tests/dual-track.cjs），笔记的〔定义〕〔性质〕条数与教材相同。
 const expected = {
-  'calc-lim-function':              [6, 20, 29, 16, 16, 9],
+  'calc-lim-function':              [6, 20, 22, 16, 16, 9],
   'calc-der-derivative':            [6, 14, 38, 21, 8, 9],
   'calc-int-antiderivative':        [6, 12, 41, 18, 11, 15],
   'calc-vec-coordinates':           [6, 23, 46, 15, 8, 18],
