@@ -27,7 +27,7 @@ const total = (o, part, sec) => o.blocks.reduce((n, b) => n + (b.rows[part + sec
 // 重构过的卡：块数（站数，⑤′ 单独一块；没有站的整张卡一块）和各节条数。
 // 〔定义〕+〔性质〕的条数等于对照视图的配对数（tests/dual-track.cjs），笔记的〔定义〕〔性质〕条数与教材相同。
 const expected = {
-  'calc-lim-function':              [7, 15, 13, 17, 18, 0],
+  'calc-lim-function':              [6, 13, 14, 17, 18, 0],
   'calc-der-derivative':            [6, 14, 38, 21, 8, 9],
   'calc-int-antiderivative':        [6, 12, 41, 18, 11, 15],
   'calc-vec-coordinates':           [6, 23, 46, 15, 8, 18],
@@ -52,13 +52,13 @@ for (const [id, [blocks, ...counts]] of Object.entries(expected)) {
 // 第 1 章 ①：站卡上〔定义〕的小标题，按原文顺序
 const lim = outline('calc-lim-function');
 // 意义、例题按题型分组，不挂在站里：都在最后那个没有站名的块
-assert.deepEqual(lim.blocks.map((b) => b.mark), ['①', '②', '③', '④', '⑤', '⑥', '']);
+assert.deepEqual(lim.blocks.map((b) => b.mark), ['①', '②', '③', '④', '⑤', '']);
 assert.deepEqual(lim.blocks[0].rows.book定义.items.map((it) => it.title),
   ['函数概念与两要素', '函数四大性态', '复合函数与反函数', '初等函数与特殊形态']);
-assert.deepEqual(lim.blocks[6].rows.book意义.items.map((it) => it.num).slice(0, 2), ['1', '2']);
+assert.deepEqual(lim.blocks[5].rows.book意义.items.map((it) => it.num).slice(0, 2), ['1', '2']);
 // 「例题 1-1」「例题 1-2」都记在题型 1 下
-assert.deepEqual(lim.blocks[6].rows.note例题.items.map((it) => it.num).slice(0, 3), ['1', '1', '2']);
-assert.equal(lim.blocks[6].rows.note例题.items[1].title, '判断奇偶性与周期性');
+assert.deepEqual(lim.blocks[5].rows.note例题.items.map((it) => it.num).slice(0, 3), ['1', '1', '2']);
+assert.equal(lim.blocks[5].rows.note例题.items[1].title, '判断奇偶性与周期性');
 // 第 6 章 ①：〔性质〕的分组记在条目上
 assert.deepEqual(outline('calc-mi-double-def').blocks[0].rows.book性质.items.map((it) => it.group),
   ['二重积分', '二重积分', '二重积分', '二重积分', '三重积分', '反过来用定义']);
@@ -72,7 +72,7 @@ assert.deepEqual(Object.keys(story.st), ['①', '②', '③', '④', '⑤', '⑥
 // 写法二：「**本卡主线：……**」「- **① 问句** $\to$ **答案**：一句话」
 const story2 = cardStory(KaoyanData.find('calc-lim-function').md);
 assert.equal(story2.lead, '$x$ 靠近某点时，$f(x)$ 靠近谁？');
-assert.deepEqual(Object.keys(story2.st), ['①', '②', '③', '④', '⑤', '⑥']);
+assert.deepEqual(Object.keys(story2.st), ['①', '②', '③', '④', '⑤']);
 assert.equal(story2.st['①'], '谁在靠近？ $\\\\to$ **函数**：研究对象、构造与四大性态');
 assert.deepEqual(cardStory('没有主线').st, {});
 
@@ -126,20 +126,20 @@ assert.equal(cellSplice(doc, s1, e1, '#### 1. 甲\\n新的正文   \\n\\n'), '##
 assert.equal(cellInsert(doc, e1, '#### 1′. 丙\\n正文三\\n\\n'), '### 〔定义〕\\n\\n#### 1. 甲\\n正文一\\n\\n#### 1′. 丙\\n正文三\\n\\n#### 2. 乙\\n正文二\\n');
 assert.equal(cellInsert('甲\\n', 2, '乙'), '甲\\n\\n乙');
 
-// 标题改坏（「#### 3. 四则运算法则：」被去掉）：这一条落进上一格，右栏显示「笔记没有这一条」。
+// 标题改坏（「#### 2. 四则运算法则：」被去掉）：这一条落进上一格，右栏显示「笔记没有这一条」。
 // 那一格带着配对键和插入位置，「补写这一条」填好仓库里的那一版，插回去就又配上了，原文其他地方不动。
 {
   const id = 'calc-lim-function', book = KaoyanData.find(id).md, note = Notes.get(id);
-  const broken = note.replace('#### 3. 四则运算法则：', '四则运算法则：');
+  const broken = note.replace('#### 2. 四则运算法则：', '四则运算法则：');
   const html = App.dualTrackHtml(App.dualTrackModel(id, book, broken));
   const m = html.match(/<div class="dual-cell dual-note dual-missing" [^>]*data-key="([^"]*)" data-at="(\\d+)">/);
   assert(m, '缺的那一格带配对键和插入位置');
   const key = m[1].replace(/&quot;/g, '"');
   const seg = dualSource(note, 'note', appByType(book)).find((r) => r.key === key);
   const fill = cellSource(note, seg.sourcePieces[0].start, seg.sourcePieces[seg.sourcePieces.length - 1].end).core;
-  assert(fill.startsWith('#### 3. 四则运算法则：'), '填好的是仓库里的那一条');
+  assert(fill.startsWith('#### 2. 四则运算法则：'), '填好的是仓库里的那一条');
   const fixed = cellInsert(broken, +m[2], fill);
-  assert(fixed.includes(fill + '\\n\\n**④ 能不能直接代入**'), '插在下一段前面');
+  assert(fixed.includes(fill + '\\n\\n#### 3. 复合函数的极限'), '插在下一条前面');
   assert.equal(fixed.replace(fill + '\\n\\n', ''), broken, '除了插进去的这一段，原文一字不变');
   const after = App.dualTrackModel(id, book, fixed);
   assert(!after.rows.some((r) => r.kind === 'entry' && (!r.book || !r.note)), '补写以后不再缺');

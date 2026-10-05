@@ -11,7 +11,7 @@ const dataFiles = ['calculus', 'linalg', 'probability', 'notes', 'superseded']
   .map(name => 'assets/data/' + name + '.js');
 const dataBefore = dataFiles.map(file => fs.readFileSync(file));
 const expected = new Map([
-  ['calc-lim-function', 45],
+  ['calc-lim-function', 44],
   ['calc-der-derivative', 52],
   ['calc-int-antiderivative', 53],
   ['calc-vec-coordinates', 69],

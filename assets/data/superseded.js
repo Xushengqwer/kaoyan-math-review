@@ -8,7 +8,7 @@ registerSuperseded({
     "map:linalg/vector-space": ["5ec107105d39a923071208cbac70bd8414ceb355e691cc30030207339a0d28c2"],
   },
   notes: {
-    "calc-lim-function": ["1gm1we686ls","hppjqg2tc","1q95eppecol","1be0xko3hyb","1g14r2a5g4j","1j9fgkmtqpz","2b0wqwjim1h"],
+    "calc-lim-function": ["1gm1we686ls","hppjqg2tc","1q95eppecol","1be0xko3hyb","1g14r2a5g4j","1j9fgkmtqpz","2b0wqwjim1h","1xyyyv9td3c","u4fo7fhsdq"],
     "ch:linalg/eigen": ["1h32fa17l0z"],
     "flow:linalg/eigen": ["1h3p2d178s"],
     "la-qf-thm-semi-positive-definite": ["5v8qxlj8bq"],
@@ -237,7 +237,7 @@ registerSuperseded({
     "calc-int-thm-variable-limit": ["eurzfeyqu"],
     "calc-int-thm-wallis": ["1pipfrqdggk"],
     "calc-lim-composite-inverse": ["16739nmt3la"],
-    "calc-lim-function": ["v0ic3z0btt","1qhdjz21gmj","1hvjmosqeg7","1dfqbr37uiv","u7tb7m3314","rpjdva67ak","bthsitzrm3","ooottpc7gr"],
+    "calc-lim-function": ["v0ic3z0btt","1qhdjz21gmj","1hvjmosqeg7","1dfqbr37uiv","u7tb7m3314","rpjdva67ak","bthsitzrm3","ooottpc7gr","ao8g446lqz","2a397s5inya"],
     "calc-limit-def-continuity": ["an2gopyfr0"],
     "calc-limit-def-discontinuity-types": ["1j97vm55213"],
     "calc-limit-def-eps-delta": ["1hvlg1xj97o"],
