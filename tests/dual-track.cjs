@@ -429,7 +429,7 @@ const stationReadGroups = [...stationReadHtml.matchAll(
   .map(m => m[2] + m[1])
   .filter((value, i, all) => i === 0 || value !== all[i - 1]);
 assert.deepEqual(stationReadGroups,
-  ['①定义', '②定义', '②性质', '③定义', '③性质', '④定义', '④性质', '⑤性质'],
+  ['①定义', '②定义', '③定义', '③性质', '④定义', '④性质', '⑤性质'],
   '第 1 章按站连续阅读，定义与该站性质相邻');
 assertCoverage(stationReadModel, 'calc-lim-function');
 

@@ -106,7 +106,7 @@ test('the first chapter displays definition and property entries station by stat
   const book = findItem(fixtureId, subjects).item.md;
   const html = render(site.App.dualTrackModel(fixtureId, book, notes[fixtureId]));
   assert.deepEqual(groups(html),
-    ['①定义', '②定义', '②性质', '③定义', '③性质', '④定义', '④性质', '⑤性质']);
+    ['①定义', '②定义', '③定义', '③性质', '④定义', '④性质', '⑤性质']);
   const rows = entryRows(html);
   const lastCore = rows.findLastIndex(row => row.book && ['定义', '性质'].includes(row.book.sec));
   const applications = rows.filter(row => (row.book && row.book.sec === '意义') || (row.note && row.note.sec === '例题'));

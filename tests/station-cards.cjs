@@ -126,20 +126,20 @@ assert.equal(cellSplice(doc, s1, e1, '#### 1. 甲\\n新的正文   \\n\\n'), '##
 assert.equal(cellInsert(doc, e1, '#### 1′. 丙\\n正文三\\n\\n'), '### 〔定义〕\\n\\n#### 1. 甲\\n正文一\\n\\n#### 1′. 丙\\n正文三\\n\\n#### 2. 乙\\n正文二\\n');
 assert.equal(cellInsert('甲\\n', 2, '乙'), '甲\\n\\n乙');
 
-// 标题改坏（「#### 2. 四则运算法则：」被去掉）：这一条落进上一格，右栏显示「笔记没有这一条」。
+// 标题改坏（「#### 2. 两个重要极限：」被去掉）：这一条落进上一格，右栏显示「笔记没有这一条」。
 // 那一格带着配对键和插入位置，「补写这一条」填好仓库里的那一版，插回去就又配上了，原文其他地方不动。
 {
   const id = 'calc-lim-function', book = KaoyanData.find(id).md, note = Notes.get(id);
-  const broken = note.replace('#### 2. 四则运算法则：', '四则运算法则：');
+  const broken = note.replace('#### 2. 两个重要极限：', '两个重要极限：');
   const html = App.dualTrackHtml(App.dualTrackModel(id, book, broken));
   const m = html.match(/<div class="dual-cell dual-note dual-missing" [^>]*data-key="([^"]*)" data-at="(\\d+)">/);
   assert(m, '缺的那一格带配对键和插入位置');
   const key = m[1].replace(/&quot;/g, '"');
   const seg = dualSource(note, 'note', appByType(book)).find((r) => r.key === key);
   const fill = cellSource(note, seg.sourcePieces[0].start, seg.sourcePieces[seg.sourcePieces.length - 1].end).core;
-  assert(fill.startsWith('#### 2. 四则运算法则：'), '填好的是仓库里的那一条');
+  assert(fill.startsWith('#### 2. 两个重要极限：'), '填好的是仓库里的那一条');
   const fixed = cellInsert(broken, +m[2], fill);
-  assert(fixed.includes(fill + '\\n\\n#### 3. 复合函数的极限'), '插在下一条前面');
+  assert(fixed.includes(fill + '\\n\\n#### 3. 无穷小的运算'), '插在下一条前面');
   assert.equal(fixed.replace(fill + '\\n\\n', ''), broken, '除了插进去的这一段，原文一字不变');
   const after = App.dualTrackModel(id, book, fixed);
   assert(!after.rows.some((r) => r.kind === 'entry' && (!r.book || !r.note)), '补写以后不再缺');
