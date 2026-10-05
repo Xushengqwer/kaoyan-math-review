@@ -418,6 +418,21 @@ assert.equal(crlf.book.raw, crlfBook);
 assert.equal(crlf.note.raw, crlfNote);
 assertCoverage(crlf, fixtureId);
 
+// 阅读顺序以站为单位：该站的定义后紧接性质，再进入下一站。
+// 只重排渲染视图，前面的原文/HTML 区间覆盖检查仍要求模型保持源文顺序。
+const stationReadModel = site.App.dualTrackModel('calc-lim-function',
+  findItem('calc-lim-function').item.md, notes['calc-lim-function']);
+const stationReadHtml = site.App.dualTrackHtml(stationReadModel);
+const stationReadGroups = [...stationReadHtml.matchAll(
+  /<div class="dual-row kind-entry"><div class="dual-cell dual-book" data-part="book" data-sec="([^"]+)" data-station="([^"]*)" /g)]
+  .filter(m => m[2] && ['定义', '性质'].includes(m[1]))
+  .map(m => m[2] + m[1])
+  .filter((value, i, all) => i === 0 || value !== all[i - 1]);
+assert.deepEqual(stationReadGroups,
+  ['①定义', '②定义', '②性质', '③定义', '③性质', '④定义', '④性质', '⑤性质'],
+  '第 1 章按站连续阅读，定义与该站性质相邻');
+assertCoverage(stationReadModel, 'calc-lim-function');
+
 for (let i = 0; i < dataFiles.length; i++) {
   assert(fs.readFileSync(dataFiles[i]).equals(dataBefore[i]), dataFiles[i] + ': display tests never alter data bytes');
 }

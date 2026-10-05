@@ -547,6 +547,43 @@ function dualRows(book, note) {
   return rows;
 }
 
+// 阅读视图按站排「定义 → 性质」。只移动显示行，原模型和源文区间保持原顺序；
+// 缺失格补写时仍使用每行的原始索引，不能拿显示位置当作原文位置。
+function dualStationRows(rows) {
+  const original = rows.map((row, index) => ({ row, index }));
+  const sections = new Set(["定义", "性质"]);
+  const relevant = original.filter(({ row }) => [row.book, row.note].some((s) => s && sections.has(s.sec)));
+  if (!relevant.length) return original;
+  const start = relevant[0].index, end = relevant[relevant.length - 1].index;
+  const stations = new Map(), preamble = { "定义": [], "性质": [] };
+  for (const item of original.slice(start, end + 1)) {
+    const sides = [item.row.book, item.row.note].filter(Boolean);
+    // 不跨过其他小节，也不重排两边所属站/小节不一致的行。
+    if (sides.some((s) => !sections.has(s.sec)) || new Set(sides.map((s) => s.sec)).size !== 1
+      || new Set(sides.map((s) => s.station)).size !== 1) return original;
+    const { sec, station } = sides[0];
+    if (!station) {
+      if (item.row.kind === "entry" || item.row.kind === "group") return original;
+      preamble[sec].push(item);
+      continue;
+    }
+    if (!stations.has(station)) stations.set(station, { "定义": [], "性质": [] });
+    stations.get(station)[sec].push(item);
+  }
+  if (stations.size < 2) return original;
+  const ordered = [];
+  // 圈号按自然顺序；⑤′ 是⑤之后的独立站，不能与⑤合并或排到⑥后。
+  const marks = [...stations.keys()].sort((a, b) => a.codePointAt(0) - b.codePointAt(0) || a.length - b.length);
+  marks.forEach((mark) => ["定义", "性质"].forEach((sec) => {
+    const entries = stations.get(mark)[sec];
+    if (!entries.length) return;
+    ordered.push(...preamble[sec], ...entries);
+    preamble[sec] = [];
+  }));
+  ordered.push(...preamble["定义"], ...preamble["性质"]);
+  return original.slice(0, start).concat(ordered, original.slice(end + 1));
+}
+
 const App = {
   openSubjects: new Set(),
 
@@ -574,6 +611,9 @@ const App = {
   },
 
   dualTrackHtml(model) {
+    const view = dualStationRows(model.rows);
+    const stationOrdered = view.some((item, i) => item.index !== i);
+    const stationHeads = new Map();
     const attrs = (s, part) => `data-part="${part}" data-sec="${escapeHtml(s.sec)}" data-station="${escapeHtml(s.station)}"`;
     // 缺的那一格记下：另一边这一条的配对键（到仓库原文里找同一条），以及补写时插到原文的哪个位置（这一边下一段的开头）
     let rowAt = 0;
@@ -594,13 +634,21 @@ const App = {
         (part === "note" ? '<span class="dual-label">笔记</span>' : "") +
         `<div class="${body}">${part === "book" ? '<div class="term-md">' + s.html + '</div>' : s.html}</div></div>`;
     };
-    return '<div class="dual-track"><div class="dual-columns"><span>教材</span><span>笔记</span></div>' + model.rows.map((r, i) => {
-      rowAt = i;
+    return '<div class="dual-track' + (stationOrdered ? ' station-ordered' : '') + '"><div class="dual-columns"><span>教材</span><span>笔记</span></div>' + view.map(({ row: r, index }) => {
+      rowAt = index;
       const hasBook = !!(r.book && r.book.html.trim()), hasNote = !!(r.note && r.note.html.trim());
       if (!hasBook && !hasNote) return "";
       const s = hasBook ? r.book : r.note;
       const wide = (!hasBook || !hasNote) && (r.kind === "content" || s.sec === "提示");
-      const cls = "dual-row kind-" + r.kind + (r.merged ? " is-merged" : wide ? " is-wide" : "");
+      let continuation = false;
+      if (stationOrdered && r.kind === "station") {
+        const signature = JSON.stringify([r.book && r.book.title, r.note && r.note.title]);
+        continuation = stationHeads.get(s.station) === signature;
+        if (!stationHeads.has(s.station)) stationHeads.set(s.station, signature);
+      }
+      const stationSection = stationOrdered && r.kind === "section" && ["定义", "性质"].includes(s.sec);
+      const cls = "dual-row kind-" + r.kind + (r.merged ? " is-merged" : wide ? " is-wide" : "")
+        + (continuation ? " is-station-continuation" : "") + (stationSection ? " is-station-section" : "");
       if (r.merged) return `<div class="${cls}" data-sec="${escapeHtml(s.sec)}" data-station="${escapeHtml(s.station)}">` +
         `<div class="dual-shared" data-book-sec="${escapeHtml(r.book.sec)}" data-note-sec="${escapeHtml(r.note.sec)}" data-station="${escapeHtml(s.station)}">${r.html}</div></div>`;
       return `<div class="${cls}">` + (wide ? cell(s, hasBook ? "book" : "note")
@@ -669,7 +717,7 @@ const App = {
     const attr = (v) => escapeHtml(v).replace(/"/g, "&quot;");
     const chips = (lists, station) => {
       if (!lists.length) return "";
-      const label = lists.length > 1;
+      const label = lists.length > 1 || track.classList.contains("station-ordered");
       return `<div class="st-titles">` + lists.map((l) => {
         let group = "";
         const items = l.items.map((it, k) => {
