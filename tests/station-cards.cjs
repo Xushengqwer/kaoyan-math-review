@@ -27,7 +27,7 @@ const total = (o, part, sec) => o.blocks.reduce((n, b) => n + (b.rows[part + sec
 // 重构过的卡：块数（站数，⑤′ 单独一块；没有站的整张卡一块）和各节条数。
 // 〔定义〕+〔性质〕的条数等于对照视图的配对数（tests/dual-track.cjs），笔记的〔定义〕〔性质〕条数与教材相同。
 const expected = {
-  'calc-lim-function':              [6, 13, 14, 17, 18, 0],
+  'calc-lim-function':              [6, 13, 14, 10, 14, 0],
   'calc-der-derivative':            [6, 14, 38, 21, 8, 9],
   'calc-int-antiderivative':        [6, 12, 41, 18, 11, 15],
   'calc-vec-coordinates':           [6, 23, 46, 15, 8, 18],
@@ -89,10 +89,10 @@ assert.equal((rail.body.match(/class="rl-st"/g) || []).length, 7);
 assert.equal((rail.body.match(/class="rl-item"/g) || []).length, 44);
 assert.equal((rail.body.match(/class="rl-mini /g) || []).length, 18);
 assert(!rail.body.includes('rl-types'), '旧写法没有「题型」一组');
-// 题型写法（第 1 章）：六站后面一组「题型」，17 个题型、4 个分组；各站不再有意义、例题、提示的条数
+// 题型写法（第 1 章）：各站后面一组「题型」，10 个题型、3 个分组；各站不再有意义、例题、提示的条数
 const limRail = App.stationRailHtml(KaoyanData.find('calc-lim-function'), 'calculus', 'limit');
 assert.equal((limRail.body.match(/class="rl-st rl-types"/g) || []).length, 1);
-assert.equal((limRail.body.match(/data-sec="意义" data-station="" data-ord=/g) || []).length, 17);
+assert.equal((limRail.body.match(/data-sec="意义" data-station="" data-ord=/g) || []).length, 10);
 assert.equal((limRail.body.match(/class="rl-mini /g) || []).length, 0);
 assert.equal((rail.body.match(/class="rl-extra"/g) || []).length, 3);
 for (const id of ['la-det-def-n-order', 'la-mat-def-matrix', 'la-vec-def-linear-dependence', 'prob-evt-events']) {

@@ -11,7 +11,7 @@ const dataFiles = ['calculus', 'linalg', 'probability', 'notes', 'superseded']
   .map(name => 'assets/data/' + name + '.js');
 const dataBefore = dataFiles.map(file => fs.readFileSync(file));
 const expected = new Map([
-  ['calc-lim-function', 44],
+  ['calc-lim-function', 37],
   ['calc-der-derivative', 52],
   ['calc-int-antiderivative', 53],
   ['calc-vec-coordinates', 69],
@@ -184,14 +184,14 @@ assert.deepEqual(enabled.sort(), [...expected.keys()].sort(),
   'exactly the eleven reconstructed cards currently enable comparison');
 
 // 题型写法（第 1 章）：〔意义〕是「#### n. 题型名」，意义 n 和例题 n 并排；「例题 1-1」「例题 1-2」同在题型 1 那一格；
-// 四个分组行横跨两栏。旧写法的卡（意义是列表、按站排）没有意义—例题配对。
+// 三个分组行横跨两栏。旧写法的卡（意义是列表、按站排）没有意义—例题配对。
 {
   const lim = site.App.dualTrackModel('calc-lim-function', findItem('calc-lim-function').item.md, notes['calc-lim-function']);
   const app = lim.pairs.filter((p) => p.book.sec === '意义');
-  assert.equal(app.length, 17, '17 个题型各占一行');
+  assert.equal(app.length, 10, '10 个题型各占一行');
   assert.deepEqual(app.map((p) => p.book.num), app.map((p) => p.note.num), '意义 n 对例题 n');
   assert(app[0].note.html.includes('例题 1-1') && app[0].note.html.includes('例题 1-2'), '题型 1 的两道例题在同一格');
-  assert.equal(lim.rows.filter((r) => r.kind === 'group' && r.merged && r.book.sec === '意义').length, 4, '四个分组行横跨两栏');
+  assert.equal(lim.rows.filter((r) => r.kind === 'group' && r.merged && r.book.sec === '意义').length, 3, '三个分组行横跨两栏');
   for (const id of ['calc-der-derivative', 'la-eig-def-eigen', 'la-vec-def-max-independent-set']) {
     const m = site.App.dualTrackModel(id, findItem(id).item.md, notes[id]);
     assert.equal(m.pairs.filter((p) => p.book.sec === '意义').length, 0, id + '：旧写法没有意义—例题配对');
