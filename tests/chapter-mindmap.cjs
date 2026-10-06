@@ -18,7 +18,10 @@ for (const subject of KaoyanData.subjects()) for (const chapter of KaoyanData.ch
   const flow = html.indexOf('id="item-flow:' + subject.id + '/' + chapter.id + '"');
   const map = html.indexOf('id="item-' + id + '"');
   const summary = html.indexOf('id="item-ch:' + subject.id + '/' + chapter.id + '"');
-  assert(flow >= 0 && flow < map && map < summary);
+  const toolbar = html.indexOf('<div class="toolbar">');
+  const body = html.indexOf('id="chapter-item-groups"');
+  assert(map >= 0 && map < toolbar && toolbar < body && body < flow && flow < summary,
+    'the map precedes the toolbar and body, while flow and summary stay at the end');
   assert.equal(html.split('id="item-' + id + '"').length, 2);
   assert(html.includes('type="file"') && html.includes('accept="image/png,image/jpeg,image/webp,image/gif"'));
   const toc = App.tocHtml(App.chapterGroups(subject.id, chapter.id, KaoyanData.itemsByChapter(subject.id, chapter.id)), App.chapterNos(subject.id, chapter.id), subject.id, chapter.id);
@@ -29,4 +32,4 @@ assert.equal(KaoyanData.itemsByChapter('linalg', 'matrix').length, 4);
 assert.equal(Notes.get('ch:linalg/matrix').length > 6000, true);
 assert(App.searchViewHtml('思维导图').includes('data-item="map:linalg/matrix"'));
 `, context);
-console.log('PASS: one picture-only mind map slot per chapter, after decision flow and before chapter summary, in page and TOC.');
+console.log('PASS: one picture-only map per chapter before the body, unchanged storage key and TOC order.');

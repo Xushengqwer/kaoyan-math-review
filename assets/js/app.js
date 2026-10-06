@@ -1647,6 +1647,9 @@ const App = {
       <h1 class="page-title"><span class="page-title-no">${String(c.order).padStart(2, "0")}</span>${escapeHtml(c.name)}</h1>
       <p class="page-sub">${sup ? supStats : `共 ${items.length} 条 · ${TYPE_ORDER.filter((t) => items.some((i) => this.itemTypes(i).includes(t))).map((t) => `${TYPE_LABEL[t]} ${items.filter((i) => this.itemTypes(i).includes(t)).length}`).join(" · ")}`}</p>
       ${lead ? `<p class="page-lead"><b>本卡主线</b>${mdHtml(lead, true)}</p>` : ""}
+      <div class="chapter-map-top">
+        ${this.chapterMapHtml(subjectId, chapterId)}
+      </div>
 
       <div class="toolbar">
         <div class="search-bar">
@@ -1668,7 +1671,6 @@ const App = {
       <div class="chapter-extras">
         <div class="chapter-extras-grid">
           ${this.chapterFlowHtml(subjectId, chapterId)}
-          ${this.chapterMapHtml(subjectId, chapterId)}
           ${this.chapterSummaryHtml(subjectId, chapterId)}
         </div>
       </div>
@@ -2054,7 +2056,7 @@ const App = {
   // 搜索时把正文以外的东西收起来：本章总结会作为一条结果出现在列表里，
   // 导出条和上下章翻页跟结果列表摆在一起没有意义。
   chapterSearchMode(on) {
-    [".chapter-extras", ".chapter-summary", ".export-bar", ".pager"].forEach((sel) => {
+    [".chapter-map-top", ".chapter-extras", ".chapter-summary", ".export-bar", ".pager"].forEach((sel) => {
       document.querySelectorAll(sel).forEach((el) => { el.hidden = on; });
     });
     // 退出搜索时把战果行也收起来；进入搜索时由 renderChapterHits 填内容再显示

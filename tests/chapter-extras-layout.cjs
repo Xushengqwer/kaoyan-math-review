@@ -51,9 +51,32 @@ function once(html, text, label) {
   return at;
 }
 
-test('every chapter wraps its unchanged flow, map and summary blocks in source order', () => {
+test('every chapter places its original map below the optional lead and before the toolbar', () => {
   chapters((subjectId, chapterId) => {
-    const expected = blocks(subjectId, chapterId);
+    const html = App.chapterViewHtml(subjectId, chapterId);
+    const map = App.chapterMapHtml(subjectId, chapterId).trim();
+    const top = '<div class="chapter-map-top">';
+    const topAt = once(html, top, subjectId + '/' + chapterId + ': top map container');
+    const lead = html.match(/<p class="page-lead">[\s\S]*?<\/p>/);
+    const sub = html.match(/<p class="page-sub">[\s\S]*?<\/p>/);
+    assert(sub, 'the chapter retains its original statistics line');
+    const anchor = lead || sub;
+    const anchorEnd = anchor.index + anchor[0].length;
+    assert(topAt >= anchorEnd, 'the map follows the lead, or the statistics when there is no lead');
+    assert.match(html.slice(anchorEnd, topAt), /^\s*$/, 'the top map sits immediately below its chapter header');
+    const mapAt = once(html, map, 'original complete map card HTML');
+    assert.match(html.slice(topAt + top.length, mapAt), /^\s*$/, 'the top container contains the original map card');
+    const afterMap = html.slice(mapAt + map.length);
+    assert.match(afterMap, /^\s*<\/div>\s*<div class="toolbar">/,
+      'the map container closes immediately before the toolbar');
+    assert(mapAt < once(html, 'id="chapter-item-groups"', 'chapter body'), 'the map precedes every knowledge-point card');
+  });
+});
+
+test('every chapter keeps only its unchanged flow and summary in the trailing grid', () => {
+  chapters((subjectId, chapterId) => {
+    const original = blocks(subjectId, chapterId);
+    const expected = [original[0], original[2]];
     const html = App.chapterViewHtml(subjectId, chapterId);
     const outer = '<div class="chapter-extras">';
     const grid = '<div class="chapter-extras-grid">';
@@ -63,11 +86,12 @@ test('every chapter wraps its unchanged flow, map and summary blocks in source o
     let cursor = gridAt + grid.length;
     for (const block of expected) {
       const at = once(html, block, 'original standalone extra HTML');
-      assert(at >= cursor, 'flow, map and summary keep their original DOM order');
+      assert(at >= cursor, 'flow and summary remain at the end in their original order');
       assert.match(html.slice(cursor, at), /^\s*$/, 'no extra content replaces or splits the original cards');
       cursor = at + block.length;
     }
     assert.match(html.slice(cursor), /^\s*<\/div>\s*<\/div>/, 'both containers end immediately after the summary');
+    assert(!html.slice(gridAt, cursor).includes(original[1]), 'the trailing grid contains no duplicate map card');
   });
 });
 
@@ -82,7 +106,9 @@ test('all chapter IDs, note bodies, map slots and TOC order remain intact', () =
       once(html, block, 'unchanged ' + ids[index] + ' HTML');
       return once(html, 'id="item-' + ids[index] + '"', ids[index]);
     });
-    assert(positions[0] < positions[1] && positions[1] < positions[2], 'page source order stays flow / map / summary');
+    const body = once(html, 'id="chapter-item-groups"', 'chapter body');
+    assert(positions[1] < body && body < positions[0] && positions[0] < positions[2],
+      'page and print source order is map / knowledge-point body / flow / summary');
     for (const index of [0, 2]) {
       const raw = Notes.get(ids[index]);
       if (raw.trim()) assert(expected[index].includes(noteMdHtml(raw)), 'chapter note Markdown is rendered unchanged');
@@ -139,11 +165,13 @@ test('chapter search hides and restores the parent layout and every original car
   // Card HTML comes from the real renderer; visibility must change without rebuilding it.
   const html = blocks('linalg', 'matrix');
   const parent = { classes: ['chapter-extras'], hidden: false };
+  const mapParent = { classes: ['chapter-map-top'], hidden: false };
   const cards = html.map(innerHTML => ({ classes: ['chapter-summary'], hidden: false, innerHTML }));
   const controls = ['export-bar', 'pager'].map(name => ({ classes: [name], hidden: false }));
-  nodes = [parent, ...cards, ...controls];
+  nodes = [parent, mapParent, ...cards, ...controls];
   App.chapterSearchMode(true);
   assert.equal(parent.hidden, true, 'search must hide the whole chapter extras container');
+  assert.equal(mapParent.hidden, true, 'search must hide the top map container without leaving blank layout space');
   assert(cards.every(card => card.hidden), 'search keeps the original child-card visibility behavior');
   assert(controls.every(node => node.hidden), 'export and pager remain hidden during search');
   App.chapterSearchMode(false);

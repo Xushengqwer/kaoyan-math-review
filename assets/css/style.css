@@ -1232,7 +1232,16 @@ body.mynote-zoomed { overflow: hidden; }
 .is-compare .entry:not(.is-dual), .is-compare .chapter-summary {
   max-width: 756px;
 }
-/* 章末产物按正文的可用宽度排版，手机仍按原顺序阅读。 */
+/* 导图紧接章节主线，桌面按正文可用宽度铺满。 */
+.chapter-map-top { container: chapter-map-top / inline-size; }
+.chapter-map-top[hidden] { display: none; }
+.chapter-map-top > .chapter-map { margin-top: 20px; }
+@container chapter-map-top (min-width: 840px) {
+  .chapter-map-top > .chapter-map { max-width: none; }
+  .chapter-map-top .mindmap-open { width: 100%; }
+  .chapter-map-top .mindmap-image { width: 100%; height: auto; max-height: none; }
+}
+/* 章末决策流与总结等宽并排，手机单列。 */
 .chapter-extras { container: chapter-extras / inline-size; }
 .chapter-extras[hidden] { display: none; }
 @container chapter-extras (min-width: 840px) {
@@ -1244,12 +1253,9 @@ body.mynote-zoomed { overflow: hidden; }
     min-width: 0; max-width: none; margin-top: 0;
   }
   .chapter-extras-grid > .chapter-flow { grid-column: 1; grid-row: 1; }
-  .chapter-extras-grid > .chapter-summary:not(.chapter-flow):not(.chapter-map) {
+  .chapter-extras-grid > .chapter-summary:not(.chapter-flow) {
     grid-column: 2; grid-row: 1;
   }
-  .chapter-extras-grid > .chapter-map { grid-column: 1 / -1; grid-row: 2; }
-  .chapter-extras-grid .mindmap-open { width: 100%; }
-  .chapter-extras-grid .mindmap-image { width: 100%; height: auto; max-height: none; }
 }
 .is-dual .entry-main { container: review-card / inline-size; }
 
@@ -1505,7 +1511,7 @@ a.rl-mini:hover { box-shadow: inset 0 0 0 1.5px currentColor; }
   .app-shell { display: block; }
   .content, .content.is-compare { max-width: none; padding: 0; }
   .is-compare .entry:not(.is-dual), .is-compare .chapter-summary { max-width: none; }
-  .chapter-extras { container: none; }
+  .chapter-map-top, .chapter-extras { container: none; }
   .chapter-extras-grid { display: block; margin-top: 0; }
 
   /* 打印时保留分类色和笔记底色，否则一片灰 */
