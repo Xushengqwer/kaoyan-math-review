@@ -1,10 +1,10 @@
 // 简单的离线缓存：优先使用缓存，后台静默更新，方便在地铁/宿舍弱网环境下阅读。
-const CACHE_NAME = "kaoyan-math-v124";
+const CACHE_NAME = "kaoyan-math-v125";
 const ASSETS = [
   "./",
   "index.html",
   "manifest.json",
-  "assets/css/style.css?v=124",
+  "assets/css/style.css?v=125",
   "assets/js/data-loader.js",
   "assets/js/storage.js",
   "assets/js/katex-init.js?v=111",
