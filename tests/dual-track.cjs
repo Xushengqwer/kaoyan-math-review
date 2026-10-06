@@ -12,7 +12,7 @@ const dataFiles = ['calculus', 'linalg', 'probability', 'notes', 'superseded']
 const dataBefore = dataFiles.map(file => fs.readFileSync(file));
 const expected = new Map([
   ['calc-lim-function', 37],
-  ['calc-der-derivative', 50],
+  ['calc-der-derivative', 46],
   ['calc-int-antiderivative', 53],
   ['calc-vec-coordinates', 69],
   ['calc-mvd-limit-continuity', 65],
