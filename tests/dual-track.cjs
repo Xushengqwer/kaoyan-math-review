@@ -436,4 +436,10 @@ assertCoverage(stationReadModel, 'calc-lim-function');
 for (let i = 0; i < dataFiles.length; i++) {
   assert(fs.readFileSync(dataFiles[i]).equals(dataBefore[i]), dataFiles[i] + ': display tests never alter data bytes');
 }
+// 对照上方那一行（整卡的「编辑」「用仓库版」）不显示：最后一条 .dual-controls 规则是 display: none
+{
+  const css = fs.readFileSync('assets/css/style.css', 'utf8');
+  const rules = [...css.matchAll(/^\.dual-controls \{([^}]*)\}/gm)];
+  assert(rules.length && /display:\s*none/.test(rules[rules.length - 1][1]), 'the whole-card controls row above the comparison is hidden');
+}
 console.log('PASS: comparison guards reconstructed cards, preserves both full sources and renderer HTML, keeps unmatched entries, and merges only exact headings.');
