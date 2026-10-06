@@ -1774,9 +1774,9 @@ const App = {
   // 章末固定卡：顺序固定，不属于模块，也不占知识点卡号。
   chapterExtras(subjectId, chapterId) {
     return [
-      { noteId: this.chapterFlowId(subjectId, chapterId), title: "决策流", label: "决策流", cls: "chapter-flow", sub: "从题目条件出发，找到解题路径" },
-      { imageId: this.chapterMapId(subjectId, chapterId), title: "思维导图", label: "思维导图", cls: "chapter-map", sub: "用一张图看清本章知识结构" },
-      { noteId: this.chapterNoteId(subjectId, chapterId), title: "本章笔记总结", label: "本章总结", cls: "", sub: "用自己的话把整章串一遍" },
+      { noteId: this.chapterFlowId(subjectId, chapterId), title: "决策流", label: "决策流", cls: "chapter-flow" },
+      { imageId: this.chapterMapId(subjectId, chapterId), title: "思维导图", label: "思维导图", cls: "chapter-map" },
+      { noteId: this.chapterNoteId(subjectId, chapterId), title: "本章笔记总结", label: "本章总结", cls: "" },
     ];
   },
 
@@ -1793,12 +1793,10 @@ const App = {
   },
 
   chapterExtraHtml(subjectId, chapterId, extra) {
-    const c = KaoyanData.chapter(subjectId, chapterId);
     return `
       <section class="chapter-summary${extra.cls ? " " + extra.cls : ""}" id="item-${extra.imageId || extra.noteId}">
         <header class="chapter-summary-head">
           <h3>${extra.title}</h3>
-          <span class="chapter-summary-sub">第${c.order}章 ${escapeHtml(c.name)} · ${extra.sub}</span>
         </header>
         ${extra.imageId ? this.mindMapHtml(extra.imageId) : `<div class="mynote-slot" data-note="${extra.noteId}">${this.myNoteHtml(extra.noteId)}</div>`}
       </section>`;
@@ -2137,7 +2135,6 @@ const App = {
         <span class="result-type summary">${extra.label}</span>
         <span class="result-body">
           <span class="result-title">${this.mark(extra.title, raw)}</span>
-          <span class="result-where">${extra.sub}</span>
           ${extra.imageId ? "" : `<span class="result-snippet"><span class="snippet-from">笔记</span>${this.textSnippet(Notes.get(extra.noteId), raw)}</span>`}
         </span>
       </a>`);

@@ -86,13 +86,32 @@ test('all chapter IDs, note bodies, map slots and TOC order remain intact', () =
     for (const index of [0, 2]) {
       const raw = Notes.get(ids[index]);
       if (raw.trim()) assert(expected[index].includes(noteMdHtml(raw)), 'chapter note Markdown is rendered unchanged');
+      once(expected[index], `<div class="mynote-slot" data-note="${ids[index]}">${App.myNoteHtml(ids[index])}</div>`,
+        'original note slot, note key and complete note HTML');
     }
     assert(expected[1].includes('data-map="' + ids[1] + '"'), 'the map retains its original storage key');
+    once(expected[1], App.mindMapHtml(ids[1]).trim(), 'original complete map slot HTML');
     const toc = App.chapterExtraTocHtml(subjectId, chapterId);
     const targets = ids.map(id => once(toc, 'data-goto="' + id + '"', 'TOC target ' + id));
     assert(targets[0] < targets[1] && targets[1] < targets[2], 'TOC keeps its original order and targets');
   });
   assert.equal(JSON.stringify(Notes.exportAll()), notesBefore, 'rendering does not rewrite any repository or local note');
+});
+
+test('all chapter extra headers contain only their original title without subtitles', () => {
+  const notesBefore = JSON.stringify(Notes.exportAll());
+  const titles = ['决策流', '思维导图', '本章笔记总结'];
+  chapters((subjectId, chapterId) => {
+    blocks(subjectId, chapterId).forEach((html, index) => {
+      const label = subjectId + '/' + chapterId + ': ' + titles[index];
+      assert(!html.includes('chapter-summary-sub'), label + ' no longer emits a subtitle element');
+      const header = html.match(/<header class="chapter-summary-head">([\s\S]*?)<\/header>/);
+      assert(header, label + ' retains its header');
+      assert.equal(header[1].trim(), '<h3>' + titles[index] + '</h3>',
+        label + ' keeps only its original h3, with no chapter label or explanatory text');
+    });
+  });
+  assert.equal(JSON.stringify(Notes.exportAll()), notesBefore, 'header rendering leaves all note text unchanged');
 });
 
 test('local chapter drafts keep exact whitespace, formulas and export text', () => {
@@ -131,6 +150,42 @@ test('chapter search hides and restores the parent layout and every original car
   assert(nodes.every(node => !node.hidden), 'clearing search restores the parent, cards and controls');
   assert.equal(hitBar.hidden, true, 'clearing search also hides the result count');
   assert.deepEqual(cards.map(card => card.innerHTML), html, 'search leaves every card HTML unchanged');
+});
+
+test('chapter extra search results omit removed descriptions and keep destinations and note snippets', () => {
+  const notesBefore = JSON.stringify(Notes.exportAll());
+  const oldQuery = App.chapterQuery;
+  const subjectId = 'linalg', chapterId = 'matrix';
+  const targets = [
+    ['决策流', App.chapterFlowId(subjectId, chapterId)],
+    ['思维导图', App.chapterMapId(subjectId, chapterId)],
+    ['本章总结', App.chapterNoteId(subjectId, chapterId)],
+  ];
+  try {
+    for (const [query, id] of targets) {
+      App.chapterQuery = query;
+      const wrap = { innerHTML: '', querySelectorAll() { return []; } };
+      // No knowledge-point cards are supplied: exercise actual chapter-extra hits.
+      App.renderChapterResults(subjectId, chapterId, [], wrap);
+      const result = wrap.innerHTML.match(new RegExp('<a\\b[^>]*data-item="' + id + '"[^>]*>[\\s\\S]*?<\\/a>'));
+      assert(result, query + ' keeps its search result and original destination');
+      const html = result[0];
+      assert(html.includes('href="#' + subjectId + '/' + chapterId + '"'), query + ' keeps its chapter route');
+      assert(html.includes('class="result-title"'), query + ' keeps its title');
+      assert(html.includes('class="result-type summary">' + query + '</span>'), query + ' keeps its label');
+      assert(!html.includes('undefined'), query + ' must not display undefined from removed subtitle metadata');
+      assert(!html.includes('result-where'), query + ' no longer renders the obsolete explanatory line');
+      if (!id.startsWith('map:')) {
+        assert(Notes.get(id).trim(), 'the local fixture has a nonempty note snippet');
+        assert(html.includes('<span class="snippet-from">笔记</span>' + App.textSnippet(Notes.get(id), query)),
+          query + ' keeps its original rendered note snippet');
+      }
+    }
+    assert.equal(JSON.stringify(Notes.exportAll()), notesBefore, 'search rendering preserves every original note and local draft');
+  } finally {
+    App.chapterQuery = oldQuery;
+    App.chapterSearchMode(false);
+  }
 });
 
 test('chapter rendering and local drafts leave every data file byte unchanged', () => {

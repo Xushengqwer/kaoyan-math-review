@@ -1029,10 +1029,7 @@ body.mynote-zoomed { overflow: hidden; }
 .chapter-summary-head h3 {
   margin: 0; font-size: 19px; font-weight: 600; letter-spacing: -.015em;
 }
-.chapter-summary-sub {
-  display: block; margin-top: 5px;
-  font-size: 12.5px; color: var(--text-3);
-}
+.chapter-summary:not(.chapter-map) .chapter-summary-head h3 { text-align: center; }
 .chapter-summary .mynote-slot { margin-top: 0; padding-top: 0; border-top: none; }
 .chapter-summary .mynote-editing { box-shadow: none; background: var(--bg); }
 .chapter-summary .mynote-input { background: var(--surface); }
