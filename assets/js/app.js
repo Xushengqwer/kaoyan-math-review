@@ -1665,9 +1665,13 @@ const App = {
 
       <p class="chapter-hits" id="chapter-hits" hidden></p>
       <div id="chapter-item-groups"></div>
-      ${this.chapterFlowHtml(subjectId, chapterId)}
-      ${this.chapterMapHtml(subjectId, chapterId)}
-      ${this.chapterSummaryHtml(subjectId, chapterId)}
+      <div class="chapter-extras">
+        <div class="chapter-extras-grid">
+          ${this.chapterFlowHtml(subjectId, chapterId)}
+          ${this.chapterMapHtml(subjectId, chapterId)}
+          ${this.chapterSummaryHtml(subjectId, chapterId)}
+        </div>
+      </div>
       ${this.exportBarHtml()}
       ${this.pagerHtml(subjectId, chapterId)}
     `;
@@ -2052,7 +2056,7 @@ const App = {
   // 搜索时把正文以外的东西收起来：本章总结会作为一条结果出现在列表里，
   // 导出条和上下章翻页跟结果列表摆在一起没有意义。
   chapterSearchMode(on) {
-    [".chapter-summary", ".export-bar", ".pager"].forEach((sel) => {
+    [".chapter-extras", ".chapter-summary", ".export-bar", ".pager"].forEach((sel) => {
       document.querySelectorAll(sel).forEach((el) => { el.hidden = on; });
     });
     // 退出搜索时把战果行也收起来；进入搜索时由 renderChapterHits 填内容再显示
