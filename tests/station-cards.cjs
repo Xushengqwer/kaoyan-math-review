@@ -65,10 +65,14 @@ assert.deepEqual(outline('calc-mi-double-def').blocks[0].rows.book性质.items.m
 assert.deepEqual(outline('la-eig-def-eigen').blocks.map((b) => b.mark), ['①', '②', '③', '④', '⑤', '⑤′', '⑥']);
 
 // 本卡主线：开头一句、每站一句
-// 写法一：「**本卡主线**：……」「* **① 站名**：一句话」
-const story = cardStory(KaoyanData.find('calc-der-derivative').md);
-assert.equal(story.lead, '从一点的变化率，看清整个函数。');
+// 写法一独立于教材正文：用户修改导读时，仍检查原有格式的解析能力。
+const story = cardStory('**本卡主线**：主线开头。整张卡分六站：\\n' +
+  ['①', '②', '③', '④', '⑤', '⑥'].map((mark) => '* **' + mark + ' 站名**：一句话').join('\\n'));
+assert.equal(story.lead, '主线开头。');
 assert.deepEqual(Object.keys(story.st), ['①', '②', '③', '④', '⑤', '⑥']);
+assert.equal(story.st['①'], '一句话');
+// 第 2 章确认导出改用“核心本质／四层递进结构”，没有旧的主线及站句。
+assert.deepEqual(cardStory(KaoyanData.find('calc-der-derivative').md), { lead: '', st: {} });
 // 写法二：「**本卡主线：……**」「- **① 问句** $\to$ **答案**：一句话」
 const story2 = cardStory(KaoyanData.find('calc-lim-function').md);
 assert.equal(story2.lead, '$x$ 靠近某点时，$f(x)$ 靠近谁？');
