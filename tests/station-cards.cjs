@@ -158,7 +158,7 @@ assert.equal(cellInsert('甲\\n', 2, '乙'), '甲\\n\\n乙');
   assert.deepEqual(structuralLines(demoteStructural('#### 1. 甲\\n**② 乙**\\n## 丙')), [], '降级以后不再有会打乱结构的行');
   const id = 'calc-der-derivative', book = KaoyanData.find(id).md, note = Notes.get(id), byType = appByType(book);
   assert.deepEqual(structureChange(note, note, 'note', byType), [], '原样保存，结构不变');
-  const pasted = note.replace('#### 2. 导数的几何意义', '#### 1. 粘进来的\\n\\n#### 2. 导数的几何意义');
+  const pasted = note.replace(/^#### 2\\. 导数的几何意义/m, '#### 1. 粘进来的\\n\\n#### 2. 导数的几何意义');
   assert.deepEqual(structureChange(note, pasted, 'note', byType), ['+ #### 1. 粘进来的'], '多出来的标题行标出来');
   assert.equal(unpairedCount(book, note), 0, '仓库版全部配上');
   assert(unpairedCount(book, pasted) > 0, '粘进一个 #### 以后有配不上的');
