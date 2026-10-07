@@ -1416,6 +1416,55 @@ body.mynote-zoomed { overflow: hidden; }
 /* 状态只在小卡片上显示一次；整条「用仓库版」一直留着，万一某一格改坏了也有退路 */
 .dual-controls .flags-in-cells .mynote-flag { display: none; }
 .cell-edit:hover { color: var(--accent); background: var(--accent-soft); }
+
+/* 卡片格子：右上角「⋯」菜单（上移、下移、在下面加一张、复制到、删除） */
+.cell-tools { position: relative; }
+.cell-more { padding: 1px 8px; border-radius: 7px; font-size: 14px; line-height: 1.5; letter-spacing: 1px; color: var(--text-3); }
+.cell-more:hover, .cell-more.open { color: var(--accent); background: var(--accent-soft); }
+.card-menu {
+  position: absolute; right: 0; top: calc(100% + 4px); z-index: 30; min-width: 168px; padding: 6px;
+  border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: var(--lift-hi);
+}
+.card-menu button {
+  display: flex; align-items: center; gap: 8px; width: 100%; padding: 7px 10px; border-radius: 8px;
+  font-size: 13.5px; line-height: 1.4; color: var(--text); text-align: left;
+}
+.card-menu button:hover:not(:disabled) { background: var(--accent-soft); color: var(--accent); }
+.card-menu button:disabled { opacity: .4; cursor: default; }
+.card-menu .ic { width: 16px; text-align: center; color: var(--text-3); }
+.card-menu hr { margin: 5px 4px; border: 0; border-top: 1px solid var(--border); }
+.card-menu .danger, .card-menu .danger .ic { color: var(--method); }
+.cell-empty { margin: 0; color: var(--text-3); font-size: 13px; }
+
+/* 「复制到…」：本章所有卡片按小节、站、分组列出 */
+.copy-modal .modal { max-width: 560px; }
+.copy-targets { margin: 0 0 16px; }
+.copy-sec { margin: 14px 0 4px; font-size: 13px; font-weight: 700; }
+.copy-sec.def { color: var(--def); } .copy-sec.prp { color: var(--prp); } .copy-sec.meaning { color: var(--meaning); }
+.copy-st { margin: 8px 0 4px; font-size: 12.5px; color: var(--text-2); }
+.copy-grp { margin: 6px 0 3px; font-size: 12px; color: var(--text-3); }
+.copy-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.copy-list button {
+  max-width: 100%; padding: 4px 11px; border: 1px solid var(--border); border-radius: 999px;
+  font-size: 12.5px; line-height: 1.5; color: var(--text); background: var(--surface); text-align: left;
+}
+.copy-list button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.copy-list button:disabled { opacity: .45; cursor: default; }
+@media (max-width: 600px) {
+  .copy-modal { align-items: flex-end; padding: 0; }
+  .copy-modal .modal { max-width: none; max-height: 82dvh; border-radius: var(--r-lg) var(--r-lg) 0 0; padding: 20px 16px 16px; }
+}
+
+/* 卡片操作以后底部那一条：做了什么 + 撤销 */
+.card-toast {
+  position: fixed; left: 50%; bottom: 22px; z-index: 70; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 10px; max-width: min(560px, calc(100vw - 32px)); padding: 9px 10px 9px 16px;
+  border-radius: 999px; background: var(--text); color: var(--bg); box-shadow: var(--lift-hi); font-size: 13px; line-height: 1.5;
+}
+.card-toast[hidden] { display: none; }
+.card-toast-msg { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card-toast button { flex: 0 0 auto; padding: 3px 12px; border-radius: 999px; font-size: 12.5px; font-weight: 600; color: var(--bg); background: color-mix(in srgb, var(--bg) 18%, transparent); }
+.card-toast .card-toast-x { padding: 3px 8px; font-weight: 400; background: none; opacity: .7; }
 .cell-editor-head { margin-bottom: 8px; font-size: 12px; font-weight: 700; color: var(--text-3); }
 .cell-editor .cell-input { width: 100%; min-height: 160px; }
 
@@ -1512,7 +1561,7 @@ a.rl-mini:hover { box-shadow: inset 0 0 0 1.5px currentColor; }
   .toolbar, .pager, .export-bar, .breadcrumb,
   .modal-backdrop, .mynote-edit, .mynote-add, .mynote-actions,
   .mynote-preview-btn, .mynote-zoom-btn, .mynote-restore,
-  .mynote-flag, .station-links, .here, .dual-columns, .cell-edit, .st-titles { display: none !important; }
+  .mynote-flag, .station-links, .here, .dual-columns, .cell-edit, .st-titles, .cell-more, .card-menu, .card-toast, .copy-modal { display: none !important; }
 
   html, body { background: #fff !important; }
   body { color: #000; font-size: 12pt; }

@@ -12,6 +12,7 @@ const HTML_TAG = /<\/?[a-zA-Z][a-zA-Z0-9-]*(?:\s[^<>]*)?>/g;
 // $ _ 是公式写法的一部分，去掉会让「$A$」「|A|」都退化成搜「a」，满页都是。
 function searchText(raw) {
   return String(raw || "")
+    .replace(/<!--[\s\S]*?-->/g, " ")
     .replace(HTML_TAG, " ")
     .replace(/[*`~]/g, "")
     .replace(/==/g, "")
@@ -22,6 +23,7 @@ function searchText(raw) {
 // Markdown 记号一并去掉，高亮才能落在词上。
 function plainText(raw) {
   return String(raw || "")
+    .replace(/<!--[\s\S]*?-->/g, " ")
     .replace(HTML_TAG, " ")
     .replace(/\$\$?[^$]*\$\$?/g, " ▫ ")
     .replace(/^[ \t]*(?:[-*+]|\d+\.)\s+/gm, " ")
@@ -108,20 +110,16 @@ function mdHtml(text, inline) {
 const NOTE_TERM_HEAD = new RegExp("^〔(" + TERM_KINDS + ")〕");
 
 function noteMdHtml(text) {
-  return mdHtml(trimRules(text)).replace(/<h([1-6])>([\s\S]*?)<\/h\1>/g, (m, level, head) => {
-    const title = head.replace(HTML_TAG, "").trim()
-      .replace(/^(?:[一二三四五六七八九十]+、|\d+[.、．])[ \t]*/, "");
-    const term = title.match(NOTE_TERM_HEAD);
-    let cls = term ? BOOK_CLASS[term[1]] : "";
-    if (!cls && /^例题(?=$|[\s:：0-9一二三四五六七八九十（(])/.test(title)) cls = "ex";
-    if (!cls && /^(?:【|〔)?小题\s*[0-9一二三四五六七八九十]+(?=$|[\s】〕:：、.．（(])/.test(title)) cls = "subquestion";
-    return cls ? '<h' + level + ' class="term-head ' + cls + '">' + head + '</h' + level + '>' : m;
-  });
+  // 有格子记号的笔记：按格子渲染（记号不显示，卡片标题用自动编号）
+  if (hasMarkers(text)) return markedNoteHtml(text);
+  return colorNoteHeads(mdHtml(trimRules(text)));
 }
 
 // → { main: 正文 HTML（一个〔〕小节一个 .term）, tip: 提示 HTML }
 // deco(html, 小节)：可选，给每个〔〕小节渲染好的正文再加工一次（站牌用，见 App.stationDeco）
 function bookParts(md, deco) {
+  // 有格子记号的教材：小节、站只认记号，卡片里的标题只是排版
+  if (hasMarkers(md)) return markedBookParts(md, deco);
   const sections = [{ label: null, kind: null, lines: [] }];
   String(md == null ? "" : md).split("\n").forEach((line) => {
     const m = line.match(BOOK_HEAD);
@@ -169,6 +167,11 @@ function bookHeadKind(line) {
 
 function bookSections(md) {
   const kinds = [];
+  const cb = cardBlocks(md);
+  if (cb) {
+    cb.blocks.forEach((b) => { if (b.kind === "section" && !kinds.includes(b.value)) kinds.push(b.value); });
+    return kinds;
+  }
   String(md == null ? "" : md).split("\n").forEach((line) => {
     const kind = bookHeadKind(line);
     if (kind && !kinds.includes(kind)) kinds.push(kind);
@@ -184,6 +187,25 @@ const STATION_LINE = /^\*\*(([①-⑳]′?)[ \t]*[^*]*?)\*\*[ \t]*$/;
 
 function sectionStations(text, part) {
   const src = String(text == null ? "" : text);
+  const cb = cardBlocks(src);
+  if (cb) {
+    // 有记号：站只认 station 记号；〔提示〕没有分站，站名行留在正文里，照旧列出
+    const res = {};
+    const add = (sec, mark, name) => {
+      const list = res[sec] || (res[sec] = []);
+      if (!list.some((x) => x.mark === mark)) list.push({ mark, name });
+    };
+    cb.blocks.forEach((b) => {
+      if (!b.sec) return;
+      if (b.kind === "station") {
+        const st = STATION_LINE.exec(blockHead(src, b).line);
+        add(b.sec, b.value, st ? st[1] : b.value);
+      } else if (b.sec === "提示" && b.kind !== "card") {
+        src.slice(b.start, b.end).split("\n").forEach((l) => { const s = l.replace(/\r$/, "").match(STATION_LINE); if (s) add(b.sec, s[2], s[1]); });
+      }
+    });
+    return res;
+  }
   const level = part === "note" ? noteSections(src).level : 0;
   const out = {};
   let cur = null, fence = false;
@@ -213,6 +235,10 @@ function sectionStations(text, part) {
 const OUTLINE_SECS = [["book", "定义"], ["book", "性质"], ["book", "意义"], ["note", "例题"], ["note", "提示"]];
 
 function cardOutline(book, note) {
+  // 有格子记号的卡按记号取结构；只有一边有记号（本机旧副本）先去掉记号再照旧认
+  const mode = markMode(book, note);
+  if (mode === "marked") return markedOutline(book, note);
+  if (mode === "mixed") { book = stripMarkers(book); note = stripMarkers(note); }
   const blocks = [];
   let structured = false;
   const block = (mark, name) => {
@@ -275,7 +301,11 @@ function cardOutline(book, note) {
 // 以及「**本卡主线：……**」「- **① 问句** $\to$ **答案**：一句话」（后者站卡上显示问句和后面整句）。
 function cardStory(book) {
   const out = { lead: "", st: {} };
-  String(book == null ? "" : book).split("\n").forEach((raw) => {
+  // 有格子记号：只读小节、站、分组开头的介绍，不读卡片里面
+  const cb = cardBlocks(book);
+  const text = cb ? [cb.raw.slice(0, cb.pre.end)].concat(cb.blocks.filter((b) => b.kind !== "card").map((b) => cb.raw.slice(b.start, b.end))).join("\n")
+    : String(book == null ? "" : book);
+  text.split("\n").forEach((raw) => {
     const l = raw.replace(/\r$/, "");
     const lead = l.match(/^\*\*本卡主线\*\*[：:][ \t]*(.*)$/) || l.match(/^\*\*本卡主线[：:][ \t]*(.*?)\*\*[ \t]*$/);
     if (lead && !out.lead) out.lead = lead[1].replace(/[ \t]*整张卡.*$/, "").trim();
@@ -308,6 +338,14 @@ function cellSplice(full, start, end, val) {
   const { lead, tail } = cellSource(full, start, end);
   const v = String(val).replace(/^(?:[ \t]*\r?\n)*/, "").replace(/\s+$/, "");
   return String(full).slice(0, start) + lead + v + tail + String(full).slice(end);
+}
+
+// 按格子的卡：一格是两个记号之间的正文。拼回去时保证和下一个记号之间至少空一行（原来是空格子时没有空行）
+function cellSpliceMarked(full, start, end, val) {
+  const src = String(full), { lead, tail } = cellSource(src, start, end);
+  const v = String(val).replace(/^(?:[ \t]*\r?\n)*/, "").replace(/\s+$/, "");
+  const t = end < src.length && v && (tail.match(/\n/g) || []).length < 2 ? "\n\n" : tail;
+  return src.slice(0, start) + lead + v + t + src.slice(end);
 }
 
 // 粘贴进一张小卡片时会打乱结构的行：# ～ #### 标题（会变成新的卡片或小节）、单独一行加粗的站名（**① …**）。
@@ -381,6 +419,18 @@ function stationBarHtml(itemId, part, sec, mark, name, map, bothCurrent) {
 // 笔记只认最外层那一级小节标题：「### 〔例题〕」算，它下面的「#### 例题 1」「##### 【小题 1】」不算
 function noteSections(text) {
   const found = [];
+  const cb = cardBlocks(text);
+  if (cb) {
+    const kinds = [];
+    let level = 0;
+    cb.blocks.forEach((b) => {
+      if (b.kind !== "section") return;
+      if (!kinds.includes(b.value)) kinds.push(b.value);
+      const h = !level && blockHead(cb.raw, b).line.match(/^(#{1,6})[ \t]+\S/);
+      if (h) level = h[1].length;
+    });
+    return { level: level || 3, kinds };
+  }
   let fence = false;
   String(text == null ? "" : text).split("\n").forEach((line) => {
     if (/^\s*```/.test(line)) { fence = !fence; return; }
@@ -626,11 +676,500 @@ function dualStationRows(rows) {
   return original.slice(0, start).concat(ordered, original.slice(end + 1));
 }
 
+// ── 卡片格子（2026-10-07）────────────────────────────────────────────────
+// 结构（小节、站、分组、卡片）和对照配对只看原文里看不见的记号，不看内容：卡片里写 ###、#### 2.、**① …** 都只是排版。
+//   <!-- section:定义 -->  小节开始（定义 / 性质 / 意义 / 例题 / 提示）
+//   <!-- station:① -->     站开始（站名行照旧写在记号下面，负责显示）
+//   <!-- group:k7f2 -->    分组开始（整行加粗的组名，如「公式与法则」）
+//   <!-- card:k7f2 -->     一张卡开始；同一个 id 在教材和笔记里 = 同一个格子的两半
+// 记号单独一行、后面空一行；一块从它的记号到下一个记号（或文末）。显示、搜索、打印前都先去掉。
+// 没有记号的卡照旧按标题认结构（dualSource 那一套）。
+const MARK_SRC = "^<!-- (section|station|group|card):([^\\n]*?) -->[ \\t]*\\r?(?:\\n|$)";
+const BOLD_LINE = /^\*\*([^*]+)\*\*[ \t]*$/;
+
+function hasMarkers(raw) {
+  return new RegExp(MARK_SRC, "m").test(String(raw == null ? "" : raw));
+}
+
+// 去掉记号行连同后面那一个空行：迁移时只插进了「记号 + 空行」，去掉以后和原文逐字节相同
+function stripMarkers(raw) {
+  const s = String(raw == null ? "" : raw);
+  return hasMarkers(s) ? s.replace(new RegExp(MARK_SRC + "(?:\\r?\\n)?", "gm"), "") : s;
+}
+
+// 教材、笔记两边：都有记号 = 按格子（marked）；只有一边有 = 本机留着改造以前的旧副本（mixed）；都没有 = 旧写法
+function markMode(book, note) {
+  const b = hasMarkers(book), n = hasMarkers(note);
+  if (b && (n || !String(note == null ? "" : note).trim())) return "marked";
+  return b || n ? "mixed" : "";
+}
+
+// → { raw, pre: { start, end }, blocks: [{ kind, value, id, mstart, start, end, sec, station, group }] }；没有记号是 null。
+// mstart 是记号行的开头，[start, end) 是这一块的正文（记号和它后面的空行不算）。
+function cardBlocks(raw) {
+  const src = String(raw == null ? "" : raw);
+  const re = new RegExp(MARK_SRC, "gm"), marks = [];
+  let m;
+  while ((m = re.exec(src))) {
+    let start = m.index + m[0].length;
+    if (m[0].endsWith("\n")) { const nl = src.slice(start, start + 2).match(/^\r?\n/); if (nl) start += nl[0].length; }
+    marks.push({ kind: m[1], value: m[2].trim(), mstart: m.index, start });
+  }
+  if (!marks.length) return null;
+  let sec = "", station = "", group = "";
+  const blocks = marks.map((k, i) => {
+    const end = i + 1 < marks.length ? marks[i + 1].mstart : src.length;
+    if (k.kind === "section") { sec = k.value; station = group = ""; }
+    else if (k.kind === "station") { station = k.value; group = ""; }
+    else if (k.kind === "group") group = k.value;
+    return { kind: k.kind, value: k.value, id: k.kind === "card" || k.kind === "group" ? k.value : "",
+      mstart: k.mstart, start: Math.min(k.start, end), end, sec, station, group };
+  });
+  return { raw: src, pre: { start: 0, end: marks[0].mstart }, blocks };
+}
+
+// 一块里第一个非空行：{ line, start, end }（end 含换行）
+function blockHead(src, b) {
+  const text = src.slice(b.start, b.end);
+  const lead = text.match(/^(?:[ \t]*\r?\n)*/)[0];
+  const nl = text.indexOf("\n", lead.length);
+  return { line: text.slice(lead.length, nl < 0 ? text.length : nl).replace(/\r$/, ""),
+    start: b.start + lead.length, end: b.start + (nl < 0 ? text.length : nl + 1) };
+}
+
+// 小节、站、分组那一块的标题行：认得出才算（认不出就整块都当介绍文字显示）
+function markedHead(src, b, part) {
+  const h = blockHead(src, b);
+  const ok = b.kind === "section" ? (part === "book" ? !!bookHeadKind(h.line) : /^#{1,6}[ \t]+\S/.test(h.line))
+    : b.kind === "station" ? STATION_LINE.test(h.line) : b.kind === "group" ? BOLD_LINE.test(h.line) : false;
+  return ok ? h : null;
+}
+
+// 配对用的小节名：教材〔意义〕和笔记〔例题〕是同一类（题型）；〔提示〕两边各管各的
+function canonSec(sec, part) {
+  return sec === "意义" || sec === "例题" ? "application" : sec === "提示" ? part + "提示" : sec;
+}
+
+// 卡片编号按位置算：定义、性质是「同一站、同一分组里的第几张」，意义（题型）是整节连续。
+// 两边都有的卡用教材那一边的编号，笔记的例题号跟着意义的题型号。→ Map(id → 编号)
+function cardNumbers(bb, nb) {
+  const nums = new Map();
+  [[bb, "book"], [nb, "note"]].forEach(([cb, part]) => {
+    if (!cb) return;
+    const c = {};
+    cb.blocks.forEach((b) => {
+      if (b.kind !== "card") return;
+      const k = canonSec(b.sec, part) === "application" ? "application" : b.sec + "|" + b.station + "|" + b.group;
+      c[k] = (c[k] || 0) + 1;
+      if (!nums.has(b.id)) nums.set(b.id, c[k]);
+    });
+  });
+  return nums;
+}
+
+// 卡片标题 = 第一行去掉 #、编号（例题去掉「例题 n：」）
+function cardTitle(text, sec) {
+  const line = (String(text).match(/^(?:[ \t]*\r?\n)*([^\n]*)/) || ["", ""])[1].replace(/\r$/, "");
+  let t = line.replace(/^#{1,6}[ \t]+/, "");
+  if (sec === "例题") { const m = t.match(/^例题[ \t]*\d*(?:-\d+)?[ \t]*[：:]?[ \t]*(.*)$/); if (m) t = m[1]; }
+  else t = t.replace(/^\d+\.[ \t]*/, "");
+  return t.trim();
+}
+
+// 显示时换成自动编号（原文不改）：第一行是标题就换掉（或补上）里面的数字；例题卡换「例题 n」的 n
+function numberCard(text, num, sec) {
+  if (num == null || num === "") return text;
+  if (sec === "例题") return text.replace(/^(#{2,6}[ \t]+例题[ \t]*)\d+(?=(?:-\d+)?(?![\d.]))/gm, "$1" + num);
+  return text.replace(/^((?:[ \t]*\r?\n)*)(#{1,6}[ \t]+)(\d+(?=\.)|(?!例题)(?=\S))/,
+    (m, lead, hashes, digits) => lead + hashes + (digits ? num : num + ". "));
+}
+
+// 一段连续的原文（教材的一个〔〕小节、整篇笔记）去掉头尾的空行和分隔线，和 trimRules 对整段做的一样；
+// 换算成每一块还剩哪一截：→ [[开始, 结束], …]（相对每块自己）
+function trimSpans(texts) {
+  const full = texts.join("");
+  const lead = trimRulesLead(full);
+  const keepStart = full.length - lead.length;
+  const keepEnd = keepStart + trimRulesTail(lead).length;
+  let at = 0;
+  return texts.map((t) => {
+    const a = Math.min(Math.max(keepStart - at, 0), t.length), b = Math.max(Math.min(keepEnd - at, t.length), a);
+    at += t.length;
+    return [a, b];
+  });
+}
+function trimRulesLead(text) {
+  const lines = String(text).split("\n");
+  let i = 0;
+  while (i < lines.length && (!lines[i].trim() || HR_LINE.test(lines[i]))) i++;
+  return lines.slice(i).join("\n");
+}
+function trimRulesTail(text) {
+  const lines = String(text).split("\n");
+  const blank = (l) => l === undefined || !l.trim();
+  while (lines.length) {
+    const last = lines[lines.length - 1];
+    if (blank(last) || (HR_LINE.test(last) && blank(lines[lines.length - 2]))) lines.pop();
+    else break;
+  }
+  return lines.join("\n");
+}
+
+// 笔记的标题上色（noteMdHtml 的后半段）
+function colorNoteHeads(html) {
+  return html.replace(/<h([1-6])>([\s\S]*?)<\/h\1>/g, (m, level, head) => {
+    const title = head.replace(HTML_TAG, "").trim()
+      .replace(/^(?:[一二三四五六七八九十]+、|\d+[.、．])[ \t]*/, "");
+    const term = title.match(NOTE_TERM_HEAD);
+    let cls = term ? BOOK_CLASS[term[1]] : "";
+    if (!cls && /^例题(?=$|[\s:：0-9一二三四五六七八九十（(])/.test(title)) cls = "ex";
+    if (!cls && /^(?:【|〔)?小题\s*[0-9一二三四五六七八九十]+(?=$|[\s】〕:：、.．（(])/.test(title)) cls = "subquestion";
+    return cls ? '<h' + level + ' class="term-head ' + cls + '">' + head + '</h' + level + '>' : m;
+  });
+}
+
+// 按记号把一边的原文切成显示用的几段，每段单独渲染。
+// 段：{ kind: content | section | station | group | entry, sec, station, group（组名）, id, key, line, title, num, start, end, html }
+// 小节、站、分组那一块拆成标题行和后面的介绍两段；一张卡是一段。key 是配对键（卡片、分组按 id）。
+// opts.nums：编号；opts.deco(html, 小节)：站名行换成站牌；opts.noHtml：只要位置和配对键
+function markedPieces(raw, part, opts = {}) {
+  const cb = cardBlocks(raw);
+  if (!cb) return [];
+  const src = cb.raw, nums = opts.nums || cardNumbers(part === "book" ? cb : null, part === "note" ? cb : null);
+  const pieces = [], groupTitle = {};
+  const add = (p) => pieces.push(Object.assign({ kind: "content", sec: "", station: "", group: "", id: "", line: "",
+    title: "", num: "", label: "", headKind: "", run: 0 }, p));
+  let run = 0;
+  if (cb.pre.end > 0) add({ start: 0, end: cb.pre.end, key: JSON.stringify(["pre"]) });
+  cb.blocks.forEach((b) => {
+    const canon = canonSec(b.sec, part);
+    if (b.kind === "section") run++;
+    const base = { sec: b.sec, station: b.station, run };
+    if (b.kind === "card") {
+      const text = src.slice(b.start, b.end);
+      add(Object.assign(base, { kind: "entry", id: b.id, group: b.group ? groupTitle[b.group] || "" : "", start: b.start, end: b.end,
+        key: JSON.stringify(["card", b.id]), line: blockHead(src, b).line, title: cardTitle(text, b.sec),
+        num: nums.has(b.id) ? String(nums.get(b.id)) : "" }));
+      return;
+    }
+    const h = markedHead(src, b, part);
+    if (b.kind === "group") groupTitle[b.id] = h ? BOLD_LINE.exec(h.line)[1] : "";
+    const group = b.kind === "group" ? groupTitle[b.id] : "";
+    if (h) {
+      const head = Object.assign({}, base, { group, start: b.start, end: h.end, line: h.line });
+      if (b.kind === "section") {
+        const m = part === "book" && h.line.match(BOOK_HEAD);
+        const meaning = part === "book" && !m && h.line.match(/^#{1,6}[ \t]*意义(?:[ \t]*[:：][ \t]*(.*?))?[ \t]*$/);
+        add(Object.assign(head, { kind: "section", key: JSON.stringify(["section", canon]),
+          label: m ? m[1] : meaning ? "〔意义〕" + (meaning[1] || "") : "", headKind: m ? m[2] : meaning ? "意义" : "" }));
+      } else if (b.kind === "station") {
+        add(Object.assign(head, { kind: "station", title: STATION_LINE.exec(h.line)[1], key: JSON.stringify(["station", canon, b.station]) }));
+      } else add(Object.assign(head, { kind: "group", title: group, key: JSON.stringify(["group", b.id]) }));
+    }
+    const scope = b.kind === "section" ? [canon] : b.kind === "station" ? [canon, b.station] : ["g", b.id];
+    add(Object.assign({}, base, { group, start: h ? h.end : b.start, end: b.end, key: JSON.stringify(["intro"].concat(scope)) }));
+  });
+  if (opts.noHtml) return pieces;
+  // 头尾去空行、分隔线：教材按〔〕小节（小节标题行不算），笔记整篇一起
+  const runs = new Map();
+  pieces.forEach((p, i) => {
+    if (part === "book" && p.kind === "section") return;
+    const k = part === "book" ? p.run : 0;
+    if (!runs.has(k)) runs.set(k, []);
+    runs.get(k).push(i);
+  });
+  const shown = pieces.map((p) => src.slice(p.start, p.end));
+  runs.forEach((idx) => {
+    const spans = trimSpans(idx.map((i) => shown[i]));
+    idx.forEach((i, k) => { shown[i] = shown[i].slice(spans[k][0], spans[k][1]); });
+  });
+  const render = (text) => (!text.trim() ? "" : part === "book" ? mdHtml(text) : colorNoteHeads(mdHtml(text)));
+  pieces.forEach((p, i) => {
+    if (p.kind === "section" && part === "book") {
+      p.html = p.headKind === "提示" ? '<div class="note-label">' + mdHtml(p.label, true) + "</div>"
+        : '<div class="term-label ' + (BOOK_CLASS[p.headKind] || "") + '">' + mdHtml(p.label, true) + "</div>";
+    } else if (p.kind === "entry") p.html = render(numberCard(shown[i], p.num, p.sec));
+    else p.html = render(shown[i]);
+    // 站牌：站名行；笔记的〔提示〕没有分站（站名行留在一大格里），照旧换成站牌
+    if (opts.deco && p.html && (p.kind === "station" || (part === "note" && p.sec === "提示" && p.kind === "content"))) p.html = opts.deco(p.html, p.sec);
+  });
+  return pieces;
+}
+
+// 有记号的教材：和 bookParts 一样分〔〕小节、提示放底部，但小节、站只认记号
+function markedBookParts(md, deco) {
+  const pieces = markedPieces(md, "book", { deco: deco ? (html, sec) => (sec ? deco(html, sec) : html) : null });
+  const sections = [{ label: null, kind: null, body: "" }];
+  pieces.forEach((p) => {
+    if (p.kind === "section") sections.push({ label: p.label, kind: p.headKind, body: "" });
+    else sections[sections.length - 1].body += p.html;
+  });
+  let main = "", tip = "";
+  sections.forEach((s) => {
+    if (s.kind === "提示") {
+      const name = s.label.replace(/^〔提示〕/, "").trim();
+      if (name || s.body.trim()) tip += '<div class="note-label">' + mdHtml(s.label, true) + '</div><div class="note-body">' + s.body + "</div>";
+    } else if (!s.label) {
+      if (s.body.trim()) main += '<div class="term-md">' + s.body + "</div>";
+    } else {
+      main += '<div class="term"><div class="term-label ' + (BOOK_CLASS[s.kind] || "") + '">' + mdHtml(s.label, true) +
+        '</div><div class="term-md">' + s.body + "</div></div>";
+    }
+  });
+  return { main, tip };
+}
+
+// 有记号的笔记：整篇显示（打印、非对照时用）；deco(html, 小节) 把站名行换成站牌
+function markedNoteHtml(text, deco) {
+  return markedPieces(text, "note", { deco: deco ? (html, sec) => (sec ? deco(html, sec) : html) : null }).map((p) => p.html).join("");
+}
+
+// 有记号的卡的骨架（cardOutline 的按记号版）：卡片的标题、编号、分组从格子来；
+// 没切成卡的地方（旧写法的意义列表、例题，笔记的〔提示〕）照旧从行里读条目，只用来显示小标题和条数
+function markedOutline(book, note) {
+  const blocks = [];
+  let structured = false;
+  const block = (mark, name) => {
+    let b = blocks.find((x) => x.mark === mark);
+    if (!b) blocks.push((b = { mark, name, rows: {} }));
+    return b;
+  };
+  const bb = cardBlocks(book), nb = cardBlocks(note);
+  const nums = cardNumbers(bb, nb);
+  const scan = (cb, part) => {
+    if (!cb) return;
+    const src = cb.raw, counts = {}, groupTitle = {};
+    const want = (sec) => OUTLINE_SECS.some(([p, s]) => p === part && s === sec) || (part === "note" && (sec === "定义" || sec === "性质"));
+    const push = (sec, station, title, num, group) => {
+      const rows = block(station, "").rows;
+      const row = rows[part + sec] || (rows[part + sec] = { part, sec, items: [] });
+      const n = counts[sec + station] || 0;
+      counts[sec + station] = n + 1;
+      row.items.push({ title, num, ord: n, group: sec === "定义" || sec === "性质" || sec === "意义" ? group : "" });
+    };
+    const lines = (sec, st, text) => {
+      if (sec !== "意义" && sec !== "例题" && sec !== "提示") return;
+      const ls = text.split("\n").map((l) => l.replace(/\r$/, ""));
+      let fence = false;
+      ls.forEach((line, i) => {
+        if (/^\s*(```|~~~)/.test(line)) { fence = !fence; return; }
+        if (fence) return;
+        const independent = i === 0 || !ls[i - 1].trim() || /^#{1,6}[ \t]/.test(ls[i - 1]);
+        const s = independent && line.match(STATION_LINE);
+        if (s) { st = s[2]; structured = true; block(st, s[1]); return; }
+        const m = sec === "意义" ? line.match(/^[*-][ \t]+\*\*(\d+)\.[ \t]*(.*?)\*\*/)
+          : sec === "例题" ? line.match(/^#{2,6}[ \t]+例题[ \t]*(\d+)(?:-\d+)?(?![\d.])[ \t]*[：:]?[ \t]*(.*?)[ \t]*$/)
+          : line.match(/^#{2,6}[ \t]+(\d+)\.[ \t]*(.*?)[ \t]*$/);
+        if (m) push(sec, st, m[2], m[1], "");
+      });
+    };
+    cb.blocks.forEach((b) => {
+      if (!want(b.sec)) return;
+      const h = b.kind === "card" ? null : markedHead(src, b, part);
+      const intro = src.slice(h ? h.end : b.start, b.end);
+      if (b.kind === "section") lines(b.sec, "", intro);
+      else if (b.kind === "station") {
+        structured = true;
+        block(b.value, h ? STATION_LINE.exec(h.line)[1] : b.value);
+        lines(b.sec, b.value, intro);
+      } else if (b.kind === "group") {
+        groupTitle[b.id] = h ? BOLD_LINE.exec(h.line)[1] : "";
+        if (b.sec === "定义" || b.sec === "性质" || (b.sec === "意义" && !b.station)) structured = true;
+      } else {
+        const text = src.slice(b.start, b.end), num = nums.has(b.id) ? String(nums.get(b.id)) : "";
+        // 例题卡里「例题 n-1」「例题 n-2」两道，站卡上各列一个小标题
+        const exs = b.sec === "例题" ? [...text.matchAll(/^#{2,6}[ \t]+例题[ \t]*\d+(?:-\d+)?(?![\d.])[ \t]*[：:]?[ \t]*(.*?)[ \t]*\r?$/gm)] : [];
+        if (exs.length) exs.forEach((m) => push(b.sec, b.station, m[1], num, ""));
+        else push(b.sec, b.station, cardTitle(text, b.sec), num, b.group ? groupTitle[b.group] || "" : "");
+      }
+    });
+  };
+  scan(bb, "book");
+  scan(nb, "note");
+  return { structured, blocks: blocks.filter((b) => b.mark || Object.keys(b.rows).length) };
+}
+
+// 卡片按钮（上移、下移、在下面加一张、复制到、删除）：同时改教材、笔记两段原文，只挪动、增删记号块，卡片里的字一个不动。
+// 每块 = 记号行开头到最后一个非空白字（core）；块之间的空白留在原位，不跟着块走。
+const CardOps = {
+  split(raw) {
+    const cb = cardBlocks(raw);
+    if (!cb) return null;
+    const items = [], wss = [];
+    cb.blocks.forEach((b) => {
+      const body = cb.raw.slice(b.mstart, b.end), core = body.replace(/\s+$/, "");
+      items.push({ b, core });
+      wss.push(body.slice(core.length));
+    });
+    return { pre: cb.raw.slice(0, cb.pre.end), items, wss, end: wss[wss.length - 1] };
+  },
+  join(s) {
+    const n = s.items.length;
+    return s.pre + s.items.map((x, i) => x.core + (i === n - 1 ? s.end : /\n/.test(s.wss[i] || "") ? s.wss[i] : "\n\n")).join("");
+  },
+  index(s, id) {
+    return s ? s.items.findIndex((x) => x.b.kind === "card" && x.b.id === id) : -1;
+  },
+  // 两边对应同一块的键：卡片、分组按 id，站按小节 + 圈号，小节按小节名（意义 = 例题）
+  key(b, part) {
+    return b.kind === "card" || b.kind === "group" ? b.kind + ":" + b.id
+      : b.kind === "station" ? "station:" + canonSec(b.sec, part) + ":" + b.value : "section:" + canonSec(b.value, part);
+  },
+  parts(texts) {
+    return { book: this.split(texts.book), note: this.split(texts.note) };
+  },
+  master(S, id) {
+    return ["book", "note"].find((p) => this.index(S[p], id) >= 0) || null;
+  },
+  // 另一边放到哪：主边第 from 块往前（含它自己）最近的、另一边也有的那一块后面 → 另一边的下标（插在它后面）
+  anchor(O, M, from, mp, op, skip) {
+    const keys = O.items.map((x) => (x.b.kind === "card" && x.b.id === skip ? null : this.key(x.b, op)));
+    for (let q = from; q >= 0; q--) {
+      const a = keys.indexOf(this.key(M.items[q].b, mp));
+      if (a >= 0) return a;
+    }
+    return -1;
+  },
+  canMove(texts, id, dir) {
+    const S = this.parts(texts), mp = this.master(S, id);
+    if (!mp) return false;
+    const items = S[mp].items, j = this.index(S[mp], id) + dir;
+    if (j < 0 || j >= items.length || items[j].b.kind === "section") return false;
+    // 第一站最上面那张不能再往上：站名前面是小节标题，挪过去就不在任何一站里了
+    return !(dir < 0 && items[j].b.kind === "station" && (j === 0 || items[j - 1].b.kind === "section"));
+  },
+  // 和相邻的一块换位置：相邻的是站名或分组名，就挪进那一站、那一组；不跨小节
+  move(texts, id, dir) {
+    if (!this.canMove(texts, id, dir)) return null;
+    const S = this.parts(texts), mp = this.master(S, id), op = mp === "book" ? "note" : "book";
+    const M = S[mp], i = this.index(M, id), j = i + dir;
+    [M.items[i], M.items[j]] = [M.items[j], M.items[i]];
+    const out = { book: texts.book, note: texts.note };
+    out[mp] = this.join(M);
+    const O = S[op], k = this.index(O, id);
+    if (k >= 0) {
+      const a = this.anchor(O, M, j - 1, mp, op, id);
+      if (a >= 0) {
+        const item = O.items[k];
+        O.items.splice(k, 1); O.wss.splice(k, 1);
+        const at = a > k ? a : a + 1;
+        O.items.splice(at, 0, item); O.wss.splice(at, 0, "\n\n");
+        out[op] = this.join(O);
+      }
+    }
+    return out;
+  },
+  remove(texts, id) {
+    const S = this.parts(texts), out = { book: texts.book, note: texts.note };
+    let done = false;
+    ["book", "note"].forEach((p) => {
+      const k = this.index(S[p], id);
+      if (k < 0) return;
+      S[p].items.splice(k, 1); S[p].wss.splice(k, 1);
+      out[p] = this.join(S[p]);
+      done = true;
+    });
+    return done ? out : null;
+  },
+  // 在下面加一张：教材第一行「#### 新卡片」，笔记空着
+  add(texts, id, newId) {
+    const S = this.parts(texts), mp = this.master(S, id);
+    if (!mp) return null;
+    const out = { book: texts.book, note: texts.note }, M = S[mp], i = this.index(M, id);
+    const core = { book: "<!-- card:" + newId + " -->\n\n#### 新卡片", note: "<!-- card:" + newId + " -->" };
+    ["book", "note"].forEach((p) => {
+      const s = S[p];
+      if (!s) return;
+      const a = p === mp ? i : this.anchor(s, M, i, mp, p);
+      if (a < 0) return;
+      s.items.splice(a + 1, 0, { b: { kind: "card", id: newId }, core: core[p] }); s.wss.splice(a + 1, 0, "\n\n");
+      out[p] = this.join(s);
+    });
+    return out;
+  },
+  // 复制到：这张卡的教材接到目标卡教材末尾、笔记接到目标卡笔记末尾，前面一行「##### 复制自：标题」代替原来的标题行。这张卡保留。
+  copy(texts, id, target, fallbackTitle) {
+    const out = { book: texts.book, note: texts.note };
+    let done = false;
+    ["book", "note"].forEach((p) => {
+      const cb = cardBlocks(texts[p]);
+      if (!cb) return;
+      const from = cb.blocks.find((b) => b.kind === "card" && b.id === id), to = cb.blocks.find((b) => b.kind === "card" && b.id === target);
+      if (!from || !to || id === target) return;
+      const body = cb.raw.slice(from.start, from.end).replace(/^(?:[ \t]*\r?\n)*/, "").replace(/\s+$/, "");
+      if (!body) return;
+      const nl = body.indexOf("\n"), first = nl < 0 ? body : body.slice(0, nl);
+      const heading = /^#{1,6}[ \t]+\S/.test(first);
+      const rest = heading ? (nl < 0 ? "" : body.slice(nl + 1).replace(/^(?:[ \t]*\r?\n)*/, "")) : body;
+      const piece = "##### 复制自：" + ((heading && cardTitle(first, from.sec)) || fallbackTitle || "（无标题）") + (rest ? "\n\n" + rest : "");
+      const tCore = cb.raw.slice(to.start, to.end).replace(/\s+$/, ""), at = to.start + tCore.length, after = cb.raw.slice(at);
+      out[p] = cb.raw.slice(0, at) + (tCore.trim() ? "\n\n" : "") + piece + (after && !/^\r?\n/.test(after) ? "\n\n" : "") + after;
+      done = true;
+    });
+    return done ? out : null;
+  },
+  newId(texts) {
+    const used = new Set();
+    [texts.book, texts.note].forEach((t) => (String(t || "").match(/<!-- (?:card|group):[^\n]*? -->/g) || [])
+      .forEach((m) => used.add(m.replace(/^<!-- \w+:|[ ]-->$/g, "").trim())));
+    const abc = "abcdefghijklmnopqrstuvwxyz", all = abc + "0123456789";
+    for (;;) {
+      let id = abc[Math.floor(Math.random() * 26)];
+      for (let i = 0; i < 3; i++) id += all[Math.floor(Math.random() * all.length)];
+      if (!used.has(id)) return id;
+    }
+  },
+};
+
+// 记号完整性（体检、迁移、测试共用）：格式、一章内 id 唯一、卡片都在某个小节里、笔记的卡在教材里有（〔提示〕〔例题〕等单边小节除外）
+function markerIssues(book, note) {
+  const out = [];
+  const check = (raw, part) => {
+    const src = String(raw == null ? "" : raw);
+    if (!hasMarkers(src)) return null;
+    src.split("\n").forEach((l, i) => {
+      if (/<!--\s*(?:section|station|group|card)\b/.test(l) && !new RegExp(MARK_SRC, "m").test(l + "\n"))
+        out.push(part + " 第 " + (i + 1) + " 行：记号写法不对「" + l.slice(0, 40) + "」");
+    });
+    const cb = cardBlocks(src), seen = new Set();
+    cb.blocks.forEach((b) => {
+      if (b.kind === "card" || b.kind === "group") {
+        if (!/^[a-z0-9]{4,6}$/.test(b.id)) out.push(part + "：id 不是 4～6 位小写字母数字「" + b.id + "」");
+        if (seen.has(b.id)) out.push(part + "：id 重复「" + b.id + "」");
+        seen.add(b.id);
+      }
+      if (b.kind !== "section" && !b.sec) out.push(part + "：" + b.kind + ":" + b.value + " 不在任何小节里");
+      if (b.kind === "station") {
+        const st = STATION_LINE.exec(blockHead(src, b).line);
+        if (!st) out.push(part + "：station:" + b.value + " 下面第一行不是站名行");
+        else if (st[2] !== b.value) out.push(part + "：station:" + b.value + " 和站名行的圈号不一样");
+      }
+      const prev = src.slice(Math.max(0, b.mstart - 1), b.mstart);
+      if (b.mstart > 0 && prev !== "\n") out.push(part + "：" + b.kind + ":" + b.value + " 记号不在行首");
+    });
+    return cb;
+  };
+  const bb = check(book, "教材"), nb = check(note, "笔记");
+  if (bb && nb) {
+    const ids = new Set(bb.blocks.filter((b) => b.kind === "card").map((b) => b.id));
+    nb.blocks.filter((b) => b.kind === "card" && !ids.has(b.id) && b.sec !== "提示")
+      .forEach((b) => out.push("笔记：card:" + b.id + "（" + b.sec + "）教材里没有"));
+  } else if (bb || nb) {
+    const n = String((bb ? note : book) || "").trim();
+    if (n) out.push((bb ? "笔记" : "教材") + "没有记号，" + (bb ? "教材" : "笔记") + "有");
+  }
+  return out;
+}
+
 const App = {
   openSubjects: new Set(),
 
   dualTrackModel(id, bookRaw, noteRaw) {
     const texts = { book: String(bookRaw || ""), note: String(noteRaw || "") };
+    // 有格子记号：按记号切、按 id 配对；只有一边有记号（本机旧副本）：去掉记号照旧显示，但不能单张编辑（decorateCells 提示先导出）
+    const mode = markMode(texts.book, texts.note);
+    if (mode === "marked") return this.markedModel(id, texts);
+    if (mode === "mixed") return Object.assign(this.dualTrackModel(id, stripMarkers(texts.book), stripMarkers(texts.note)), { mixed: true });
     const parts = bookParts(texts.book, this.stationDeco(id, texts));
     const byType = appByType(texts.book);
     const book = dualSide(texts.book, parts.main + parts.tip, "book", byType);
@@ -650,6 +1189,33 @@ const App = {
         : r.book.html;
     });
     return { enabled, pairs, rows, book, note };
+  },
+
+  // 按格子的对照：每一块单独渲染，配对只看配对键（卡片、分组按 id）。行的样子和旧的一样（dualTrackHtml 通用）。
+  markedModel(id, texts) {
+    const nums = cardNumbers(cardBlocks(texts.book), cardBlocks(texts.note));
+    let map = null;
+    const deco = (part) => (html, sec) => (!sec ? html : html.replace(STATION_P, (m, name, mark) => {
+      map = map || this.stationMap(id, texts);
+      return stationBarHtml(id, part, sec, mark, name, map);
+    }));
+    const side = (part) => {
+      const segments = markedPieces(texts[part], part, { nums, deco: deco(part) }).map((p) => Object.assign(p, {
+        sourcePieces: [{ start: p.start, end: p.end, text: texts[part].slice(p.start, p.end) }], htmlPieces: [] }));
+      return { raw: texts[part], html: segments.map((s) => s.html).join(""), segments,
+        sourcePieces: segments.flatMap((s) => s.sourcePieces), htmlPieces: [] };
+    };
+    const book = side("book"), note = side("note");
+    const rows = dualRows(book, note);
+    const pairs = rows.filter((r) => r.book && r.note && r.kind === "entry");
+    rows.filter((r) => r.merged).forEach((r) => {
+      const head = r.kind === "station" && r.book.html.match(/<span class="station-no">[^<]*<\/span>([ \t]*)<span class="station-name">([\s\S]*?)<\/span><\/div>/);
+      const name = head ? r.book.station + head[1] + head[2] : escapeHtml(r.book.title);
+      r.html = r.kind === "station"
+        ? stationBarHtml(id, "book", r.book.sec, r.book.station, name, this.stationMap(id, texts), { book: r.book.sec, note: r.note.sec })
+        : r.book.html;
+    });
+    return { enabled: true, marked: true, pairs, rows, book, note };
   },
 
   dualTrackHtml(model) {
@@ -672,16 +1238,20 @@ const App = {
         : `<div class="dual-cell dual-${part} dual-empty" aria-hidden="true"></div>`;
       const body = part === "book" ? "entry-statement" : "mynote-body md";
       const src = s.sourcePieces.length ? ` data-src="${s.sourcePieces[0].start}-${s.sourcePieces[s.sourcePieces.length - 1].end}"` : "";
+      // 格子里新加的卡，笔记那一半还空着：照样留一格，可以点「编辑」写
+      const html = model.marked && s.kind === "entry" && !s.html.trim() ? '<p class="cell-empty">（还没写）</p>' : s.html;
       return `<div class="dual-cell dual-${part}" ${attrs(s, part)}${src}>` +
         (part === "note" ? '<span class="dual-label">笔记</span>' : "") +
-        `<div class="${body}">${part === "book" ? '<div class="term-md">' + s.html + '</div>' : s.html}</div></div>`;
+        `<div class="${body}">${part === "book" ? '<div class="term-md">' + html + '</div>' : html}</div></div>`;
     };
+    // 按格子的卡：一张卡的两半只要有记号就算有（空的也留一格）；只有一半的卡占整行，不显示「没有这一条」
+    const present = (s, kind) => !!(s && (s.html.trim() || (model.marked && kind === "entry")));
     return '<div class="dual-track' + (stationOrdered ? ' station-ordered' : '') + '"><div class="dual-columns"><span>教材</span><span>笔记</span></div>' + view.map(({ row: r, index }) => {
       rowAt = index;
-      const hasBook = !!(r.book && r.book.html.trim()), hasNote = !!(r.note && r.note.html.trim());
+      const hasBook = present(r.book, r.kind), hasNote = present(r.note, r.kind);
       if (!hasBook && !hasNote) return "";
       const s = hasBook ? r.book : r.note;
-      const wide = (!hasBook || !hasNote) && (r.kind === "content" || s.sec === "提示");
+      const wide = (!hasBook || !hasNote) && (r.kind === "content" || s.sec === "提示" || (!!model.marked && r.kind === "entry"));
       let continuation = false;
       if (stationOrdered && r.kind === "station") {
         const signature = JSON.stringify([r.book && r.book.title, r.note && r.note.title]);
@@ -813,20 +1383,39 @@ const App = {
     const texts = { book: BookEdits.get(id), note: Notes.get(id) };
     const repo = { book: BookEdits.seed(id), note: window.__KAOYAN_SEED_NOTES__[id] || "" };
     const pending = { book: BookEdits.isPending(id), note: Notes.isPending(id) };
-    const index = (raw, part, byType) => {
+    const mode = markMode(texts.book, texts.note);
+    const controls = entry.querySelector(".dual-controls");
+    if (controls) controls.querySelectorAll(".dual-broken-tip").forEach((t) => t.remove());
+    // 本机留着格子改造以前的旧副本：照旧显示，但不能单张编辑（位置对不上），露出顶上那一行，先导出交给 Claude 合并
+    if (mode === "mixed") {
+      if (controls) {
+        controls.classList.add("is-broken");
+        controls.insertAdjacentHTML("afterbegin", `<div class="dual-broken-tip">⚠️ 这张卡在本机有旧格式的修改（卡片变成格子以前的版本），暂时不能单张编辑。` +
+          `先点左下角「导出」交给 Claude 合并，再点下面的「用仓库版」。</div>`);
+      }
+      return;
+    }
+    const marked = mode === "marked";
+    // 按格子的卡：每段的配对键（卡片按 id），和仓库里同一个键的那段比
+    const segs = (raw, part, book) => (marked ? (hasMarkers(raw) ? markedPieces(raw, part, { noHtml: true }) : []) : dualSource(raw, part, appByType(book)));
+    const index = (raw, part, book) => {
       const seen = {}, byStart = new Map(), byKey = new Map();
-      dualSource(raw, part, byType).forEach((r) => {
-        const first = r.sourcePieces[0], last = r.sourcePieces[r.sourcePieces.length - 1];
+      segs(raw, part, book).forEach((r) => {
+        const first = r.sourcePieces ? r.sourcePieces[0] : { start: r.start, end: r.end };
+        const last = r.sourcePieces ? r.sourcePieces[r.sourcePieces.length - 1] : first;
         if (!first) return;
         const k = r.key + "#" + (seen[r.key] = (seen[r.key] || 0) + 1);
         const core = cellSource(raw, first.start, last.end).core;
-        byStart.set(first.start, { k, core });
+        byStart.set(first.start, { k, core, id: r.kind === "entry" ? r.id || "" : "" });
         byKey.set(k, core);
       });
       return { byStart, byKey };
     };
     const now = {}, base = {}, local = { book: 0, note: 0 };
-    ["book", "note"].forEach((p) => { if (pending[p]) { now[p] = index(texts[p], p, appByType(texts.book)); base[p] = index(repo[p], p, appByType(repo.book)); } });
+    ["book", "note"].forEach((p) => {
+      if (pending[p] || marked) now[p] = index(texts[p], p, texts.book);
+      if (pending[p]) base[p] = index(repo[p], p, repo.book);
+    });
     this._cellRepo = {};
     track.querySelectorAll(".dual-row.kind-entry > .dual-cell[data-src], .dual-row.kind-content > .dual-cell[data-src]").forEach((cell) => {
       const p = cell.dataset.part, start = +cell.dataset.src.split("-")[0];
@@ -845,18 +1434,25 @@ const App = {
       const label = cell.querySelector(":scope > .dual-label");
       if (label) cell.querySelector(":scope > .cell-tools").prepend(label);
     });
+    // 按格子的卡：每张卡（教材那一半，没有教材就笔记那一半）右上角一个「⋯」：上移、下移、在下面加一张、复制到、删除
+    if (marked) track.querySelectorAll(".dual-row.kind-entry").forEach((row) => {
+      const cells = [...row.querySelectorAll(":scope > .dual-cell[data-src]")];
+      const host = cells.find((c) => c.dataset.part === "book") || cells[0];
+      const me = host && now[host.dataset.part].byStart.get(+host.dataset.src.split("-")[0]);
+      if (!me || !me.id) return;
+      host.querySelector(":scope > .cell-tools").insertAdjacentHTML("beforeend",
+        `<button type="button" class="cell-more" data-card="${escapeHtml(me.id)}" aria-haspopup="menu" title="这张卡：上移、下移、在下面加一张、复制到、删除">⋯</button>`);
+    });
     // 「没有这一条」的格子也能编辑：补写（先填好仓库里的这一条），免得标题改坏以后连改回来的入口都没有
     track.querySelectorAll(".dual-row.kind-entry > .dual-missing[data-at]").forEach((cell) => {
       cell.insertAdjacentHTML("afterbegin", `<div class="cell-tools"><button type="button" class="cell-edit" title="把这一条补回来：先填好仓库里的那一版，可以改完再保存">补写这一条</button></div>`);
     });
     // 本机改过的内容让对照错位（配不上对的卡片比仓库版多）：把平时藏起来的顶上那一行露出来，
-    // 带一句提示和「用仓库版」（点了会先确认），免得卡在错位的样子里出不来。
-    const controls = entry.querySelector(".dual-controls");
-    const broken = !!controls && (pending.book || pending.note) &&
+    // 带一句提示和「用仓库版」（点了会先确认），免得卡在错位的样子里出不来。按格子的卡不会错位，不用这一条。
+    const broken = !marked && !!controls && (pending.book || pending.note) &&
       unpairedCount(texts.book, texts.note) > unpairedCount(repo.book, repo.note || texts.note);
     if (controls) {
       controls.classList.toggle("is-broken", broken);
-      controls.querySelectorAll(".dual-broken-tip").forEach((t) => t.remove());
       if (broken) controls.insertAdjacentHTML("afterbegin", `<div class="dual-broken-tip">⚠️ 本机改过的内容让这张卡有 ${track.querySelectorAll(".dual-missing").length} 处对不上（显示「没有这一条」）。` +
         `想留着本机这一版，先点左下角「导出」；想恢复，点下面的「用仓库版」（会先问一次）。</div>`);
     }
@@ -910,9 +1506,12 @@ const App = {
     }
     const repo = !insert && this._cellRepo ? this._cellRepo[id + "|" + part + "|" + start] : undefined;
     const entryCard = cell.closest(".dual-row").classList.contains("kind-entry");
-    this._cellEdit = { id, part, full, start, end, core, repo, entryCard, insert, html: cell.innerHTML };
+    // 按格子的卡：结构由看不见的记号管，这一格里写什么标题都不会错位，不用粘贴提醒和结构检查
+    const marked = markMode(BookEdits.get(id), Notes.get(id)) === "marked";
+    this._cellEdit = { id, part, full, start, end, core, repo, entryCard, insert, marked, html: cell.innerHTML };
     cell.classList.add("cell-editing");
-    const head = !insert ? "只改这一张" : fill ? "补写这一条 · 已填好仓库里的那一版" : "补写这一条 · 第一行写「#### 编号. 标题」";
+    const head = !insert ? (marked && entryCard ? "只改这一张 · 第一行是标题，编号自动排" : "只改这一张")
+      : fill ? "补写这一条 · 已填好仓库里的那一版" : "补写这一条 · 第一行写「#### 编号. 标题」";
     cell.innerHTML = `<div class="cell-editor">
       <div class="cell-editor-head">${part === "book" ? "教材" : "笔记"} · ${head}</div>
       <textarea class="mynote-input cell-input" spellcheck="false"></textarea>
@@ -931,6 +1530,7 @@ const App = {
     // 粘贴进来的内容里有「#### 编号. 标题」「### 小节」或站名行：保存后会变成新的卡片、小节或站，整章对照错位。
     // 粘贴时先问一次，可以自动降成 #####（卡片里的小标题）再粘贴。
     ta.addEventListener("paste", (e) => {
+      if (marked) return;
       const text = e.clipboardData ? e.clipboardData.getData("text/plain") : "";
       const own = ownHeadLine(text, ta.value.slice(0, ta.selectionStart), entryCard || insert);
       const hits = structuralLines(text.split(/\r?\n/).filter((l, k) => k !== own).join("\n"));
@@ -965,7 +1565,9 @@ const App = {
       // 预览：用和卡片显示一样的渲染，看完点「继续改」回到输入框
       const pv = cell.querySelector(".cell-preview");
       if (!pv.hidden) { pv.hidden = true; ta.hidden = false; btn.textContent = "预览"; ta.focus(); return; }
-      pv.innerHTML = ed.part === "book" ? `<div class="entry-statement">${bookParts(ta.value).main}</div>`
+      // 按格子的卡：这一格整个就是一张卡，里面的 ### 〔…〕 也只是标题，不再拆小节
+      pv.innerHTML = ed.part === "book"
+        ? `<div class="entry-statement">${ed.marked && !hasMarkers(ta.value) ? '<div class="term-md">' + mdHtml(ta.value) + "</div>" : bookParts(ta.value).main}</div>`
         : `<div class="mynote-body md">${noteMdHtml(ta.value)}</div>`;
       renderMath(pv);
       pv.hidden = false; ta.hidden = true; btn.textContent = "继续改";
@@ -979,8 +1581,13 @@ const App = {
     if (act === "restore") {
       if (!confirm("把这一张改回仓库里的那一版？本机对这一张的改动会丢掉。")) return;
       val = ed.repo;
-    } else if (ed.entryCard && /^#{4}[ \t]+\d+\./.test(ed.core) && !/^#{4}[ \t]+\d+\./.test(val) &&
+    } else if (!ed.marked && ed.entryCard && /^#{4}[ \t]+\d+\./.test(ed.core) && !/^#{4}[ \t]+\d+\./.test(val) &&
       !confirm("这一张第一行原来是「#### 编号. 标题」，现在不是了。保存后它会和另一边的卡片对不上，要继续保存吗？")) return;
+    // 从导出文件里复制来的内容可能带着格子记号：去掉，免得多出格子
+    if (ed.marked && hasMarkers(val)) {
+      if (!confirm("内容里有看不见的格子记号（「<!-- card:… -->」这样的行，多半是从导出文件复制来的）。保存时会把这些行去掉，正文不变。要继续吗？")) return;
+      val = stripMarkers(val).replace(/^(?:[ \t]*\r?\n)*/, "").replace(/\s+$/, "");
+    }
     if (val === ed.core) { close(); return; }
     if ((ed.part === "book" ? BookEdits.get(ed.id) : Notes.get(ed.id)) !== ed.full) {
       alert("这张卡的原文在别处改过了，刷新页面后再改。");
@@ -989,12 +1596,13 @@ const App = {
     if (!val && !confirm("这一张清空以后，这段原文就没有了。确定吗？")) return;
     const chk = this.codeBlockCheck(val);
     if (chk && !confirm("第 " + chk.lines.slice(0, 8).join("、") + " 行的缩进会显示成代码块。内容不会丢，要继续保存吗？")) return;
-    if (ed.insert && !/^#{4}[ \t]+\S/.test(val) &&
+    if (!ed.marked && ed.insert && !/^#{4}[ \t]+\S/.test(val) &&
       !confirm("第一行不是「#### 编号. 标题」。这样保存，它还是对不上另一边的那一条。要继续保存吗？")) return;
-    const next = ed.insert ? cellInsert(ed.full, ed.start, val) : cellSplice(ed.full, ed.start, ed.end, val);
+    const next = ed.insert ? cellInsert(ed.full, ed.start, val)
+      : ed.marked ? cellSpliceMarked(ed.full, ed.start, ed.end, val) : cellSplice(ed.full, ed.start, ed.end, val);
     // 保存后整张卡多出或少掉了小节、站、编号卡片，对照就会错位：先说清楚是哪几行。
     // 补写本来就多一张（第一行那个标题），不算；第一行标题被改掉的情况上面已经问过，不再问第二遍。
-    if (act !== "restore") {
+    if (act !== "restore" && !ed.marked) {
       const changed = structureChange(ed.full, next, ed.part, appByType(ed.part === "book" ? ed.full : BookEdits.get(ed.id)))
         .filter((l) => !(ed.insert && l === "+ " + val.split(/\r?\n/)[0]));
       const headGone = ed.entryCard && /^#{4}[ \t]+\d+\./.test(ed.core) && !/^#{4}[ \t]+\d+\./.test(val);
@@ -1020,6 +1628,204 @@ const App = {
     back.classList.add("toc-flash");
     setTimeout(() => back.classList.remove("toc-flash"), 1800);
     if (ed.part === "note") this.askDownload(ed.id);
+  },
+
+  // ── 卡片按钮（按格子的卡）：右上角「⋯」→ 上移、下移、在下面加一张、复制到…、删除这张卡 ──
+  // 每个操作都同时改教材、笔记两段原文（CardOps），存成本机修改（和「编辑」一样），导出后交给 Claude 提交；
+  // 做完底部出一条提示，可以撤销。
+  cardTexts(itemId) {
+    return { book: BookEdits.get(itemId), note: Notes.get(itemId) };
+  },
+
+  // 这张卡在提示里叫什么：「编号. 标题」（教材那一半的标题；没有教材就用笔记的）
+  cardLabel(texts, card) {
+    const nums = cardNumbers(cardBlocks(texts.book), cardBlocks(texts.note));
+    for (const part of ["book", "note"]) {
+      const cb = cardBlocks(texts[part]);
+      const b = cb && cb.blocks.find((x) => x.kind === "card" && x.id === card);
+      if (b) {
+        const t = cardTitle(cb.raw.slice(b.start, b.end), b.sec) || "（无标题）";
+        return (nums.has(card) ? nums.get(card) + ". " : "") + t;
+      }
+    }
+    return "这张卡";
+  },
+
+  closeCardMenu() {
+    document.querySelectorAll(".card-menu").forEach((m) => m.remove());
+    document.querySelectorAll(".cell-more.open").forEach((b) => { b.classList.remove("open"); b.setAttribute("aria-expanded", "false"); });
+  },
+
+  toggleCardMenu(btn) {
+    const was = btn.classList.contains("open");
+    this.closeCardMenu();
+    const entry = btn.closest(".entry");
+    if (was || !entry) return;
+    const texts = this.cardTexts(entry.id.slice(5)), card = btn.dataset.card;
+    const dis = (ok) => (ok ? "" : " disabled");
+    btn.classList.add("open");
+    btn.setAttribute("aria-expanded", "true");
+    btn.insertAdjacentHTML("afterend", `<div class="card-menu" role="menu" data-card="${escapeHtml(card)}">` +
+      `<button type="button" role="menuitem" data-card-op="up"${dis(CardOps.canMove(texts, card, -1))}><span class="ic">↑</span>上移</button>` +
+      `<button type="button" role="menuitem" data-card-op="down"${dis(CardOps.canMove(texts, card, 1))}><span class="ic">↓</span>下移</button>` +
+      `<button type="button" role="menuitem" data-card-op="add"><span class="ic">＋</span>在下面加一张</button>` +
+      `<button type="button" role="menuitem" data-card-op="copy"><span class="ic">⧉</span>复制到…</button>` +
+      `<hr><button type="button" role="menuitem" class="danger" data-card-op="del"><span class="ic">✕</span>删除这张卡</button></div>`);
+  },
+
+  cardOp(btn) {
+    const menu = btn.closest(".card-menu"), entry = menu && menu.closest(".entry");
+    if (!entry || btn.disabled) return;
+    const itemId = entry.id.slice(5), card = menu.dataset.card, op = btn.dataset.cardOp;
+    this.closeCardMenu();
+    if (entry.querySelector(".cell-editing, .mynote-editing")) { alert("先把正在改的那一张保存或取消。"); return; }
+    const texts = this.cardTexts(itemId), label = this.cardLabel(texts, card);
+    if (op === "copy") { this.openCopyDialog(entry, itemId, card, label); return; }
+    let res = null, focus = card, msg = "";
+    if (op === "up" || op === "down") {
+      res = CardOps.move(texts, card, op === "up" ? -1 : 1);
+      msg = (op === "up" ? "已上移" : "已下移") + "「" + label + "」";
+    } else if (op === "add") {
+      focus = CardOps.newId(texts);
+      res = CardOps.add(texts, card, focus);
+      msg = "已在「" + label + "」下面加了一张";
+    } else if (op === "del") {
+      if (!confirm("删除「" + label + "」？教材和笔记两半一起删。\n删错了可以马上点底部的「撤销」；导出提交以前，仓库里也还有这一张。")) return;
+      res = CardOps.remove(texts, card);
+      focus = null;
+      msg = "已删除「" + label + "」";
+    }
+    if (res) this.applyCardTexts(entry, itemId, texts, res, msg, focus, op === "add");
+  },
+
+  // 存下两段新原文、重画这张超级卡，滚到相关的那张卡；edit：打开它的教材编辑
+  applyCardTexts(entry, itemId, before, after, msg, focus, edit) {
+    const ok = (after.book === before.book || BookEdits.set(itemId, after.book)) && (after.note === before.note || Notes.set(itemId, after.note));
+    if (!ok) { alert("保存失败：浏览器存储空间不足或被禁用。"); return; }
+    this.refreshAfterCards(entry, itemId);
+    this._cardUndo = { itemId, before, after };
+    this.cardToast(msg, true);
+    const row = focus && this.cardRow(entry, focus);
+    if (!row) return;
+    this.scrollToItem(row);
+    row.classList.add("toc-flash");
+    setTimeout(() => row.classList.remove("toc-flash"), 1800);
+    const cell = edit && row.querySelector(':scope > .dual-cell[data-part="book"][data-src]');
+    if (cell) this.editCell(cell);
+  },
+
+  refreshAfterCards(entry, itemId) {
+    this.maybeApplyDual(entry);
+    this.refreshDualLayout();
+    this.refreshNoteCount();
+    this.refreshTocSub(itemId);
+    this.refreshTocState(itemId);
+    const sub = document.querySelector(".page-sub");
+    const c = this.current;
+    if (sub && c && c.type === "chapter") {
+      const sup = this.superCard(c.subjectId, c.chapterId);
+      if (sup && sup.id === itemId) sub.textContent = this.superStats(sup);
+    }
+  },
+
+  cardRow(entry, card) {
+    const b = entry.querySelector('.cell-more[data-card="' + String(card).replace(/"/g, "") + '"]');
+    return b && b.closest(".dual-row");
+  },
+
+  cardToast(msg, undo) {
+    let t = document.getElementById("card-toast");
+    if (!t) {
+      t = document.createElement("div");
+      t.id = "card-toast";
+      t.className = "card-toast";
+      t.setAttribute("role", "status");
+      document.body.append(t);
+    }
+    t.innerHTML = `<span class="card-toast-msg">${mdHtml(msg, true)}</span>` +
+      (undo ? `<button type="button" data-card-undo>撤销</button>` : "") +
+      `<button type="button" class="card-toast-x" data-card-toast-close aria-label="关掉">×</button>`;
+    renderMath(t);
+    t.hidden = false;
+    clearTimeout(this._toastTimer);
+    this._toastTimer = setTimeout(() => { t.hidden = true; }, 12000);
+  },
+
+  undoCards() {
+    const u = this._cardUndo;
+    this._cardUndo = null;
+    const t = document.getElementById("card-toast");
+    if (!u) { if (t) t.hidden = true; return; }
+    const now = this.cardTexts(u.itemId);
+    if (now.book !== u.after.book || Notes._norm(now.note) !== Notes._norm(u.after.note)) { this.cardToast("这张卡后来又改过，不能撤销了。"); return; }
+    BookEdits.set(u.itemId, u.before.book);
+    if (u.before.note !== u.after.note) Notes.set(u.itemId, u.before.note);
+    const entry = document.getElementById("item-" + u.itemId);
+    if (entry) this.refreshAfterCards(entry, u.itemId);
+    this.cardToast("已撤销");
+  },
+
+  // 「复制到…」：列出这张超级卡里所有的卡（按小节、站、分组），点一张就复制过去
+  openCopyDialog(entry, itemId, card, label) {
+    this.closeCopyDialog();
+    const texts = this.cardTexts(itemId), cb = cardBlocks(texts.book);
+    if (!cb) return;
+    const nums = cardNumbers(cb, cardBlocks(texts.note));
+    let html = "", list = "";
+    const flush = () => { if (list) html += `<div class="copy-list">${list}</div>`; list = ""; };
+    cb.blocks.forEach((b) => {
+      const h = b.kind === "card" ? null : markedHead(cb.raw, b, "book");
+      if (b.kind === "section") {
+        if (!cb.blocks.some((x) => x.kind === "card" && x.sec === b.value)) return;
+        flush();
+        html += `<div class="copy-sec ${BOOK_CLASS[b.value] || ""}">〔${escapeHtml(b.value)}〕</div>`;
+      } else if (b.kind === "station") {
+        if (!cb.blocks.some((x) => x.kind === "card" && x.sec === b.sec && x.station === b.value)) return;
+        flush();
+        html += `<div class="copy-st">${mdHtml(h ? STATION_LINE.exec(h.line)[1] : b.value, true)}</div>`;
+      } else if (b.kind === "group") {
+        flush();
+        if (h) html += `<div class="copy-grp">${mdHtml(BOLD_LINE.exec(h.line)[1], true)}</div>`;
+      } else {
+        const t = (nums.has(b.id) ? nums.get(b.id) + ". " : "") + (cardTitle(cb.raw.slice(b.start, b.end), b.sec) || "（无标题）");
+        list += b.id === card ? `<button type="button" class="self" disabled title="就是这一张">${mdHtml(t, true)}</button>`
+          : `<button type="button" data-copy-to="${escapeHtml(b.id)}">${mdHtml(t, true)}</button>`;
+      }
+    });
+    flush();
+    const box = document.createElement("div");
+    box.className = "modal-backdrop copy-modal";
+    box.id = "copy-modal";
+    box.dataset.item = itemId;
+    box.dataset.card = card;
+    box.innerHTML = `<div class="modal" role="dialog" aria-modal="true" aria-labelledby="copy-title">
+      <h2 id="copy-title">把「${mdHtml(label, true)}」复制到…</h2>
+      <p class="modal-lead">教材接到目标卡教材的末尾，笔记接到目标卡笔记的末尾，前面各加一行「复制自：标题」。这张卡保留，不需要了再删。</p>
+      <div class="copy-targets">${html}</div>
+      <div class="modal-actions"><button type="button" class="btn-plain" data-copy-close>取消</button></div>
+    </div>`;
+    document.body.append(box);
+    renderMath(box);
+    const first = box.querySelector("[data-copy-to]");
+    if (first) first.focus();
+  },
+
+  closeCopyDialog() {
+    const m = document.getElementById("copy-modal");
+    if (m) m.remove();
+  },
+
+  copyCardTo(btn) {
+    const box = btn.closest("#copy-modal");
+    if (!box) return;
+    const itemId = box.dataset.item, card = box.dataset.card, target = btn.dataset.copyTo;
+    this.closeCopyDialog();
+    const entry = document.getElementById("item-" + itemId);
+    if (!entry) return;
+    if (entry.querySelector(".cell-editing, .mynote-editing")) { alert("先把正在改的那一张保存或取消。"); return; }
+    const texts = this.cardTexts(itemId), from = this.cardLabel(texts, card), to = this.cardLabel(texts, target);
+    const res = CardOps.copy(texts, card, target, from.replace(/^\d+\.\s*/, ""));
+    if (res) this.applyCardTexts(entry, itemId, texts, res, "已把「" + from + "」复制到「" + to + "」末尾", target, false);
   },
 
   // 一章只有一张按站组织的超级卡：章节头、右侧目录都按站来
@@ -1088,6 +1894,20 @@ const App = {
       else this.gotoLink(el);
     });
     // 站卡上的小标题：点了跳到那张卡片；小卡片右上角的「编辑」和它的保存 / 取消（卡片会重画，挂在 document 上）
+    // 卡片「⋯」菜单、复制对话框、撤销提示（按格子的卡）
+    document.addEventListener("click", (e) => {
+      const t = e.target.closest && e.target.closest(".cell-more, [data-card-op], [data-copy-to], [data-copy-close], [data-card-undo], [data-card-toast-close], #copy-modal");
+      if (!t || !t.matches(".cell-more, [data-card-op]")) {
+        if (!(e.target.closest && e.target.closest(".card-menu"))) this.closeCardMenu();
+      }
+      if (!t) return;
+      if (t.classList.contains("cell-more")) this.toggleCardMenu(t);
+      else if (t.dataset.cardOp) this.cardOp(t);
+      else if (t.dataset.copyTo) this.copyCardTo(t);
+      else if (t.hasAttribute("data-copy-close") || (t.id === "copy-modal" && e.target === t)) this.closeCopyDialog();
+      else if (t.hasAttribute("data-card-undo")) this.undoCards();
+      else if (t.hasAttribute("data-card-toast-close")) { const x = document.getElementById("card-toast"); if (x) x.hidden = true; }
+    });
     document.addEventListener("click", (e) => {
       const t = e.target.closest && e.target.closest(".st-chip, .cell-edit, [data-cell-action]");
       if (!t) return;
@@ -1193,6 +2013,8 @@ const App = {
     // Esc 退出全屏编辑（保存弹窗自己有一套 Esc，两者不会同时出现）
     document.addEventListener("keydown", (e) => {
       if (e.key !== "Escape") return;
+      if (document.getElementById("copy-modal")) { this.closeCopyDialog(); return; }
+      if (document.querySelector(".card-menu")) { this.closeCardMenu(); return; }
       if (document.body.classList.contains("mynote-zoomed")) this.exitZoom();
       else this.closeRail();
     });
@@ -1708,6 +2530,14 @@ const App = {
     `;
   },
 
+  // 超级卡章节头那一行：几站、各节几条
+  superStats(sup) {
+    const o = cardOutline(BookEdits.get(sup.id), Notes.has(sup.id) ? Notes.get(sup.id) : "");
+    return ["1 张超级卡", o.blocks.filter((b) => b.mark && !b.mark.includes("′")).length + " 站"]
+      .concat(OUTLINE_SECS.map(([p, sec]) => [sec, o.blocks.reduce((n, b) => n + (b.rows[p + sec] || { items: [] }).items.length, 0)])
+        .filter((x) => x[1]).map(([sec, n]) => sec + " " + n)).join(" · ");
+  },
+
   chapterViewHtml(subjectId, chapterId) {
     const s = KaoyanData.subject(subjectId);
     const c = KaoyanData.chapter(subjectId, chapterId);
@@ -1715,11 +2545,8 @@ const App = {
     // 一张超级卡的章：统计按站和各节条数，「本卡主线」放在标题下面，不要「全部 / 定义 / 性质」筛选
     const sup = this.superCard(subjectId, chapterId);
     const supBook = sup ? BookEdits.get(sup.id) : "";
-    const supOutline = sup ? cardOutline(supBook, Notes.has(sup.id) ? Notes.get(sup.id) : "") : null;
     const lead = sup ? cardStory(supBook).lead : "";
-    const supStats = sup ? ["1 张超级卡", supOutline.blocks.filter((b) => b.mark && !b.mark.includes("′")).length + " 站"]
-      .concat(OUTLINE_SECS.map(([p, sec]) => [sec, supOutline.blocks.reduce((n, b) => n + (b.rows[p + sec] || { items: [] }).items.length, 0)])
-        .filter((x) => x[1]).map(([sec, n]) => sec + " " + n)).join(" · ") : "";
+    const supStats = sup ? this.superStats(sup) : "";
 
     return `
       <nav class="breadcrumb">
@@ -2516,6 +3343,14 @@ const App = {
 
   // 笔记：小节按最外层标题认，第一个小节之前的不算（与 sectionStations 一致）
   stationizeNote(html, text, itemId, texts) {
+    // 有格子记号：只把站记号下面那一行换成站牌（卡片里写的加粗圈号行只是正文）
+    if (hasMarkers(text)) {
+      let m = null;
+      return markedNoteHtml(text, (h, sec) => h.replace(STATION_P, (x, name, mark) => {
+        m = m || this.stationMap(itemId, Object.assign({}, texts, { note: text }));
+        return stationBarHtml(itemId, "note", sec, mark, name, m);
+      }));
+    }
     const level = noteSections(text).level;
     let cur = null, map = null;
     return html.replace(/<h([1-6])\b[^>]*>([\s\S]*?)<\/h\1>|<p><strong>(([①-⑳]′?)[ \t]*[^<]*?)<\/strong><\/p>/g, (m, lv, head, name, mark) => {

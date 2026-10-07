@@ -6,7 +6,7 @@
 //   node tools/check.cjs book <草稿.md>  一份教材草稿
 //
 // 有任何问题，退出码为 1。
-const { main, must, loadSubjects, loadNotes, readDraft, makeChecker } = require("./lib.cjs");
+const { main, must, loadSubjects, loadNotes, readDraft, makeChecker, loadSite } = require("./lib.cjs");
 
 main(() => {
   const [kind, file] = process.argv.slice(2);
@@ -19,21 +19,30 @@ main(() => {
   };
 
   if (!kind) {
-    let nBook = 0, nNote = 0, nMath = 0;
+    let nBook = 0, nNote = 0, nMath = 0, nMarked = 0;
+    const notes = loadNotes(), site = loadSite();
     loadSubjects().forEach((s) => s.items.forEach((it) => {
       const r = check(it.md, "book"); nBook++; nMath += r.math; report(s.id + "/" + it.id + " 教材", r);
+      // 卡片格子的记号：格式、id 唯一、配对、小节归属（tools/card-markers.cjs）
+      if (site.hasMarkers(it.md) || site.hasMarkers(notes[it.id])) {
+        nMarked++;
+        site.markerIssues(it.md, notes[it.id] || "").forEach((x) => problems.push(s.id + "/" + it.id + " · 记号：" + x));
+      }
     }));
-    Object.entries(loadNotes()).forEach(([k, v]) => {
+    Object.entries(notes).forEach(([k, v]) => {
       if (!String(v).trim()) return;
       const r = check(v, "note"); nNote++; nMath += r.math; report(k + " 笔记", r);
     });
-    console.log("教材 " + nBook + " 张，笔记 " + nNote + " 条，公式 " + nMath + " 个");
+    console.log("教材 " + nBook + " 张，笔记 " + nNote + " 条，公式 " + nMath + " 个" + (nMarked ? "，带格子记号的卡 " + nMarked + " 张" : ""));
   } else {
     must(kind === "note" || kind === "book", "第一个参数是 note 或 book");
     must(file, "缺草稿文件路径");
     const { text, notes } = readDraft(file);
     const r = check(text, kind);
     report(file, r);
+    // 草稿里带格子记号（对照卡的整段原文）：记号写法、id 唯一、小节归属
+    const site = loadSite();
+    if (site.hasMarkers(text)) site.markerIssues(kind === "book" ? text : "", kind === "note" ? text : "").forEach((x) => problems.push(file + " · 记号：" + x));
     const heads = (r.html.match(/<h[1-6][ >]/g) || []).length;
     console.log("字符 " + text.length + "，公式 " + r.math + " 个，标题 " + heads + " 个" + (notes.length ? "（读入时" + notes.join("、") + "）" : ""));
   }

@@ -96,7 +96,9 @@ function loadSite() {
   const files = ["assets/vendor/marked/marked.umd.js", "assets/js/data-loader.js", "assets/js/storage.js"]
     .concat(SUBJECTS.map(subjectFile), ["assets/data/notes.js", "assets/data/superseded.js", "assets/js/katex-init.js", "assets/js/app.js"]);
   files.forEach((f) => vm.runInContext(read(f), ctx, { filename: f }));
-  return vm.runInContext("({ App, bookParts, noteMdHtml, mathRe: () => App.MATH_RE() })", ctx);
+  return vm.runInContext("({ App, bookParts, noteMdHtml, mathRe: () => App.MATH_RE(), cardBlocks, stripMarkers, hasMarkers, markMode, " +
+    "markerIssues, markedPieces, cardNumbers, cardOutline, cardStory, CardOps, dualSource, appByType, cellSource, cellSpliceMarked, " +
+    "numberCard, cardTitle })", ctx);
 }
 
 // KaTeX（网站自带的那份）和网站用的宏
