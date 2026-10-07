@@ -310,6 +310,37 @@ function cellSplice(full, start, end, val) {
   return String(full).slice(0, start) + lead + v + tail + String(full).slice(end);
 }
 
+// 粘贴进一张小卡片时会打乱结构的行：# ～ #### 标题（会变成新的卡片或小节）、单独一行加粗的站名（**① …**）。
+// ##### 及更小的标题只是卡片里的小标题，不算。
+const STRUCT_HEAD = /^#{1,4}[ \t]+\S/;
+function structuralLines(text) {
+  return String(text || "").split(/\r?\n/).filter((l) => STRUCT_HEAD.test(l) || STATION_LINE.test(l));
+}
+// 把这些行降成卡片里的小标题 #####，字不变；换行符原样保留
+function demoteStructural(text) {
+  return String(text || "").split(/(\r?\n)/).map((l) => {
+    if (STRUCT_HEAD.test(l)) return l.replace(/^#{1,4}[ \t]+/, "##### ");
+    const st = l.match(STATION_LINE);
+    return st ? "##### " + st[1] : l;
+  }).join("");
+}
+// 对照里配不上对的卡片有几张（只看原文的配对键，不渲染）：本机版比仓库版多，说明是本机改动弄错位的
+function unpairedCount(book, note) {
+  const byType = appByType(book);
+  const keys = (raw, part) => dualSource(raw, part, byType).filter((r) => r.kind === "entry").map((r) => r.key);
+  const a = keys(book, "book"), left = keys(note, "note");
+  let n = 0;
+  a.forEach((k) => { const i = left.indexOf(k); if (i >= 0) left.splice(i, 1); else n++; });
+  return n + left.length;
+}
+// 保存前后整张卡的结构行（小节、站、分组、编号卡片）多出或少掉了哪些：多出的前面标「+」，少掉的标「−」
+function structureChange(before, after, part, byType) {
+  const heads = (raw) => dualSource(raw, part, byType).filter((r) => r.kind !== "content").map((r) => r.line);
+  const a = heads(before), b = heads(after), left = a.slice(), out = [];
+  b.forEach((l) => { const i = left.indexOf(l); if (i >= 0) left.splice(i, 1); else out.push("+ " + l); });
+  return out.concat(left.map((l) => "− " + l));
+}
+
 // 站牌：站名行渲染后是「<p><strong>⑥ 读出符号</strong></p>」，显示时换成醒目的一块：
 // 圈号 + 站名，左边线用所在小节的颜色；下面一行链接跳到同一站在其他小节里的位置
 // （这一节高亮，没有这一站的小节灰掉）。只改显示，原文一个字不动，块里的文字仍是原来那一行。
@@ -807,10 +838,21 @@ const App = {
     track.querySelectorAll(".dual-row.kind-entry > .dual-missing[data-at]").forEach((cell) => {
       cell.insertAdjacentHTML("afterbegin", `<div class="cell-tools"><button type="button" class="cell-edit" title="把这一条补回来：先填好仓库里的那一版，可以改完再保存">补写这一条</button></div>`);
     });
+    // 本机改过的内容让对照错位（配不上对的卡片比仓库版多）：把平时藏起来的顶上那一行露出来，
+    // 带一句提示和「用仓库版」（点了会先确认），免得卡在错位的样子里出不来。
+    const controls = entry.querySelector(".dual-controls");
+    const broken = !!controls && (pending.book || pending.note) &&
+      unpairedCount(texts.book, texts.note) > unpairedCount(repo.book, repo.note || texts.note);
+    if (controls) {
+      controls.classList.toggle("is-broken", broken);
+      controls.querySelectorAll(".dual-broken-tip").forEach((t) => t.remove());
+      if (broken) controls.insertAdjacentHTML("afterbegin", `<div class="dual-broken-tip">⚠️ 本机改过的内容让这张卡有 ${track.querySelectorAll(".dual-missing").length} 处对不上（显示「没有这一条」）。` +
+        `想留着本机这一版，先点左下角「导出」；想恢复，点下面的「用仓库版」（会先问一次）。</div>`);
+    }
     const section = entry.querySelector(".dual-controls > section.card-book");
     const slot = entry.querySelector(".dual-controls > .mynote-slot");
-    if (section) section.classList.toggle("flags-in-cells", !pending.book || local.book > 0);
-    if (slot) slot.classList.toggle("flags-in-cells", !pending.note || local.note > 0);
+    if (section) section.classList.toggle("flags-in-cells", !broken && (!pending.book || local.book > 0));
+    if (slot) slot.classList.toggle("flags-in-cells", !broken && (!pending.note || local.note > 0));
   },
 
   // 站卡上的小标题对应的那张卡片：从站卡（或分组行）往下，到下一站、下一节之前，按同样的规则数到第 ord 张
@@ -875,6 +917,25 @@ const App = {
     ta.value = insert ? fill : core;
     const fit = () => { ta.style.height = "auto"; ta.style.height = Math.min(ta.scrollHeight + 4, 640) + "px"; };
     ta.addEventListener("input", fit);
+    // 粘贴进来的内容里有「#### 编号. 标题」「### 小节」或站名行：保存后会变成新的卡片、小节或站，整章对照错位。
+    // 粘贴时先问一次，可以自动降成 #####（卡片里的小标题）再粘贴。
+    ta.addEventListener("paste", (e) => {
+      const text = e.clipboardData ? e.clipboardData.getData("text/plain") : "";
+      const hits = structuralLines(text);
+      if (!hits.length) return;
+      const ok = confirm("粘贴的内容里有 " + hits.length + " 行标题，比如：\n" +
+        hits.slice(0, 3).map((l) => "「" + l.slice(0, 40) + "」").join("\n") +
+        "\n\n这种标题会被当成新的卡片、小节或站，保存后整章对照会错位，出现大片「没有这一条」。" +
+        "\n\n确定：把这些标题改成 #####（卡片里的小标题）再粘贴\n取消：原样粘贴");
+      if (!ok) return;
+      e.preventDefault();
+      const fixed = demoteStructural(text);
+      // insertText 能保留撤销（Ctrl+Z）；不支持时退回 setRangeText
+      if (!(document.execCommand && document.execCommand("insertText", false, fixed))) {
+        ta.setRangeText(fixed, ta.selectionStart, ta.selectionEnd, "end");
+        fit();
+      }
+    });
     fit();
     ta.focus();
   },
@@ -919,6 +980,16 @@ const App = {
     if (ed.insert && !/^#{4}[ \t]+\S/.test(val) &&
       !confirm("第一行不是「#### 编号. 标题」。这样保存，它还是对不上另一边的那一条。要继续保存吗？")) return;
     const next = ed.insert ? cellInsert(ed.full, ed.start, val) : cellSplice(ed.full, ed.start, ed.end, val);
+    // 保存后整张卡多出或少掉了小节、站、编号卡片，对照就会错位：先说清楚是哪几行。
+    // 补写本来就多一张（第一行那个标题），不算；第一行标题被改掉的情况上面已经问过，不再问第二遍。
+    if (act !== "restore") {
+      const changed = structureChange(ed.full, next, ed.part, appByType(ed.part === "book" ? ed.full : BookEdits.get(ed.id)))
+        .filter((l) => !(ed.insert && l === "+ " + val.split(/\r?\n/)[0]));
+      const headGone = ed.entryCard && /^#{4}[ \t]+\d+\./.test(ed.core) && !/^#{4}[ \t]+\d+\./.test(val);
+      if (changed.length && !headGone && !confirm("这样保存，这张卡的结构会变（+ 是多出来的标题，− 是没了的标题）：\n" +
+        changed.slice(0, 4).map((l) => l.slice(0, 44)).join("\n") + (changed.length > 4 ? "\n……" : "") +
+        "\n\n整章对照会错位，出现「没有这一条」。要继续保存吗？\n（卡片里的小标题请用 #####）")) return;
+    }
     if (!(ed.part === "book" ? BookEdits.set(ed.id, next) : Notes.set(ed.id, next))) {
       alert("保存失败：浏览器存储空间不足或被禁用。");
       return;

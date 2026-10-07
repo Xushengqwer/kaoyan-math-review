@@ -441,5 +441,7 @@ for (let i = 0; i < dataFiles.length; i++) {
   const css = fs.readFileSync('assets/css/style.css', 'utf8');
   const rules = [...css.matchAll(/^\.dual-controls \{([^}]*)\}/gm)];
   assert(rules.length && /display:\s*none/.test(rules[rules.length - 1][1]), 'the whole-card controls row above the comparison is hidden');
+  const broken = css.match(/^\.dual-controls\.is-broken \{([^}]*)\}/m);
+  assert(broken && /display:\s*flex/.test(broken[1]), 'it reappears only when local edits break the pairing');
 }
 console.log('PASS: comparison guards reconstructed cards, preserves both full sources and renderer HTML, keeps unmatched entries, and merges only exact headings.');

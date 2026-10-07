@@ -148,5 +148,20 @@ assert.equal(cellInsert('甲\\n', 2, '乙'), '甲\\n\\n乙');
   const after = App.dualTrackModel(id, book, fixed);
   assert(!after.rows.some((r) => r.kind === 'entry' && (!r.book || !r.note)), '补写以后不再缺');
 }
+
+// 单张小卡片的粘贴提醒与保存检查：哪些行会打乱结构、怎么降成 #####、保存前后多出少掉了什么、本机错位的判断
+{
+  assert.deepEqual(structuralLines('正文\\n#### 2. 导数的几何意义：切线的斜率\\n##### 小标题\\n**① 变化有多快**\\n### 〔定义〕\\n**加粗不是站**'),
+    ['#### 2. 导数的几何意义：切线的斜率', '**① 变化有多快**', '### 〔定义〕']);
+  assert.equal(demoteStructural('甲\\r\\n#### 2. 标题\\r\\n**① 站名**\\r\\n##### 不动\\n### 〔性质〕'),
+    '甲\\r\\n##### 2. 标题\\r\\n##### ① 站名\\r\\n##### 不动\\n##### 〔性质〕', '只换标题记号，字和换行符不变');
+  assert.deepEqual(structuralLines(demoteStructural('#### 1. 甲\\n**② 乙**\\n## 丙')), [], '降级以后不再有会打乱结构的行');
+  const id = 'calc-der-derivative', book = KaoyanData.find(id).md, note = Notes.get(id), byType = appByType(book);
+  assert.deepEqual(structureChange(note, note, 'note', byType), [], '原样保存，结构不变');
+  const pasted = note.replace('#### 2. 导数的几何意义', '#### 1. 粘进来的\\n\\n#### 2. 导数的几何意义');
+  assert.deepEqual(structureChange(note, pasted, 'note', byType), ['+ #### 1. 粘进来的'], '多出来的标题行标出来');
+  assert.equal(unpairedCount(book, note), 0, '仓库版全部配上');
+  assert(unpairedCount(book, pasted) > 0, '粘进一个 #### 以后有配不上的');
+}
 `, context);
 console.log('station cards ok');

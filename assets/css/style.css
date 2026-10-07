@@ -1371,6 +1371,13 @@ body.mynote-zoomed { overflow: hidden; }
    每张小卡片右上角各有「编辑」；这一行的 DOM 保留，对照的拆装逻辑不变。 */
 .dual-controls { display: none; }
 .dual-controls > .card-book, .dual-controls > .mynote-slot { padding: 0; border: 0; background: transparent; }
+/* 例外：本机改动让对照错位时露出来，带提示和「用仓库版」（会先确认），见 app.js decorateCells */
+.dual-controls.is-broken {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px 22px;
+  margin-bottom: 12px; padding: 10px 14px; border-radius: var(--r-sm);
+  background: var(--pend-bg); border-left: 3px solid var(--pend-dot);
+}
+.dual-broken-tip { flex-basis: 100%; font-size: 13.5px; line-height: 1.6; font-weight: 600; color: var(--pend); }
 
 /* 一张超级卡的章：模块标题、卡号、卡片标题和「本卡主线」重复，不显示 */
 #chapter-item-groups.is-super .type-group-title, #chapter-item-groups.is-super .group-note,
