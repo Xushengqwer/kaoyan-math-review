@@ -160,6 +160,12 @@ assert.equal(cellInsert('甲\\n', 2, '乙'), '甲\\n\\n乙');
   assert.deepEqual(structureChange(note, note, 'note', byType), [], '原样保存，结构不变');
   const pasted = note.replace(/^#### 2\\. 导数的几何意义/m, '#### 1. 粘进来的\\n\\n#### 2. 导数的几何意义');
   assert.deepEqual(structureChange(note, pasted, 'note', byType), ['+ #### 1. 粘进来的'], '多出来的标题行标出来');
+  // 整张粘贴：粘进来的第一行是这张卡自己的「#### 编号. 标题」，不算；只改标题的字也不算结构变化
+  assert.equal(ownHeadLine('\\n#### 1. 可导的判断与几何意义\\n##### 小标题', '', true), 1);
+  assert.equal(ownHeadLine('#### 1. 甲', '前面已有字', true), -1);
+  assert.equal(ownHeadLine('#### 1. 甲', '', false), -1);
+  assert.equal(demoteStructural('#### 1. 自己\\r\\n##### 小\\r\\n#### 2. 别的', 0), '#### 1. 自己\\r\\n##### 小\\r\\n##### 2. 别的');
+  assert.deepEqual(structureChange(note, note.replace(/^#### 2\\. 导数的几何意义：切线的斜率/m, '#### 2. 改个名'), 'note', byType), [], '只改标题的字，不算结构变化');
   assert.equal(unpairedCount(book, note), 0, '仓库版全部配上');
   assert(unpairedCount(book, pasted) > 0, '粘进一个 #### 以后有配不上的');
 }

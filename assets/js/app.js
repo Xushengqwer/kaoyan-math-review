@@ -316,13 +316,23 @@ const STRUCT_HEAD = /^#{1,4}[ \t]+\S/;
 function structuralLines(text) {
   return String(text || "").split(/\r?\n/).filter((l) => STRUCT_HEAD.test(l) || STATION_LINE.test(l));
 }
-// 把这些行降成卡片里的小标题 #####，字不变；换行符原样保留
-function demoteStructural(text) {
-  return String(text || "").split(/(\r?\n)/).map((l) => {
+// 把这些行降成卡片里的小标题 #####，字不变；换行符原样保留。keep：不动的那一行（第几行，从 0 数），
+// 用于整张粘贴时这张卡自己的「#### 编号. 标题」
+function demoteStructural(text, keep = -1) {
+  return String(text || "").split(/(\r?\n)/).map((l, j) => {
+    if (j % 2 || j / 2 === keep) return l;
     if (STRUCT_HEAD.test(l)) return l.replace(/^#{1,4}[ \t]+/, "##### ");
     const st = l.match(STATION_LINE);
     return st ? "##### " + st[1] : l;
   }).join("");
+}
+// 粘贴到一格里时，哪一行是这张卡自己的标题：粘贴位置前面没有字、这一格本来就以「#### 编号.」开头，
+// 粘进来的第一个非空行又是「#### 编号. 标题」——整张换掉、标题改个名，这一行不算打乱结构
+function ownHeadLine(text, before, entryCard) {
+  if (!entryCard || String(before).trim()) return -1;
+  const lines = String(text || "").split(/\r?\n/);
+  const k = lines.findIndex((l) => l.trim());
+  return k >= 0 && /^####[ \t]+\d+\./.test(lines[k]) ? k : -1;
 }
 // 对照里配不上对的卡片有几张（只看原文的配对键，不渲染）：本机版比仓库版多，说明是本机改动弄错位的
 function unpairedCount(book, note) {
@@ -334,11 +344,12 @@ function unpairedCount(book, note) {
   return n + left.length;
 }
 // 保存前后整张卡的结构行（小节、站、分组、编号卡片）多出或少掉了哪些：多出的前面标「+」，少掉的标「−」
+// 按配对键比（小节、站、分组、编号），所以只改卡片标题的字、编号不变，不算结构变化
 function structureChange(before, after, part, byType) {
-  const heads = (raw) => dualSource(raw, part, byType).filter((r) => r.kind !== "content").map((r) => r.line);
-  const a = heads(before), b = heads(after), left = a.slice(), out = [];
-  b.forEach((l) => { const i = left.indexOf(l); if (i >= 0) left.splice(i, 1); else out.push("+ " + l); });
-  return out.concat(left.map((l) => "− " + l));
+  const heads = (raw) => dualSource(raw, part, byType).filter((r) => r.kind !== "content");
+  const left = heads(before), out = [];
+  heads(after).forEach((r) => { const i = left.findIndex((x) => x.key === r.key); if (i >= 0) left.splice(i, 1); else out.push("+ " + r.line); });
+  return out.concat(left.map((r) => "− " + r.line));
 }
 
 // 站牌：站名行渲染后是「<p><strong>⑥ 读出符号</strong></p>」，显示时换成醒目的一块：
@@ -921,7 +932,8 @@ const App = {
     // 粘贴时先问一次，可以自动降成 #####（卡片里的小标题）再粘贴。
     ta.addEventListener("paste", (e) => {
       const text = e.clipboardData ? e.clipboardData.getData("text/plain") : "";
-      const hits = structuralLines(text);
+      const own = ownHeadLine(text, ta.value.slice(0, ta.selectionStart), entryCard || insert);
+      const hits = structuralLines(text.split(/\r?\n/).filter((l, k) => k !== own).join("\n"));
       if (!hits.length) return;
       const ok = confirm("粘贴的内容里有 " + hits.length + " 行标题，比如：\n" +
         hits.slice(0, 3).map((l) => "「" + l.slice(0, 40) + "」").join("\n") +
@@ -929,7 +941,7 @@ const App = {
         "\n\n确定：把这些标题改成 #####（卡片里的小标题）再粘贴\n取消：原样粘贴");
       if (!ok) return;
       e.preventDefault();
-      const fixed = demoteStructural(text);
+      const fixed = demoteStructural(text, own);
       // insertText 能保留撤销（Ctrl+Z）；不支持时退回 setRangeText
       if (!(document.execCommand && document.execCommand("insertText", false, fixed))) {
         ta.setRangeText(fixed, ta.selectionStart, ta.selectionEnd, "end");
