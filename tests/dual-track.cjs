@@ -68,7 +68,33 @@ const plain = (title) => '### 〔性质〕\n\n#### 1. ' + title + '\n\n正文。
 assert.equal(site.App.dualTrackModel('la-eig-def-eigen', plain(exceptionBookTitle), plain(exceptionNoteTitle)).enabled, false,
   'an unstructured card with a mismatched title keeps its original display');
 
+// 按格子的卡（有记号）：每一块单独渲染，没有整段 HTML 可比。核对：各段按顺序拼起来 = 去掉记号的原文，
+// 每一段都在某一行里、只出现一次，标题行只在两边原文完全相同时合并。
+function assertMarkedCoverage(model, id) {
+  for (const part of ['book', 'note']) {
+    const side = model[part];
+    let end = 0;
+    for (const s of side.segments) {
+      assert.equal(s.sourcePieces.length, 1);
+      const piece = s.sourcePieces[0];
+      assert(piece.start >= end, id + ': marked pieces keep source order');
+      assert.equal(piece.text, side.raw.slice(piece.start, piece.end), id + ': every piece contains its exact original substring');
+      end = piece.end;
+    }
+    assert.equal(side.segments.map((s) => s.sourcePieces[0].text).join(''), site.stripMarkers(side.raw),
+      id + ': ' + part + ' pieces restore the whole original once the invisible markers are removed');
+    const projected = model.rows.flatMap((row) => (row[part] ? row[part].sourcePieces : []));
+    assert.equal(projected.length, side.segments.length, id + ': rows contain every piece exactly once');
+    assert.equal(new Set(projected).size, projected.length, id + ': rows never duplicate a piece');
+  }
+  for (const row of model.rows) {
+    if (!['section', 'station', 'group'].includes(row.kind)) continue;
+    assert.equal(row.merged, !!(row.book && row.note && row.book.line === row.note.line), id + ': headings merge only when their complete source lines match');
+  }
+}
+
 function assertCoverage(model, id) {
+  if (model.marked) return assertMarkedCoverage(model, id);
   const texts = { book: model.book.raw, note: model.note.raw };
   const renderedBook = site.bookParts(texts.book, site.App.stationDeco(id, texts));
   assert.equal(model.book.html, renderedBook.main + renderedBook.tip,

@@ -132,8 +132,9 @@ assert.equal(cellInsert('甲\\n', 2, '乙'), '甲\\n\\n乙');
 
 // 标题改坏（「#### 2. 两个重要极限：」被去掉）：这一条落进上一格，右栏显示「笔记没有这一条」。
 // 那一格带着配对键和插入位置，「补写这一条」填好仓库里的那一版，插回去就又配上了，原文其他地方不动。
+// （旧写法的卡还用这一套；第 1 章已经按格子了，这里拿它去掉记号的原文来测。）
 {
-  const id = 'calc-lim-function', book = KaoyanData.find(id).md, note = Notes.get(id);
+  const id = 'calc-lim-function', book = stripMarkers(KaoyanData.find(id).md), note = stripMarkers(Notes.get(id));
   const broken = note.replace('#### 2. 两个重要极限：', '两个重要极限：');
   const html = App.dualTrackHtml(App.dualTrackModel(id, book, broken));
   const m = html.match(/<div class="dual-cell dual-note dual-missing" [^>]*data-key="([^"]*)" data-at="(\\d+)">/);
@@ -148,6 +149,16 @@ assert.equal(cellInsert('甲\\n', 2, '乙'), '甲\\n\\n乙');
   const after = App.dualTrackModel(id, book, fixed);
   assert(!after.rows.some((r) => r.kind === 'entry' && (!r.book || !r.note)), '补写以后不再缺');
 }
+// 按格子的卡：同样把标题的「#### 2.」去掉，照样配上，显示的编号也不变（自动编号）
+{
+  const id = 'calc-lim-function', book = KaoyanData.find(id).md, note = Notes.get(id);
+  const changed = note.replace('#### 2. 两个重要极限：', '两个重要极限：');
+  assert.notEqual(changed, note);
+  const m = App.dualTrackModel(id, book, changed);
+  assert(m.marked);
+  assert.equal(m.pairs.length, App.dualTrackModel(id, book, note).pairs.length, '去掉标题编号，配对不变');
+  assert(!App.dualTrackHtml(m).includes('没有这一条'));
+}
 
 // 单张小卡片的粘贴提醒与保存检查：哪些行会打乱结构、怎么降成 #####、保存前后多出少掉了什么、本机错位的判断
 {
@@ -156,7 +167,8 @@ assert.equal(cellInsert('甲\\n', 2, '乙'), '甲\\n\\n乙');
   assert.equal(demoteStructural('甲\\r\\n#### 2. 标题\\r\\n**① 站名**\\r\\n##### 不动\\n### 〔性质〕'),
     '甲\\r\\n##### 2. 标题\\r\\n##### ① 站名\\r\\n##### 不动\\n##### 〔性质〕', '只换标题记号，字和换行符不变');
   assert.deepEqual(structuralLines(demoteStructural('#### 1. 甲\\n**② 乙**\\n## 丙')), [], '降级以后不再有会打乱结构的行');
-  const id = 'calc-der-derivative', book = KaoyanData.find(id).md, note = Notes.get(id), byType = appByType(book);
+  // 这些提醒只给旧写法的卡用；第 2 章已经按格子了，拿它去掉记号的原文来测
+  const id = 'calc-der-derivative', book = stripMarkers(KaoyanData.find(id).md), note = stripMarkers(Notes.get(id)), byType = appByType(book);
   assert.deepEqual(structureChange(note, note, 'note', byType), [], '原样保存，结构不变');
   const pasted = note.replace(/^(####[ \\t]+2\\.)/m, '#### 1. 粘进来的\\n\\n$1');
   assert.notEqual(pasted, note, '测试用的粘贴确实插进去了');
