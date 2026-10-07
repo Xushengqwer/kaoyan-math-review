@@ -8,7 +8,7 @@ registerSuperseded({
     "map:linalg/vector-space": ["5ec107105d39a923071208cbac70bd8414ceb355e691cc30030207339a0d28c2"],
   },
   notes: {
-    "calc-der-derivative": ["12dtznb396p","1kk3sgdq8kg","6bqvyf9wwi","1yjughmv5w5","1y67dgcbc1n"],
+    "calc-der-derivative": ["12dtznb396p","1kk3sgdq8kg","6bqvyf9wwi","1yjughmv5w5","1y67dgcbc1n","1gms36wl0z1"],
     "ch:calculus/limit": ["1lnvonnfhze","1mmz58gutdj"],
     "flow:calculus/limit": ["1vipxpnn2np","p5q3rhnwt7"],
     "calc-lim-function": ["1gm1we686ls","hppjqg2tc","1q95eppecol","1be0xko3hyb","1g14r2a5g4j","1j9fgkmtqpz","2b0wqwjim1h","1xyyyv9td3c","u4fo7fhsdq","s5mspg4e59","25qq4g9kug5","14ist9mlsmg"],
