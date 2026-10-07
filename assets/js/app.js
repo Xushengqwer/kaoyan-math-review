@@ -1806,8 +1806,6 @@ const App = {
     </div>`;
     document.body.append(box);
     renderMath(box);
-    const first = box.querySelector("[data-copy-to]");
-    if (first) first.focus();
   },
 
   closeCopyDialog() {
