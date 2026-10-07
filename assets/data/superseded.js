@@ -8,7 +8,7 @@ registerSuperseded({
     "map:linalg/vector-space": ["5ec107105d39a923071208cbac70bd8414ceb355e691cc30030207339a0d28c2"],
   },
   notes: {
-    "calc-der-derivative": ["12dtznb396p","1kk3sgdq8kg","6bqvyf9wwi","1yjughmv5w5"],
+    "calc-der-derivative": ["12dtznb396p","1kk3sgdq8kg","6bqvyf9wwi","1yjughmv5w5","1y67dgcbc1n"],
     "ch:calculus/limit": ["1lnvonnfhze","1mmz58gutdj"],
     "flow:calculus/limit": ["1vipxpnn2np","p5q3rhnwt7"],
     "calc-lim-function": ["1gm1we686ls","hppjqg2tc","1q95eppecol","1be0xko3hyb","1g14r2a5g4j","1j9fgkmtqpz","2b0wqwjim1h","1xyyyv9td3c","u4fo7fhsdq","s5mspg4e59","25qq4g9kug5","14ist9mlsmg"],
@@ -196,7 +196,7 @@ registerSuperseded({
     "calc-der-chain-implicit": ["1eutbmk112x"],
     "calc-der-convexity-asymptote": ["28cevjcq6de"],
     "calc-der-curvature": ["10dmlcsbw29"],
-    "calc-der-derivative": ["1zjzx9xcmi5","161ef65gwek","zc1opob2v7","kkxev13qvu","2d08yx2xc1j","t6w682n5gi"],
+    "calc-der-derivative": ["1zjzx9xcmi5","161ef65gwek","zc1opob2v7","kkxev13qvu","2d08yx2xc1j","2g6wj26wxdk"],
     "calc-der-differential": ["1by32e9p2dl"],
     "calc-der-monotone-extremum": ["1eop4u5znl2","o1iafhryxf"],
     "calc-deriv-def-convexity": ["1pcn97039o9"],
