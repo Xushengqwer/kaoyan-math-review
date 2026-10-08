@@ -1286,7 +1286,6 @@ const App = {
   maybeApplyDual(entry) {
     if (!entry || entry.querySelector(".mynote-editing, .cell-editing")) return;
     this.ensureEntryOriginal(entry);
-    if (this._printing) return;
     const id = entry.id.slice(5);
     if (!Notes.has(id)) return;
     const model = this.dualTrackModel(id, BookEdits.get(id), Notes.get(id));
@@ -2597,7 +2596,8 @@ const App = {
       </div>`;
   },
 
-  // 打印临时原样，不改显示偏好或保存原文。未保存草稿单独快照，打印后重开编辑器。
+  // 打印（导出 PDF）：对照的卡照电脑上的样子打，教材、笔记并排（横向 A4，见 style.css 的 @page compare）。
+  // 不改显示偏好或保存原文。整卡编辑的未保存草稿单独快照，打印后重开编辑器；正在改的那一张小卡片打印改前的样子。
   preparePrint() {
     if (this._printing) return;
     const drafts = [];
@@ -2624,7 +2624,27 @@ const App = {
       });
       this.renderChapterGroups(this.current.subjectId, this.current.chapterId);
     }
-    document.querySelectorAll("#chapter-item-groups .entry").forEach((entry) => this.ensureEntryOriginal(entry));
+    // 短的小卡片打印时不拆到两页（长的照常跨页，免得整页空白）：按屏幕上的高度量，横向 A4 一页正文约 700px
+    document.querySelectorAll(".dual-track > .dual-row").forEach((row) => row.classList.toggle("print-keep", row.offsetHeight > 0 && row.offsetHeight < 320));
+    // 比格子宽的公式：屏幕上横向滚动，纸上会被裁掉，打印时缩小到放得下。
+    // 横向 A4 正文约 1032px，一格约：教材 351px、笔记 652px、整行 1032px；正文 10.5pt（14px）。
+    const printCell = { book: 351, note: 652, wide: 1032 };
+    document.querySelectorAll(".dual-track .dual-cell .katex-display").forEach((el) => {
+      const cell = el.closest(".dual-cell"), katex = el.firstElementChild;
+      if (!cell || !katex || !cell.offsetWidth) return;
+      const target = cell.closest(".is-wide") ? printCell.wide : printCell[cell.dataset.part] || printCell.note;
+      const avail = el.clientWidth - (cell.offsetWidth - target) - 2;
+      // 公式本身多宽（不是外框）：选中看得见的那一份（不含隐藏的 MathML）量它的外接框
+      const range = document.createRange();
+      range.selectNodeContents(katex.querySelector(".katex-html") || katex);
+      const natural = range.getBoundingClientRect().width * 14 / (parseFloat(getComputedStyle(el).fontSize) || 14);
+      if (avail > 40 && natural > avail) { el.classList.add("print-fit"); el.style.setProperty("--print-fit", (avail / natural).toFixed(3)); }
+    });
+    // 正在改的那一张小卡片：打印出来是改之前的样子（输入框只在屏幕上显示），打完去掉
+    const ed = this._cellEdit;
+    document.querySelectorAll(".dual-cell.cell-editing").forEach((cell) => {
+      if (ed) cell.insertAdjacentHTML("beforeend", `<div class="cell-print-copy">${ed.html}</div>`);
+    });
     // 编辑中的笔记先还原成展示态，否则打印出来是个文本框
     document.querySelectorAll(".mynote-slot").forEach((slot) => {
       if (slot.querySelector(".mynote-editing")) {
@@ -2646,13 +2666,16 @@ const App = {
     const state = this._printState;
     if (!state) return;
     this._printing = false; this._printState = null;
+    document.querySelectorAll(".cell-print-copy").forEach((c) => c.remove());
+    document.querySelectorAll(".dual-row.print-keep").forEach((r) => r.classList.remove("print-keep"));
+    document.querySelectorAll(".katex-display.print-fit").forEach((el) => { el.classList.remove("print-fit"); el.style.removeProperty("--print-fit"); });
     this.chapterQuery = state.query; this.chapterTypeFilter = state.type;
     if (this.current && this.current.type === "chapter" && (state.query || state.type && state.type !== "all")) {
       this.renderChapterGroups(this.current.subjectId, this.current.chapterId);
       const search = document.getElementById("chapter-search");
       if (search) search.value = state.query || "";
       document.querySelectorAll("#chapter-type-filter .chip").forEach((c) => c.classList.toggle("active", c.dataset.type === (state.type || "all")));
-    } else document.querySelectorAll("#chapter-item-groups .entry").forEach((entry) => this.maybeApplyDual(entry));
+    } else document.querySelectorAll("#chapter-item-groups .entry:not(.is-dual)").forEach((entry) => this.maybeApplyDual(entry));
     state.drafts.forEach((d) => {
       const selector = d.part === "book" ? "section.card-book[data-book]" : ".mynote-slot";
       const box = [...document.querySelectorAll(selector)].find((el) => (el.dataset.book || el.dataset.note) === d.id);

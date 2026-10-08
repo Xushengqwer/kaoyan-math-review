@@ -1590,8 +1590,30 @@ a.rl-mini:hover { box-shadow: inset 0 0 0 1.5px currentColor; }
   .chapter-summary { box-shadow: none; border: 1px solid #ddd; break-before: auto; }
   a { color: inherit; text-decoration: none; }
 
+  /* 对照的章：和电脑上一样，教材、笔记并排（横向 A4，正文宽约 1040px，够 840px 的并排条件） */
+  html:has(.content.is-compare) body { page: compare; }
+  /* 整张超级卡、长卡片照常跨页；短的卡片（打印前量过，加 print-keep）和小节、站、分组的标题行不拆开 */
+  .entry.is-dual { break-inside: auto; page-break-inside: auto; padding-top: 0; }
+  .dual-row { margin: 7pt 0; gap: 10pt; orphans: 3; widows: 3; }
+  .dual-row.print-keep, .dual-row.kind-section, .dual-row.kind-station, .dual-row.kind-group { break-inside: avoid; page-break-inside: avoid; }
+  .dual-row.kind-section, .dual-row.kind-station, .dual-row.kind-group { break-after: avoid; page-break-after: avoid; }
+  .dual-cell, .dual-shared { padding: 9pt 11pt; border-radius: 7pt; }
+  .dual-cell.dual-book { padding-left: 9pt; padding-right: 9pt; }
+  .dual-cell .entry-statement, .dual-cell .mynote-body { font-size: 10.5pt; line-height: 1.65; overflow: visible; }
+  .dual-row.kind-entry .term-md > h4:first-child, .dual-row.kind-entry .mynote-body > h4:first-child { font-size: 12pt; margin-bottom: 7pt; padding-bottom: 6pt; }
+  .dual-track .station-name { font-size: 15pt; }
+  /* 小卡片右上角只留「笔记」小标，状态和按钮不打印；正在改的那一张打印改前的样子 */
+  .dual-book > .cell-tools, .cell-state, .cell-print-copy .cell-tools, .dual-broken-tip, .dual-controls { display: none !important; }
+  .dual-note > .cell-tools { min-height: 0; margin: 0 0 6pt; }
+  .cell-editing > .cell-editor { display: none !important; }
+  /* 比格子宽的公式按打印前量好的比例缩小（app.js preparePrint），不被裁掉 */
+  .katex-display.print-fit > .katex { font-size: calc(1.04em * var(--print-fit, 1)); }
+  .cell-print-copy { display: block !important; }
+
   @page { margin: 16mm 14mm; }
+  @page compare { size: A4 landscape; margin: 11mm 12mm; }
 }
+.cell-print-copy { display: none; }
 /* 「题型」一组：意义与例题，按分组列出题型名 */
 .rl-types .rl-no { color: var(--meaning); }
 .rl-types .rl-sum span { color: var(--meaning); }
