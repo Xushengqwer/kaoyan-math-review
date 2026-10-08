@@ -12,7 +12,7 @@ const dataFiles = ['calculus', 'linalg', 'probability', 'notes', 'superseded']
 const dataBefore = dataFiles.map(file => fs.readFileSync(file));
 const expected = new Map([
   ['calc-lim-function', 37],
-  ['calc-der-derivative', 18],
+  ['calc-der-derivative', 26],
   ['calc-int-antiderivative', 53],
   ['calc-vec-coordinates', 69],
   ['calc-mvd-limit-continuity', 65],
@@ -218,10 +218,14 @@ assert.deepEqual(enabled.sort(), [...expected.keys()].sort(),
   assert.deepEqual(app.map((p) => p.book.num), app.map((p) => p.note.num), '意义 n 对例题 n');
   assert(app[0].note.html.includes('例题 1-1') && app[0].note.html.includes('例题 1-2'), '题型 1 的两道例题在同一格');
   assert.equal(lim.rows.filter((r) => r.kind === 'group' && r.merged && r.book.sec === '意义').length, 3, '三个分组行横跨两栏');
-  for (const id of ['calc-der-derivative', 'la-eig-def-eigen', 'la-vec-def-max-independent-set']) {
+  for (const id of ['la-eig-def-eigen', 'la-vec-def-max-independent-set']) {
     const m = site.App.dualTrackModel(id, findItem(id).item.md, notes[id]);
     assert.equal(m.pairs.filter((p) => p.book.sec === '意义').length, 0, id + '：旧写法没有意义—例题配对');
   }
+  // 第 2 章：意义一条一格（21 格），8 道例题各进一格，其余格子的例题半边空着
+  const der = site.App.dualTrackModel('calc-der-derivative', findItem('calc-der-derivative').item.md, notes['calc-der-derivative']);
+  assert.equal(der.rows.filter((r) => r.kind === 'entry' && r.book && r.book.sec === '意义').length, 21, '第 2 章 21 个题型各占一格');
+  assert.equal(der.pairs.filter((p) => p.book.sec === '意义').length, 8, '第 2 章 8 道例题各配一个题型');
 }
 
 const fixtureId = 'calc-mi-double-def';

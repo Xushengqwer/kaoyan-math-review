@@ -161,7 +161,7 @@ const DUAL = ['calc-lim-function', 'calc-der-derivative', 'calc-int-antiderivati
   'calc-mvd-limit-continuity', 'calc-mi-double-def', 'calc-ls-line-first', 'calc-ser-convergence', 'calc-ode-concepts',
   'la-eig-def-eigen', 'la-vec-def-max-independent-set'];
 // 迁移以后用户在网站上改过结构的卡（合并、删卡、标题改成 ### 等）：边界和配对只认记号，
-// 去掉记号的旧对照已经认不出这些标题，不再逐格比；改查每张卡按 id 两半都配上
+// 去掉记号的旧对照已经认不出这些标题，不再逐格比；改查两边都有的卡都配上（意义可以没有例题，笔记的卡教材里都有）
 const RESTRUCTURED = new Set(['calc-der-derivative']);
 let marked = 0;
 for (const did of DUAL) {
@@ -172,9 +172,10 @@ for (const did of DUAL) {
     if (RESTRUCTURED.has(did)) {
       const m = App.dualTrackModel(did, book, note);
       assert(m.marked && m.enabled, did + '：按格子对照');
-      const cards = (t) => site.cardBlocks(t).blocks.filter((b) => b.kind === 'card').length;
-      assert.equal(m.pairs.length, cards(book), did + '：教材每张卡都配上');
-      assert.equal(m.pairs.length, cards(note), did + '：笔记每张卡都配上');
+      const cards = (t) => new Set(site.cardBlocks(t).blocks.filter((b) => b.kind === 'card').map((b) => b.id));
+      const bookIds = cards(book), noteIds = [...cards(note)];
+      assert(noteIds.every((x) => bookIds.has(x)), did + '：笔记的卡教材里都有');
+      assert.equal(m.pairs.length, noteIds.length, did + '：两边都有的卡都配上');
     } else {
       verifyCard(site, did, { book: site.stripMarkers(book), note: site.stripMarkers(note) }, { book, note });
     }

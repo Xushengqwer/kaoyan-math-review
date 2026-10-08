@@ -167,8 +167,8 @@ assert.equal(cellInsert('甲\\n', 2, '乙'), '甲\\n\\n乙');
   assert.equal(demoteStructural('甲\\r\\n#### 2. 标题\\r\\n**① 站名**\\r\\n##### 不动\\n### 〔性质〕'),
     '甲\\r\\n##### 2. 标题\\r\\n##### ① 站名\\r\\n##### 不动\\n##### 〔性质〕', '只换标题记号，字和换行符不变');
   assert.deepEqual(structuralLines(demoteStructural('#### 1. 甲\\n**② 乙**\\n## 丙')), [], '降级以后不再有会打乱结构的行');
-  // 这些提醒只给旧写法的卡用；第 2 章已经按格子了，拿它去掉记号的原文来测
-  const id = 'calc-der-derivative', book = stripMarkers(KaoyanData.find(id).md), note = stripMarkers(Notes.get(id)), byType = appByType(book);
+  // 这些提醒只给旧写法的卡用；拿第 3 章去掉记号的原文来测（第 2 章在网站上重排过，去掉记号后旧写法认不全）
+  const id = 'calc-int-antiderivative', book = stripMarkers(KaoyanData.find(id).md), note = stripMarkers(Notes.get(id)), byType = appByType(book);
   assert.deepEqual(structureChange(note, note, 'note', byType), [], '原样保存，结构不变');
   const pasted = note.replace(/^(####[ \\t]+2\\.)/m, '#### 1. 粘进来的\\n\\n$1');
   assert.notEqual(pasted, note, '测试用的粘贴确实插进去了');
