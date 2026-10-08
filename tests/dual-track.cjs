@@ -12,7 +12,7 @@ const dataFiles = ['calculus', 'linalg', 'probability', 'notes', 'superseded']
 const dataBefore = dataFiles.map(file => fs.readFileSync(file));
 const expected = new Map([
   ['calc-lim-function', 37],
-  ['calc-der-derivative', 26],
+  ['calc-der-derivative', 39],
   ['calc-int-antiderivative', 53],
   ['calc-vec-coordinates', 69],
   ['calc-mvd-limit-continuity', 65],
@@ -222,10 +222,11 @@ assert.deepEqual(enabled.sort(), [...expected.keys()].sort(),
     const m = site.App.dualTrackModel(id, findItem(id).item.md, notes[id]);
     assert.equal(m.pairs.filter((p) => p.book.sec === '意义').length, 0, id + '：旧写法没有意义—例题配对');
   }
-  // 第 2 章：意义一条一格（21 格），8 道例题各进一格，其余格子的例题半边空着
+  // 第 2 章：意义一条一格（21 格），8 道例题各进一格，其余 13 格笔记只有空记号（显示「还没写」）
   const der = site.App.dualTrackModel('calc-der-derivative', findItem('calc-der-derivative').item.md, notes['calc-der-derivative']);
   assert.equal(der.rows.filter((r) => r.kind === 'entry' && r.book && r.book.sec === '意义').length, 21, '第 2 章 21 个题型各占一格');
-  assert.equal(der.pairs.filter((p) => p.book.sec === '意义').length, 8, '第 2 章 8 道例题各配一个题型');
+  assert.equal(der.pairs.filter((p) => p.book.sec === '意义').length, 21, '第 2 章 21 个题型都有例题半边');
+  assert.equal(der.pairs.filter((p) => p.book.sec === '意义' && p.note.html.trim()).length, 8, '其中 8 格写了例题');
 }
 
 const fixtureId = 'calc-mi-double-def';

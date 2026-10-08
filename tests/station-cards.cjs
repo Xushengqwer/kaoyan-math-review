@@ -28,7 +28,7 @@ const total = (o, part, sec) => o.blocks.reduce((n, b) => n + (b.rows[part + sec
 // 〔定义〕+〔性质〕的条数等于对照视图的配对数（tests/dual-track.cjs），笔记的〔定义〕〔性质〕条数与教材相同。
 const expected = {
   'calc-lim-function':              [6, 13, 14, 10, 14, 0],
-  'calc-der-derivative':            [6, 10, 8, 21, 8, 9],
+  'calc-der-derivative':            [6, 10, 8, 21, 21, 9],  // 例题 21 格里 13 格还空着（只有记号）
   'calc-int-antiderivative':        [6, 12, 41, 18, 11, 15],
   'calc-vec-coordinates':           [6, 23, 46, 15, 8, 18],
   'calc-mvd-limit-continuity':      [6, 19, 46, 15, 9, 19],
@@ -111,7 +111,8 @@ for (const id of Object.keys(expected)) {
   const html = App.dualTrackHtml(App.dualTrackModel(id, book, note));
   for (const m of html.matchAll(/<div class="dual-cell dual-(book|note)" data-part="[^"]*" data-sec="([^"]*)" data-station="[^"]*" data-src="(\\d+)-(\\d+)">/g)) {
     const full = m[1] === 'book' ? book : note, start = +m[3], end = +m[4];
-    assert(start < end && end <= full.length, id + ' 位置在原文范围内');
+    // 只有记号的空半边（「在下面加一张」那样，显示「还没写」）长度是 0
+    assert(start <= end && end <= full.length, id + ' 位置在原文范围内');
     const { core } = cellSource(full, start, end);
     assert.equal(cellSplice(full, start, end, core), full, id + ' 原样拼回');
     assert.equal(cellSplice(full, start, end, '\\n\\n' + core + '\\n\\n\\n'), full, id + ' 前后多的空行不算改动');
