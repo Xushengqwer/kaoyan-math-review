@@ -28,7 +28,7 @@ const total = (o, part, sec) => o.blocks.reduce((n, b) => n + (b.rows[part + sec
 // 〔定义〕+〔性质〕的条数等于对照视图的配对数（tests/dual-track.cjs），笔记的〔定义〕〔性质〕条数与教材相同。
 const expected = {
   'calc-lim-function':              [6, 13, 14, 10, 14, 0],
-  'calc-der-derivative':            [6, 10, 8, 22, 22, 9],  // 新写的 1 格 + 旧的 21 格；例题 22 格里 13 格还空着
+  'calc-der-derivative':            [6, 10, 8, 6, 6, 0],  // 保留重构后的六组意义／例题，删除旧条目及提示
   'calc-int-antiderivative':        [6, 12, 41, 18, 11, 15],
   'calc-vec-coordinates':           [6, 23, 46, 15, 8, 18],
   'calc-mvd-limit-continuity':      [6, 19, 46, 15, 9, 19],

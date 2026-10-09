@@ -12,7 +12,7 @@ const dataFiles = ['calculus', 'linalg', 'probability', 'notes', 'superseded']
 const dataBefore = dataFiles.map(file => fs.readFileSync(file));
 const expected = new Map([
   ['calc-lim-function', 37],
-  ['calc-der-derivative', 40],
+  ['calc-der-derivative', 24],
   ['calc-int-antiderivative', 53],
   ['calc-vec-coordinates', 69],
   ['calc-mvd-limit-continuity', 65],
@@ -222,11 +222,17 @@ assert.deepEqual(enabled.sort(), [...expected.keys()].sort(),
     const m = site.App.dualTrackModel(id, findItem(id).item.md, notes[id]);
     assert.equal(m.pairs.filter((p) => p.book.sec === '意义').length, 0, id + '：旧写法没有意义—例题配对');
   }
-  // 第 2 章：意义、例题在重写，一条意义一格：新写的 1 格（母题 1～3）+ 旧的 21 格（8 格有例题，13 格例题半边空着）
+  // 第 2 章：六组重构后的意义／例题按卡片 id 配对，旧的第 7—21 组及提示已删除。
   const der = site.App.dualTrackModel('calc-der-derivative', findItem('calc-der-derivative').item.md, notes['calc-der-derivative']);
-  assert.equal(der.rows.filter((r) => r.kind === 'entry' && r.book && r.book.sec === '意义').length, 22, '第 2 章意义 22 格');
-  assert.equal(der.pairs.filter((p) => p.book.sec === '意义').length, 22, '每一格都有例题半边');
-  assert.equal(der.pairs.filter((p) => p.book.sec === '意义' && p.note.html.trim()).length, 9, '其中 9 格写了例题');
+  assert.equal(der.rows.filter((r) => r.kind === 'entry' && r.book && r.book.sec === '意义').length, 6, '第 2 章意义六格');
+  assert.equal(der.pairs.filter((p) => p.book.sec === '意义').length, 6, '六格全部有对应例题');
+  assert.equal(der.pairs.filter((p) => p.book.sec === '意义' && p.note.html.trim()).length, 6, '六格例题都有正文');
+  for (const [part, sec, source] of [['book', '意义', der.book.raw], ['note', '例题', der.note.raw]]) {
+    const blocks = site.cardBlocks(source).blocks;
+    assert.deepEqual(Array.from(blocks.filter((b) => b.kind === 'card' && b.sec === sec), (b) => b.id),
+      ['vzgd', 'wgud', 'i1te', 'ntzm', 'zjyh', 'o3rn'], part + ': 只保留用户确认的前六组标记');
+    assert(!blocks.some((b) => b.sec === '提示'), part + ': 删除整个提示小节');
+  }
 }
 
 const fixtureId = 'calc-mi-double-def';
