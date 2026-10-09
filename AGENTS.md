@@ -121,6 +121,11 @@ node tools/verify.cjs note <key> drafts/xxx.md
 1. `node tools/apply-export.cjs <文件>`：先预览，把每一条是「新增 / 替换 / 没变化」告诉用户。
 2. 对要替换的条目先存档，再 `--write`。
 3. `supersede` → `bump-sw` → `test-all`。体检报的格式问题只报告，不改用户的字。
+4. **导出之外还要再改（删卡、改字、按用户要求删掉一部分）时，导出原文必须先单独提交一次。** 用户浏览器里存着和导出一字不差的本机副本；`supersede` 只登记 git HEAD 里出现过的版本。如果直接把「导出 + 你的改动」一起写进去，导出原文从没进过 HEAD，指纹就没登记，本机副本清不掉，用户刷新多少次看到的都是自己那份旧的（2026-10-09 `5e0fa2f` 就是这样）。正确顺序：
+   - `apply-export --write` → `git commit`（只提交数据文件，不跑 supersede，不推送）；
+   - 再做你的改动 → `supersede`（这时登记的就是导出原文）→ `bump-sw` → `test-all` → 提交；
+   - 两次提交一起推送。
+   - 核对：用 `storage.js` 的 `isSuperseded` 检查导出正文（笔记先 `Notes._norm`）返回 `true`。
 
 ### C. 删卡、合并卡（结构调整）
 
