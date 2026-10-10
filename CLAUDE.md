@@ -9,4 +9,4 @@
 - 章节路线图（思维导图）由 Claude 画，不再让 GPT 画：内容写成 `drafts/<科目>-<章>-mindmap-v<N>.cjs`，用 `node tools/mindmap.cjs` 导出 webp。
 - 用户确认草稿后，把草稿文件单独提交（只加 `drafts/` 里的文件，不动网站），方便 Codex 拉取。然后告诉用户可以交给 Codex 的那一句话：「把 drafts/xxx.md 写进 <key 或卡片id>，按 AGENTS.md 流程 A 做」。
 - Codex 交付后做最后核对：`git pull --ff-only`，然后运行 `node tools/verify.cjs … --rev origin/main` 和 `node tools/test-all.cjs`。
-- 用户说过、至今有效的共识（原话摘录）在 `docs/consensus.md`，写给 Gemini 的提示词在 `docs/prompts.md`；动内容前先翻一下。
+- 用户的学习方法（核心，原文）在 `docs/learning-method.md`，写给 Gemini 的提示词在 `docs/prompts.md`；动内容前先读。
