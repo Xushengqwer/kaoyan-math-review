@@ -29,7 +29,7 @@ const total = (o, part, sec) => o.blocks.reduce((n, b) => n + (b.rows[part + sec
 const expected = {
   'calc-lim-function':              [6, 13, 14, 10, 14, 0],
   'calc-der-derivative':            [6, 10, 8, 6, 6, 0],  // 保留重构后的六组意义／例题，删除旧条目及提示
-  'calc-int-antiderivative':        [7, 12, 41, 18, 11, 15],
+  'calc-int-antiderivative':        [7, 10, 37, 18, 11, 15],  // 2026-10-10 用户在网站上重排第①站：定义 3→1、性质 6→2
   'calc-vec-coordinates':           [7, 23, 46, 15, 8, 18],
   'calc-mvd-limit-continuity':      [7, 19, 46, 15, 9, 19],
   'calc-mi-double-def':             [7, 15, 31, 18, 11, 19],

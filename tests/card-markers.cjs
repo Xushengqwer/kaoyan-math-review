@@ -162,7 +162,7 @@ const DUAL = ['calc-lim-function', 'calc-der-derivative', 'calc-int-antiderivati
   'la-eig-def-eigen', 'la-vec-def-max-independent-set'];
 // 迁移以后用户在网站上改过结构的卡（合并、删卡、标题改成 ### 等）：边界和配对只认记号，
 // 去掉记号的旧对照已经认不出这些标题，不再逐格比；改查两边都有的卡都配上（意义可以没有例题，笔记的卡教材里都有）
-const RESTRUCTURED = new Set(['calc-der-derivative']);
+const RESTRUCTURED = new Set(['calc-der-derivative', 'calc-int-antiderivative']);
 let marked = 0;
 for (const did of DUAL) {
   const book = findItem(did, subjects).item.md, note = notes[did];
