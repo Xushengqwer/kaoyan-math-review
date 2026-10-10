@@ -3604,7 +3604,9 @@ const App = {
   // 题型（意义，不挂站）：从〔意义〕这一节的开头往下数，分组行不算
   railItemTarget(node, sec, station, ord) {
     if (sec !== "定义" && sec !== "性质" && sec !== "意义") return null;
-    const head = this.tocTarget(node, "book", sec, station);
+    const target = this.tocTarget(node, "book", sec, station);
+    // 未合并的小节标题返回栏内的格子；条目顺序要从包含它的整行开始数。
+    const head = target && target.closest(".dual-row");
     if (!head || !(head.classList.contains("kind-station") || (sec === "意义" && head.classList.contains("kind-section")))) return null;
     let k = 0;
     for (let r = head.nextElementSibling; r; r = r.nextElementSibling) {

@@ -59,6 +59,11 @@ assert.deepEqual(lim.blocks[5].rows.book意义.items.map((it) => it.num).slice(0
 // 「例题 1-1」「例题 1-2」都记在题型 1 下
 assert.deepEqual(lim.blocks[5].rows.note例题.items.map((it) => it.num).slice(0, 3), ['1', '1', '2']);
 assert.equal(lim.blocks[5].rows.note例题.items[1].title, '判断奇偶性与周期性');
+// 第 2 章：标题只显示题名，不把 Markdown 的 #### 和手写编号带进目录。
+const derApplications = outline('calc-der-derivative').blocks.find((b) => !b.mark && b.rows.book意义);
+assert.deepEqual(derApplications.rows.book意义.items.slice(0, 2).map((it) => it.title),
+  ['求导公式失效，特殊点的导数与局部近似', '非标准形式函数的一阶与高阶求导']);
+assert.equal(derApplications.rows.note例题.items[0].title, '特殊点处求导与局部近似演示');
 // 第 6 章 ①：〔性质〕的分组记在条目上
 assert.deepEqual(outline('calc-mi-double-def').blocks[0].rows.book性质.items.map((it) => it.group),
   ['二重积分', '二重积分', '二重积分', '二重积分', '三重积分', '反过来用定义']);
