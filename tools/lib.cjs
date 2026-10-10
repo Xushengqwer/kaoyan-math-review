@@ -98,7 +98,7 @@ function loadSite() {
   files.forEach((f) => vm.runInContext(read(f), ctx, { filename: f }));
   return vm.runInContext("({ App, bookParts, noteMdHtml, mathRe: () => App.MATH_RE(), cardBlocks, stripMarkers, hasMarkers, markMode, " +
     "markerIssues, markedPieces, cardNumbers, cardOutline, cardStory, CardOps, dualSource, appByType, cellSource, cellSpliceMarked, " +
-    "numberCard, cardTitle })", ctx);
+    "numberCard, cardTitle, mdHtml })", ctx);
 }
 
 // KaTeX（网站自带的那份）和网站用的宏

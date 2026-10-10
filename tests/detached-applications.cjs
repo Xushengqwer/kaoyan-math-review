@@ -1,31 +1,15 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const vm = require('node:vm');
-const { abs, gitShow, loadSite, loadSubjects, loadNotes } = require('../tools/lib.cjs');
+const { abs, loadSite, loadSubjects, loadNotes } = require('../tools/lib.cjs');
 
+// 2026-10-10：去掉了与 HEAD 比较的断言（定义/性质、意义/例题 id 与标题、其他科目不变）。
+// 它们只适合核对 2a0967c 那一次改动；留着的话，任何内容改动在提交前都过不了。
 const dataFiles = ['calculus', 'linalg', 'probability', 'notes', 'superseded', 'mindmaps']
   .map(name => abs('assets/data/' + name + '.js'));
 const dataBefore = dataFiles.map(file => fs.readFileSync(file));
 const subjects = loadSubjects(), notes = loadNotes();
-const headSubjects = loadSubjects('HEAD'), headNotes = loadNotes('HEAD');
 const site = loadSite();
 site.App.subjects = subjects;
-
-// The unrelated subjects retain the renderer/rail behavior of the committed
-// site, not just unchanged data. Run the actual HEAD scripts in an isolated VM.
-const headStorage = {};
-const headContext = vm.createContext({
-  console, window: {},
-  document: { addEventListener() {}, querySelectorAll() { return []; }, getElementById() { return null; } },
-  localStorage: { getItem: key => headStorage[key] || null, setItem: (key, value) => { headStorage[key] = value; } },
-});
-for (const file of ['assets/vendor/marked/marked.umd.js', 'assets/js/data-loader.js', 'assets/js/storage.js',
-  'assets/data/calculus.js', 'assets/data/linalg.js', 'assets/data/probability.js', 'assets/data/notes.js',
-  'assets/data/superseded.js', 'assets/js/katex-init.js', 'assets/js/app.js']) {
-  vm.runInContext(gitShow(file), headContext, { filename: file });
-}
-vm.runInContext('App.subjects = KaoyanData.subjects();', headContext);
-const headSite = vm.runInContext('({ App, mdHtml })', headContext);
 
 const expectedCounts = new Map([
   ['calc-lim-function', [10, 14]],
@@ -43,12 +27,6 @@ const attributes = text => Object.fromEntries(Array.from(text.matchAll(/([a-z][a
   match => [match[1], match[2].replace(/&quot;/g, '"').replace(/&amp;/g, '&')]));
 const details = (outline, part, sec) => outline.blocks.flatMap(block =>
   Array.from((block.rows[part + sec] || { items: [] }).items, item => ({ num: item.num, title: item.title, group: item.group })));
-const coreShape = raw => site.cardBlocks(raw).blocks.filter(block => ['定义', '性质'].includes(block.sec))
-  .map(block => ({ kind: block.kind, sec: block.sec, station: block.station, group: block.group,
-    id: block.id, value: block.value, text: raw.slice(block.start, block.end) }));
-const applicationIds = raw => site.cardBlocks(raw).blocks.filter(block =>
-  ['意义', '例题'].includes(block.sec) && ['card', 'group'].includes(block.kind))
-  .map(block => ({ kind: block.kind, sec: block.sec, id: block.id }));
 
 // Read the section attributes from actual rendered row wrappers/cells. The
 // station ordering is applied by dualTrackHtml, so model source order alone
@@ -87,26 +65,19 @@ function assertSourceCoverage(model, originals, id) {
 }
 
 const calculus = subjects.find(subject => subject.id === 'calculus');
-const headCalculus = headSubjects.find(subject => subject.id === 'calculus');
 assert.equal(calculus.items.length, expectedCounts.size, 'Exercise all nine calculus cards');
 for (const item of calculus.items) {
-  const id = item.id, previous = headCalculus.items.find(old => old.id === id);
+  const id = item.id;
   const originals = { book: item.md, note: notes[id] };
-  const prior = { book: previous.md, note: headNotes[id] };
   const outline = site.cardOutline(originals.book, originals.note);
-  const previousOutline = site.cardOutline(prior.book, prior.note);
   const counts = expectedCounts.get(id);
   assert(counts, 'Known calculus card: ' + id);
   for (const [part, sec, count] of [['book', '意义', counts[0]], ['note', '例题', counts[1]]]) {
     const blocks = site.cardBlocks(originals[part]).blocks.filter(block => block.sec === sec);
     assert(blocks.length, id + ': ' + sec + ' remains present');
     assert(blocks.every(block => !block.station && block.kind !== 'station'), id + ': ' + sec + ' is detached from all stations');
-    same(coreShape(originals[part]), coreShape(prior[part]), id + ': original core stations/cards/content remain unchanged');
-    // Existing chapter 1/2 application card/group IDs retain their identities.
-    same(applicationIds(originals[part]), applicationIds(prior[part]), id + ': application card/group IDs are preserved');
     const titles = details(outline, part, sec);
     assert.equal(titles.length, count, id + ': complete ' + sec + ' item count');
-    same(titles, details(previousOutline, part, sec), id + ': original titles/numbers/order are preserved');
   }
   const model = site.App.dualTrackModel(id, originals.book, originals.note);
   const html = site.App.dualTrackHtml(model);
@@ -129,23 +100,10 @@ for (const item of calculus.items) {
       assert.equal(link.attrs['data-station'], '', id + ': application directory link has no station');
       assert.equal(link.attrs['data-goto'], id, id + ': directory link belongs to this card');
       assert.equal(+link.attrs['data-ord'], index, id + ': application directory order is preserved');
-      assert(link.html.includes(headSite.mdHtml(titles[index].title, true)), id + ': directory keeps the original title');
+      assert(link.html.includes(site.mdHtml(titles[index].title, true)), id + ': directory keeps the original title');
     });
   }
 }
 
-for (const subject of subjects.filter(subject => subject.id !== 'calculus')) {
-  const oldSubject = headSubjects.find(old => old.id === subject.id);
-  same(subject, oldSubject, subject.id + ': textbook/chapter/card metadata unchanged from HEAD');
-  for (const item of subject.items) {
-    const oldItem = oldSubject.items.find(old => old.id === item.id);
-    assert(notes[item.id] === headNotes[item.id], item.id + ': unrelated note unchanged');
-    const currentModel = site.App.dualTrackModel(item.id, item.md, notes[item.id] || '');
-    const oldModel = headSite.App.dualTrackModel(item.id, oldItem.md, headNotes[item.id] || '');
-    assert(site.App.dualTrackHtml(currentModel) === headSite.App.dualTrackHtml(oldModel), item.id + ': non-calculus rendering unchanged from HEAD');
-    same(site.App.stationRailHtml(item, subject.id, item.chapterId),
-      headSite.App.stationRailHtml(oldItem, subject.id, oldItem.chapterId), item.id + ': non-calculus rail unchanged from HEAD');
-  }
-}
 dataFiles.forEach((file, index) => assert(fs.readFileSync(file).equals(dataBefore[index]), file + ': rendering/navigation do not write source data'));
-console.log('PASS: all calculus applications are detached, complete, after core content, with independent meaning/example directory links; source data and other subjects are preserved.');
+console.log('PASS: all calculus applications are detached, complete, after core content, with independent meaning/example directory links; source data is not written.');
