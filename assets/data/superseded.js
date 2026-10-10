@@ -8,6 +8,8 @@ registerSuperseded({
     "map:linalg/vector-space": ["5ec107105d39a923071208cbac70bd8414ceb355e691cc30030207339a0d28c2"],
   },
   notes: {
+    "ch:calculus/derivative": ["1naw4xkb42i"],
+    "flow:calculus/derivative": ["7f55pt5j5m"],
     "calc-ode-concepts": ["zwkm4wlq6t"],
     "calc-ser-convergence": ["z48wixtwf8"],
     "calc-ls-line-first": ["242o6v78rc2"],
