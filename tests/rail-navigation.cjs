@@ -9,14 +9,15 @@ const site = loadSite();
 site.App.subjects = loadSubjects();
 
 // No DOM package is installed in this static repository. Keep the real rendered
-// div tree, classes, data attributes and sibling order needed by both target
-// functions; headings/text inside the divs do not affect row navigation.
+// element tree, classes, text and sibling order used by navigation. Legacy
+// meaning lists and example headings also need their actual nested elements.
 class Element {
   constructor(tag, attrs = {}) {
     this.tagName = tag.toUpperCase();
     this.attrs = attrs;
     this.children = [];
     this.parentElement = null;
+    this.content = [];
     this.dataset = {};
     for (const [name, value] of Object.entries(attrs)) {
       if (name.startsWith('data-')) {
@@ -26,13 +27,27 @@ class Element {
     }
     this.classList = { contains: name => (attrs.class || '').split(/\s+/).includes(name) };
   }
-  append(child) { child.parentElement = this; this.children.push(child); }
+  append(child) { child.parentElement = this; this.children.push(child); this.content.push(child); }
+  get firstElementChild() { return this.children[0] || null; }
+  get textContent() { return this.content.map(child => typeof child === 'string' ? child : child.textContent).join(''); }
   get nextElementSibling() {
     if (!this.parentElement) return null;
     const siblings = this.parentElement.children;
     return siblings[siblings.indexOf(this) + 1] || null;
   }
   matches(selector) {
+    const parts = selector.trim().split(/\s+/);
+    if (parts.length > 1) {
+      if (!this.matches(parts.pop())) return false;
+      let node = this.parentElement;
+      while (parts.length) {
+        const wanted = parts.pop();
+        while (node && !node.matches(wanted)) node = node.parentElement;
+        if (!node) return false;
+        node = node.parentElement;
+      }
+      return true;
+    }
     let matched = true;
     const rest = selector.trim().replace(/\[([^\]=\s]+)(?:=(?:"([^"]*)"|'([^']*)'|([^\]]+)))?\]/g,
       (_, name, double, single, bare) => {
@@ -73,12 +88,17 @@ function renderedEntry(model) {
   entry.append(new Element('section', { class: 'card-book' }));
   entry.append(new Element('div', { class: 'mynote-slot' }));
   const stack = [entry];
-  for (const match of site.App.dualTrackHtml(model).matchAll(/<!--[^]*?-->|<(\/?)div\b([^>]*)>/gi)) {
+  const voidTags = new Set(['br', 'hr', 'img', 'input', 'wbr']);
+  for (const match of site.App.dualTrackHtml(model).matchAll(/<!--[^]*?-->|<(\/?)([a-z][a-z0-9]*)\b([^>]*)>|([^<]+)/gi)) {
     if (match[0].startsWith('<!--')) continue;
-    if (match[1]) { assert(stack.length > 1, 'Balanced div tree'); stack.pop(); }
-    else { const element = new Element('div', attributes(match[2])); stack.at(-1).append(element); stack.push(element); }
+    if (match[4]) { stack.at(-1).content.push(match[4]); continue; }
+    if (match[1]) { assert(stack.length > 1, 'Balanced element tree'); assert.equal(stack.pop().tagName, match[2].toUpperCase()); }
+    else {
+      const element = new Element(match[2], attributes(match[3])); stack.at(-1).append(element);
+      if (!voidTags.has(match[2].toLowerCase())) stack.push(element);
+    }
   }
-  assert.equal(stack.length, 1, 'Every rendered div is closed');
+  assert.equal(stack.length, 1, 'Every rendered element is closed');
   return entry;
 }
 function markerId(row, book) {
@@ -162,6 +182,49 @@ for (const merged of [true, false]) {
   assert.equal(fixtureModel.book.raw, fixtureBook, 'Navigation/rendering preserve complete book source');
   assert.equal(fixtureModel.note.raw, fixtureNote, 'Navigation/rendering preserve complete note source');
 }
+
+// Independent application sections can contain the old complete Markdown
+// lists rather than marker cards. Meaning 3 and example 2 must resolve to
+// their own text, including in the original layout used while editing.
+const legacyBook = '<!-- section:意义 -->\n\n### 意义\n\n' +
+  '* **1. 甲题型**\n\n  正文甲。\n\n* **2. 乙题型**\n\n  正文乙。\n\n* **3. 丙题型**\n\n  正文丙。';
+const legacyNote = '<!-- section:例题 -->\n\n### 〔例题〕\n\n' +
+  '#### 例题 1：甲演示\n\n正文甲。\n\n#### 例题 2：乙演示\n\n正文乙。';
+const legacyEntry = renderedEntry(site.App.dualTrackModel(id, legacyBook, legacyNote));
+assert.equal(target(legacyEntry, '意义', '', 2)?.querySelector('strong')?.textContent, '3. 丙题型',
+  'Legacy meaning navigation selects the numbered list item');
+assert.equal(site.App.railItemTarget(legacyEntry, '例题', '', 1, 'note')?.textContent, '例题 2：乙演示',
+  'Legacy example navigation selects the example heading, independently of meaning numbering');
+assert.equal(target(legacyEntry, '意义', '', 3), null, 'Do not use an example as a missing meaning');
+assert.equal(site.App.railItemTarget(legacyEntry, '例题', '', 2, 'note'), null, 'Example overflow stays in its own section');
+
+const subBook = '<!-- section:意义 -->\n\n### 意义\n\n<!-- card:sc01 -->\n\n#### 1. 甲题型\n\n甲正文。';
+const subNote = '<!-- section:例题 -->\n\n### 〔例题〕\n\n<!-- card:sc01 -->\n\n' +
+  '#### 例题 1-1：第一道\n\n甲正文。\n\n#### 例题 1-2：第二道\n\n乙正文。';
+const subEntry = renderedEntry(site.App.dualTrackModel(id, subBook, subNote));
+assert.equal(site.App.railItemTarget(subEntry, '例题', '', 0, 'note').textContent, '例题 1-1：第一道');
+assert.equal(site.App.railItemTarget(subEntry, '例题', '', 1, 'note').textContent, '例题 1-2：第二道',
+  'Two examples in one marker card jump to their own headings, not the shared card start');
+
+const originalEntry = new Element('article', { class: 'entry' });
+// Construct the original layout using the same real rendered body nodes.
+const bookCard = new Element('section', { class: 'card-book' });
+const bookTerm = new Element('div', { class: 'term' });
+const bookLabel = new Element('div', { class: 'term-label' }); bookLabel.content.push('〔意义〕');
+bookTerm.append(bookLabel);
+legacyEntry.querySelectorAll('.dual-cell[data-part="book"][data-sec="意义"]').forEach(cell => {
+  if (cell.querySelector('li')) bookTerm.append(cell.querySelector('.term-md'));
+});
+bookCard.append(bookTerm); originalEntry.append(bookCard);
+const slot = new Element('div', { class: 'mynote-slot' }), body = new Element('div', { class: 'mynote-body' });
+const noteHead = new Element('h3'); noteHead.content.push('〔例题〕'); body.append(noteHead);
+legacyEntry.querySelectorAll('.dual-cell[data-part="note"][data-sec="例题"]').forEach(cell => {
+  const md = cell.querySelector('.mynote-body');
+  if (md && md.querySelector('h4')) md.children.slice().forEach(child => body.append(child));
+});
+slot.append(body); originalEntry.append(slot);
+assert.equal(target(originalEntry, '意义', '', 2)?.querySelector('strong')?.textContent, '3. 丙题型');
+assert.equal(site.App.railItemTarget(originalEntry, '例题', '', 1, 'note')?.textContent, '例题 2：乙演示');
 
 assert.equal(model.book.raw, book, 'Real textbook source is unchanged');
 assert.equal(model.note.raw, note, 'Real note source is unchanged');

@@ -1534,6 +1534,8 @@ body.mynote-zoomed { overflow: hidden; }
 .rl-sec-head b { font-weight: 500; color: var(--text-3); }
 .rl-sec.def .rl-sec-head { color: var(--def); }
 .rl-sec.prp .rl-sec-head { color: var(--prp); }
+.rl-sec.meaning .rl-sec-head { color: var(--meaning); }
+.rl-sec.ex .rl-sec-head { color: var(--example); }
 .rl-items { list-style: none; margin: 4px 0 0; padding: 0 0 0 10px; border-left: 2px solid var(--border); }
 .rl-sec.def .rl-items { border-left-color: color-mix(in srgb, var(--def) 35%, transparent); }
 .rl-sec.prp .rl-items { border-left-color: color-mix(in srgb, var(--prp) 35%, transparent); }
@@ -1618,6 +1620,7 @@ a.rl-mini:hover { box-shadow: inset 0 0 0 1.5px currentColor; }
 .rl-types .rl-no { color: var(--meaning); }
 .rl-types .rl-sum span { color: var(--meaning); }
 .rl-types .rl-items { border-left-color: color-mix(in srgb, var(--meaning) 35%, transparent); }
+.rl-types .rl-sec.ex .rl-items { border-left-color: color-mix(in srgb, var(--example) 35%, transparent); }
 .rl-tno { display: inline-block; min-width: 1.7em; font-size: 12px; font-weight: 600; color: var(--text-3); }
 /* 例题之间的分隔线（---）在对照里落在上一格末尾，不显示；同一格里两道例题之间的照常 */
 .dual-cell hr:last-child { display: none; }

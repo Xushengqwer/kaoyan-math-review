@@ -29,13 +29,13 @@ const total = (o, part, sec) => o.blocks.reduce((n, b) => n + (b.rows[part + sec
 const expected = {
   'calc-lim-function':              [6, 13, 14, 10, 14, 0],
   'calc-der-derivative':            [6, 10, 8, 6, 6, 0],  // 保留重构后的六组意义／例题，删除旧条目及提示
-  'calc-int-antiderivative':        [6, 12, 41, 18, 11, 15],
-  'calc-vec-coordinates':           [6, 23, 46, 15, 8, 18],
-  'calc-mvd-limit-continuity':      [6, 19, 46, 15, 9, 19],
-  'calc-mi-double-def':             [6, 15, 31, 18, 11, 19],
-  'calc-ls-line-first': [6,16,39,20,10,18],
-  'calc-ser-convergence': [6,16,36,19,10,18],
-  'calc-ode-concepts': [6,15,29,17,8,15],
+  'calc-int-antiderivative':        [7, 12, 41, 18, 11, 15],
+  'calc-vec-coordinates':           [7, 23, 46, 15, 8, 18],
+  'calc-mvd-limit-continuity':      [7, 19, 46, 15, 9, 19],
+  'calc-mi-double-def':             [7, 15, 31, 18, 11, 19],
+  'calc-ls-line-first': [7,16,39,20,10,18],
+  'calc-ser-convergence': [7,16,36,19,10,18],
+  'calc-ode-concepts': [7,15,29,17,8,15],
   'la-eig-def-eigen':               [7, 19, 25, 19, 14, 30],
   'la-vec-def-max-independent-set': [1, 11, 11, 9, 6, 14],
 };

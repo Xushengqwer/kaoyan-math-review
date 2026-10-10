@@ -3240,9 +3240,18 @@ const App = {
         group = x.group;
         return g + `<li>${link("rl-item", "book", "意义", "", `<span class="rl-tno">${escapeHtml(x.num)}</span>${mdHtml(x.title, true)}`, x.ord)}</li>`;
       }).join("");
+      // 高数：意义与例题各列自己的目录，不靠站号或相同编号建立对应关系。
+      let lists = `<ol class="rl-items">${lis}</ol>`;
+      if (subjectId === "calculus") {
+        const examples = app.rows.note例题 && app.rows.note例题.items || [];
+        const exLis = examples.map((x) => `<li>${link("rl-item", "note", "例题", "",
+          `<span class="rl-tno">${escapeHtml(x.num)}</span>${mdHtml(x.title, true)}`, x.ord)}</li>`).join("");
+        lists = `<div class="rl-sec meaning">${link("rl-sec-head", "book", "意义", "", `意义<b>${its.length}</b>`)}<ol class="rl-items">${lis}</ol></div>` +
+          (examples.length ? `<div class="rl-sec ex">${link("rl-sec-head", "note", "例题", "", `例题<b>${examples.length}</b>`)}<ol class="rl-items">${exLis}</ol></div>` : "");
+      }
       types = `<div class="rl-cap">题型 · ${its.length}</div><div class="rl-st rl-types" data-station="题型">` +
         link("rl-name", "book", "意义", "", `<span class="rl-no">题</span><span class="rl-label">意义与例题</span><span class="rl-sum">${sum}</span>`) +
-        `<div class="rl-detail"><ol class="rl-items">${lis}</ol></div></div>`;
+        `<div class="rl-detail">${lists}</div></div>`;
     }
     const extras = this.chapterExtras(subjectId, chapterId).map(({ noteId, imageId, title, label }) =>
       `<a class="rl-extra" href="#item-${imageId || noteId}" data-goto="${imageId || noteId}">${escapeHtml(label || title)}</a>`).join("");
@@ -3592,7 +3601,7 @@ const App = {
   gotoLink(a) {
     const node = document.getElementById("item-" + a.dataset.goto);
     if (!node) return;
-    const target = (a.dataset.ord != null && this.railItemTarget(node, a.dataset.sec, a.dataset.station, +a.dataset.ord)) ||
+    const target = (a.dataset.ord != null && this.railItemTarget(node, a.dataset.sec, a.dataset.station, +a.dataset.ord, a.dataset.part)) ||
       this.tocTarget(node, a.dataset.part, a.dataset.sec, a.dataset.station);
     this.scrollToItem(target || node);
     const cls = target ? "toc-flash" : "flash";
@@ -3600,9 +3609,39 @@ const App = {
     setTimeout(() => (target || node).classList.remove(cls), 1800);
   },
 
-  // 右侧目录里定义、性质的一个小标题对应的那张小卡片：从这一节这一站的站卡往下，数到第 ord 张（与站卡小标题同一规则）
-  // 题型（意义，不挂站）：从〔意义〕这一节的开头往下数，分组行不算
-  railItemTarget(node, sec, station, ord) {
+  // 不挂站的意义/例题：目录条目可以是记号卡的标题，也可以是原来的加粗列表项/例题标题。
+  // 只读已经渲染的节点，原文及编辑区间保持原样；原样视图也用各小节自己的条目。
+  applicationTargets(node, part, sec) {
+    const matches = (el) => {
+      if (/^H[1-6]$/.test(el.tagName)) return sec === "例题"
+        ? /^例题\s*\d+(?:-\d+)?(?![\d.])/.test(el.textContent.trim()) : /^\d+\./.test(el.textContent.trim());
+      if (sec !== "意义" || el.tagName !== "LI") return false;
+      const first = el.firstElementChild;
+      const strong = first && (first.tagName === "P" ? first.firstElementChild : first);
+      return strong && strong.tagName === "STRONG" && /^\d+\./.test(strong.textContent.trim());
+    };
+    const scan = (box) => [...box.querySelectorAll("h1, h2, h3, h4, h5, h6, li")].filter(matches);
+    const track = node.querySelector(".dual-track");
+    if (track) return [...track.querySelectorAll(`.dual-cell[data-part="${part}"][data-sec="${sec}"]`)].flatMap(scan);
+    const head = this.tocTarget(node, part, sec, "");
+    if (!head) return [];
+    if (part === "book") return scan(head);
+    if (!/^H[1-6]$/.test(head.tagName)) return [];
+    const entries = [], level = +head.tagName.charAt(1);
+    for (let el = head.nextElementSibling; el; el = el.nextElementSibling) {
+      if (/^H[1-6]$/.test(el.tagName) && +el.tagName.charAt(1) <= level) break;
+      if (matches(el)) entries.push(el);
+      entries.push(...scan(el));
+    }
+    return entries;
+  },
+
+  // 右侧目录：独立的应用按各栏自己的条目定位；定义、性质仍按站内记号卡定位。
+  railItemTarget(node, sec, station, ord, part) {
+    if (!station && (sec === "意义" || sec === "例题")) {
+      const target = this.applicationTargets(node, part || (sec === "例题" ? "note" : "book"), sec)[ord];
+      return target && (sec === "例题" ? target : target.closest(".kind-entry") || target) || null;
+    }
     if (sec !== "定义" && sec !== "性质" && sec !== "意义") return null;
     const target = this.tocTarget(node, "book", sec, station);
     // 未合并的小节标题返回栏内的格子；条目顺序要从包含它的整行开始数。
