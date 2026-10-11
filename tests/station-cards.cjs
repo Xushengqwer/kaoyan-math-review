@@ -29,7 +29,7 @@ const total = (o, part, sec) => o.blocks.reduce((n, b) => n + (b.rows[part + sec
 const expected = {
   'calc-lim-function':              [6, 13, 14, 10, 14, 0],
   'calc-der-derivative':            [6, 10, 8, 6, 6, 0],  // 保留重构后的六组意义／例题，删除旧条目及提示
-  'calc-int-antiderivative':        [7, 10, 37, 18, 11, 15],  // 2026-10-10 用户在网站上重排第①站：定义 3→1、性质 6→2
+  'calc-int-antiderivative':        [7, 6, 11, 18, 11, 0],  // 2026-10-11 Gemini 重写定义、性质（每站 1～2 张），删分组与提示
   'calc-vec-coordinates':           [7, 23, 46, 15, 8, 18],
   'calc-mvd-limit-continuity':      [7, 19, 46, 15, 9, 19],
   'calc-mi-double-def':             [7, 15, 31, 18, 11, 19],
@@ -173,8 +173,8 @@ assert.equal(cellInsert('甲\\n', 2, '乙'), '甲\\n\\n乙');
   assert.equal(demoteStructural('甲\\r\\n#### 2. 标题\\r\\n**① 站名**\\r\\n##### 不动\\n### 〔性质〕'),
     '甲\\r\\n##### 2. 标题\\r\\n##### ① 站名\\r\\n##### 不动\\n##### 〔性质〕', '只换标题记号，字和换行符不变');
   assert.deepEqual(structuralLines(demoteStructural('#### 1. 甲\\n**② 乙**\\n## 丙')), [], '降级以后不再有会打乱结构的行');
-  // 这些提醒只给旧写法的卡用；拿第 3 章去掉记号的原文来测（第 2 章在网站上重排过，去掉记号后旧写法认不全）
-  const id = 'calc-int-antiderivative', book = stripMarkers(KaoyanData.find(id).md), note = stripMarkers(Notes.get(id)), byType = appByType(book);
+  // 这些提醒只给旧写法的卡用；拿第 4 章去掉记号的原文来测（第 2、3 章在网站上重排过，去掉记号后旧写法认不全）
+  const id = 'calc-vec-coordinates', book = stripMarkers(KaoyanData.find(id).md), note = stripMarkers(Notes.get(id)), byType = appByType(book);
   assert.deepEqual(structureChange(note, note, 'note', byType), [], '原样保存，结构不变');
   const pasted = note.replace(/^(####[ \\t]+2\\.)/m, '#### 1. 粘进来的\\n\\n$1');
   assert.notEqual(pasted, note, '测试用的粘贴确实插进去了');
