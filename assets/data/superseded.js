@@ -163,7 +163,7 @@ registerSuperseded({
     "calc-int-definite": ["lhz4t70vo4"],
     "calc-int-rational": ["3ns9b6mlg4"],
     "calc-int-substitution-parts": ["22ip70njebz"],
-    "calc-int-antiderivative": ["2c8bakogq1q","2300kxap37g","10l7kt32utj","8toqgl8iz9","118p9l2d5zz","1e5lfipjii2","17825u9d2w"],
+    "calc-int-antiderivative": ["2c8bakogq1q","2300kxap37g","10l7kt32utj","8toqgl8iz9","118p9l2d5zz","1e5lfipjii2","17825u9d2w","1h4cj8d7j9g"],
     "calc-der-curve-shape": ["uidnedr4i9"],
     "calc-der-lhospital": ["28eoi32u36q"],
     "calc-der-taylor": ["10gfc6r5fhp"],
