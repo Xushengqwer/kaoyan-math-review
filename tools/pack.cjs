@@ -3,14 +3,27 @@
 // 读的是工作区里的数据文件（先 git pull --ff-only，就是网站上的那一版）。
 //
 // 用法：
-//   node tools/pack.cjs <目标卡id> [输出.md]
+//   node tools/pack.cjs <目标卡id> [输出.md] [--only 定义,性质]
 //   例：node tools/pack.cjs calc-int-antiderivative
+//   --only：这一章只放列出的小节（按 <!-- section:… --> 记号切），不放决策流、本章总结
 //
 // 输出位置：默认 C:\Users\许志火\Downloads\Gemini素材-高等数学第3章.md
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
 const { main, must, loadSubjects, loadNotes, findItem } = require("./lib.cjs");
+
+// 只留列出的小节（按 section 记号切；第一个记号之前的开头部分保留）
+function onlySections(md, names) {
+  const out = [];
+  let keep = true;
+  for (const line of md.split("\n")) {
+    const m = line.trim().match(/^<!-- section:(.+) -->$/);
+    if (m) keep = names.includes(m[1]);
+    if (keep) out.push(line);
+  }
+  return out.join("\n");
+}
 
 // 去掉记号行和紧跟的一个空行
 function stripMarkers(md) {
@@ -29,8 +42,12 @@ function stripMarkers(md) {
 const doc = (title, body) => '<document title="' + title + '">\n' + stripMarkers(body).trimEnd() + "\n</document>";
 
 main(() => {
-  const [targetId, outArg] = process.argv.slice(2);
-  must(targetId, "用法：node tools/pack.cjs <目标卡id> [输出.md]");
+  const args = process.argv.slice(2);
+  const oi = args.indexOf("--only");
+  const only = oi >= 0 ? args.splice(oi, 2)[1].split(/[,，]/) : null;
+  const [targetId, outArg] = args;
+  must(targetId, "用法：node tools/pack.cjs <目标卡id> [输出.md] [--only 定义,性质]");
+  const pick = (md) => (only ? onlySections(md, only) : md);
   const subjects = loadSubjects();
   const notes = loadNotes();
   const target = findItem(targetId, subjects);
@@ -47,7 +64,7 @@ main(() => {
   out.push("");
   out.push("这是我的考研数学复习网站里" + subjName + "的内容，分两部分：");
   out.push("1. 其他各章的教材全文，用来了解哪些知识在前面章节已经有了、哪些要到后面才讲；");
-  out.push("2. " + chLabel(tch) + "的全部内容：教材、笔记、决策流、本章总结。");
+  out.push("2. " + chLabel(tch) + (only ? "的〔" + only.join("〕〔") + "〕：教材和笔记。" : "的全部内容：教材、笔记、决策流、本章总结。"));
   out.push("");
   out.push("## 第 1 部分 · 其他各章的教材");
   out.push("");
@@ -55,13 +72,13 @@ main(() => {
     if (c.id === tch.id) continue;
     for (const it of subj.items.filter((i) => i.chapterId === c.id)) out.push(doc(chLabel(c) + " · 教材 · " + it.title, it.md), "");
   }
-  out.push("## 第 2 部分 · " + chLabel(tch) + "全部内容");
+  out.push("## 第 2 部分 · " + chLabel(tch) + (only ? "〔" + only.join("〕〔") + "〕" : "全部内容"));
   out.push("");
   for (const it of subj.items.filter((i) => i.chapterId === tch.id)) {
-    out.push(doc(chLabel(tch) + " · 教材 · " + it.title, it.md), "");
-    if (notes[it.id]) out.push(doc(chLabel(tch) + " · 笔记 · " + it.title, notes[it.id]), "");
+    out.push(doc(chLabel(tch) + " · 教材 · " + it.title, pick(it.md)), "");
+    if (notes[it.id]) out.push(doc(chLabel(tch) + " · 笔记 · " + it.title, pick(notes[it.id])), "");
   }
-  for (const [key, name] of [["flow:", "决策流"], ["ch:", "本章总结"]]) {
+  for (const [key, name] of only ? [] : [["flow:", "决策流"], ["ch:", "本章总结"]]) {
     const k = key + subj.id + "/" + tch.id;
     if (notes[k]) out.push(doc(chLabel(tch) + " · " + name, notes[k]), "");
   }
