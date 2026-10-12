@@ -1,5 +1,5 @@
 // 简单的离线缓存：优先使用缓存，后台静默更新，方便在地铁/宿舍弱网环境下阅读。
-const CACHE_NAME = "kaoyan-math-v162";
+const CACHE_NAME = "kaoyan-math-v163";
 const ASSETS = [
   "./",
   "index.html",
