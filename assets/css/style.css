@@ -945,10 +945,10 @@ body.mynote-zoomed { overflow: hidden; }
 .md h2 { font-size: 15.5px; color: var(--accent); }
 .md h3 { font-size: 14.5px; }
 .md h4, .md h5, .md h6 { font-size: 14px; color: var(--text-2); }
-/* 过渡横幅：正文里单独一行「###### 标题」——前后大留白，居中，上方三支渐隐的向下箭头，
+/* 过渡横幅：正文里单独一行「###### 标题」——前后超大留白（上 152px、下 80px），居中，上方三支渐隐的向下箭头，
    用来提示「下面是另一段（如推导演示）」。数据里只有这种用法用到六级标题。 */
 :is(.term-md, .md, .note-body) h6 {
-  margin: 76px 0 40px; text-align: center; font-size: 15px; font-weight: 700;
+  margin: 152px 0 80px; text-align: center; font-size: 15px; font-weight: 700;
   letter-spacing: .02em; color: var(--accent);
 }
 :is(.term-md, .md, .note-body) h6::before {
