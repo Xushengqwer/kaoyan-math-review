@@ -23,6 +23,6 @@ AGENTS.md 原本写给 Codex。Codex 从 2026-10-09 起不用了，其中的工�
 
 ## 其他
 
-- 给 Gemini 的素材包：`node tools/pack.cjs <卡片id> [输出] --only 定义,性质 --deps 1,2`（`--deps` 只带依赖章，Gemini 网页版长文件会被截断）。
+- 给 Gemini 的素材包：`node tools/pack.cjs <卡片id> [输出] --only 定义,性质 --deps 1,2`（`--deps` 只带依赖章，Gemini 网页版长文件会被截断；同一个对话里补发某几个小节用 `--deps none`，不重复带前面几章）。
 - 用户的 Gemini / AI Studio 对话可以用 Claude in Chrome 读（只读，不替用户发消息；历史列表里别的对话不打开、不提）。
 - 章节路线图（思维导图）由 Claude 画：`drafts/<科目>-<章>-mindmap-v<N>.cjs` + `node tools/mindmap.cjs`。

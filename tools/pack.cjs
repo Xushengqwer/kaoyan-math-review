@@ -7,6 +7,7 @@
 //   例：node tools/pack.cjs calc-int-antiderivative
 //   --only：这一章只放列出的小节（按 <!-- section:… --> 记号切），不放决策流、本章总结
 //   --deps：其他章只放列出的几章（按章序号），文件小一些——Gemini 网页版上传长文件会被截断（2026-10-14）
+//   --deps none：不放其他章，只放这一章（同一个对话里补发某几个小节，前面几章已经发过时用）
 //
 // 输出位置：默认 C:\Users\许志火\Downloads\Gemini素材-高等数学第3章.md
 const fs = require("fs");
@@ -47,7 +48,8 @@ main(() => {
   const oi = args.indexOf("--only");
   const only = oi >= 0 ? args.splice(oi, 2)[1].split(/[,，]/) : null;
   const di = args.indexOf("--deps");
-  const deps = di >= 0 ? args.splice(di, 2)[1].split(/[,，]/).map(Number) : null;
+  const depsArg = di >= 0 ? args.splice(di, 2)[1] : null;
+  const deps = depsArg == null ? null : depsArg === "none" ? [] : depsArg.split(/[,，]/).map(Number);
   const [targetId, outArg] = args;
   must(targetId, "用法：node tools/pack.cjs <目标卡id> [输出.md] [--only 定义,性质] [--deps 1,2]");
   const pick = (md) => (only ? onlySections(md, only) : md);
@@ -65,19 +67,24 @@ main(() => {
   const out = [];
   out.push("# " + subjName + " " + chLabel(tch) + " · 素材");
   out.push("");
-  out.push("这是我的考研数学复习网站里" + subjName + "的内容，分两部分：");
-  out.push(deps
-    ? "1. 这一章用到的前面几章（第 " + deps.join("、") + " 章）的教材全文，用来了解哪些知识前面已经有了；"
-    : "1. 其他各章的教材全文，用来了解哪些知识在前面章节已经有了、哪些要到后面才讲；");
-  out.push("2. " + chLabel(tch) + (only ? "的〔" + only.join("〕〔") + "〕：教材和笔记。" : "的全部内容：教材、笔记、决策流、本章总结。"));
-  out.push("");
-  out.push("## 第 1 部分 · " + (deps ? "前面几章的教材" : "其他各章的教材"));
-  out.push("");
-  for (const c of chapters) {
-    if (c.id === tch.id || (deps && !deps.includes(c.order))) continue;
-    for (const it of subj.items.filter((i) => i.chapterId === c.id)) out.push(doc(chLabel(c) + " · 教材 · " + it.title, it.md), "");
+  const part2 = chLabel(tch) + (only ? "的〔" + only.join("〕〔") + "〕：教材和笔记。" : "的全部内容：教材、笔记、决策流、本章总结。");
+  if (deps && !deps.length) {
+    out.push("这是我的考研数学复习网站里" + subjName + "的内容：" + part2);
+  } else {
+    out.push("这是我的考研数学复习网站里" + subjName + "的内容，分两部分：");
+    out.push(deps
+      ? "1. 这一章用到的前面几章（第 " + deps.join("、") + " 章）的教材全文，用来了解哪些知识前面已经有了；"
+      : "1. 其他各章的教材全文，用来了解哪些知识在前面章节已经有了、哪些要到后面才讲；");
+    out.push("2. " + part2);
+    out.push("");
+    out.push("## 第 1 部分 · " + (deps ? "前面几章的教材" : "其他各章的教材"));
+    out.push("");
+    for (const c of chapters) {
+      if (c.id === tch.id || (deps && !deps.includes(c.order))) continue;
+      for (const it of subj.items.filter((i) => i.chapterId === c.id)) out.push(doc(chLabel(c) + " · 教材 · " + it.title, it.md), "");
+    }
   }
-  out.push("## 第 2 部分 · " + chLabel(tch) + (only ? "〔" + only.join("〕〔") + "〕" : "全部内容"));
+  out.push("## " + (deps && !deps.length ? "" : "第 2 部分 · ") + chLabel(tch) + (only ? "〔" + only.join("〕〔") + "〕" : "全部内容"));
   out.push("");
   for (const it of subj.items.filter((i) => i.chapterId === tch.id)) {
     out.push(doc(chLabel(tch) + " · 教材 · " + it.title, pick(it.md)), "");
