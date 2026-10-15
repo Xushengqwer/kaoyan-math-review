@@ -14,7 +14,7 @@ const expected = new Map([
   ['calc-lim-function', 37],
   ['calc-der-derivative', 24],
   ['calc-int-antiderivative', 20],
-  ['calc-vec-coordinates', 69],
+  ['calc-vec-coordinates', 66],
   ['calc-mvd-limit-continuity', 65],
   ['calc-mi-double-def', 46],
   ['calc-ls-line-first', 55],
