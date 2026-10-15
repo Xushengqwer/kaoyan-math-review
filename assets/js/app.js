@@ -1251,7 +1251,10 @@ const App = {
       const hasBook = present(r.book, r.kind), hasNote = present(r.note, r.kind);
       if (!hasBook && !hasNote) return "";
       const s = hasBook ? r.book : r.note;
-      const wide = (!hasBook || !hasNote) && (r.kind === "content" || s.sec === "提示" || (!!model.marked && r.kind === "entry"));
+      // 意义、例题不分两栏（2026-10-15 用户定）：两半都有就上下叠成满格，意义在上、例题在下；只有一半的也占满格
+      const app = [r.book, r.note].some((x) => x && (x.sec === "意义" || x.sec === "例题"));
+      const stack = app && hasBook && hasNote && !r.merged;
+      const wide = (!hasBook || !hasNote) && (app || r.kind === "content" || s.sec === "提示" || (!!model.marked && r.kind === "entry"));
       let continuation = false;
       if (stationOrdered && r.kind === "station") {
         const signature = JSON.stringify([r.book && r.book.title, r.note && r.note.title]);
@@ -1259,7 +1262,7 @@ const App = {
         if (!stationHeads.has(s.station)) stationHeads.set(s.station, signature);
       }
       const stationSection = stationOrdered && r.kind === "section" && ["定义", "性质"].includes(s.sec);
-      const cls = "dual-row kind-" + r.kind + (r.merged ? " is-merged" : wide ? " is-wide" : "")
+      const cls = "dual-row kind-" + r.kind + (r.merged ? " is-merged" : wide ? " is-wide" : stack ? " is-stack" : "")
         + (continuation ? " is-station-continuation" : "") + (stationSection ? " is-station-section" : "");
       if (r.merged) return `<div class="${cls}" data-sec="${escapeHtml(s.sec)}" data-station="${escapeHtml(s.station)}">` +
         `<div class="dual-shared" data-book-sec="${escapeHtml(r.book.sec)}" data-note-sec="${escapeHtml(r.note.sec)}" data-station="${escapeHtml(s.station)}">${r.html}</div></div>`;
