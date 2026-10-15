@@ -43,5 +43,18 @@ const order = Array.from(html3.matchAll(/<h4[^>]*>([\s\S]*?)<\/h4>/g), m => m[1]
   .map(t => (t.trim().match(/^(\d+\. 方向.|例题 \d+)(?=：|（)/) || [])[0]).filter(Boolean);
 assert.deepEqual(order, ['1. 方向一', '例题 1', '2. 方向二', '例题 2'], '第 3 章意义、例题交替排列');
 
+// 右侧目录：题型写法（意义是「#### n.」）的卡，意义 n 下面紧跟例题 n；旧写法（意义是一整张列表）仍分两段
+const railOrder = (id, chapter) => {
+  const item = subjects.flatMap(s => s.items).find(i => i.id === id);
+  const r = site.App.stationRailHtml(item, 'calculus', chapter);
+  return Array.from((typeof r === 'string' ? r : r.body).matchAll(/<li( class="rl-ex")?>[\s\S]*?<span class="rl-tno">([^<]*)<\/span>/g),
+    m => (m[1] ? '例' : '意') + m[2].replace(/^例 /, ''));
+};
+assert.deepEqual(railOrder('calc-int-antiderivative', 'integral'), ['意1', '例1', '意2', '例2'], '第 3 章目录：意义、例题交替');
+const lim = railOrder('calc-lim-function', 'limit');
+assert.deepEqual(lim.slice(0, 4), ['意1', '例1', '例1', '意2'], '第 1 章目录：题型 1 的两道例题挂在意义 1 下面');
+const vec = site.App.stationRailHtml(subjects.flatMap(s => s.items).find(i => i.id === 'calc-vec-coordinates'), 'calculus', 'vector-geometry');
+assert(!/class="rl-ex"/.test(typeof vec === 'string' ? vec : vec.body), '旧写法的章（意义是列表）目录不交替');
+
 dataFiles.forEach((file, i) => assert(dataBefore[i].equals(fs.readFileSync(file)), '数据文件不变：' + file));
 console.log('app-stack ok: ' + stacked + ' 行叠成满格，检查 ' + checked + ' 行意义/例题');

@@ -1637,5 +1637,9 @@ a.rl-mini:hover { box-shadow: inset 0 0 0 1.5px currentColor; }
 .rl-types .rl-items { border-left-color: color-mix(in srgb, var(--meaning) 35%, transparent); }
 .rl-types .rl-sec.ex .rl-items { border-left-color: color-mix(in srgb, var(--example) 35%, transparent); }
 .rl-tno { display: inline-block; min-width: 1.7em; font-size: 12px; font-weight: 600; color: var(--text-3); }
+/* 题型写法：例题 n 紧跟在意义 n 下面，往里缩一格、编号用例题色 */
+.rl-items .rl-ex { padding-left: 12px; }
+.rl-items .rl-ex .rl-tno { min-width: 2.6em; color: var(--example); }
+.rl-sec-head.rl-ex-head { color: var(--example); }
 /* 例题之间的分隔线（---）在对照里落在上一格末尾，不显示；同一格里两道例题之间的照常 */
 .dual-cell hr:last-child { display: none; }

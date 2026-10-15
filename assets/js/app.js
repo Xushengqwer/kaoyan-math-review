@@ -3249,8 +3249,27 @@ const App = {
         const examples = app.rows.note例题 && app.rows.note例题.items || [];
         const exLis = examples.map((x) => `<li>${link("rl-item", "note", "例题", "",
           `<span class="rl-tno">${escapeHtml(x.num)}</span>${mdHtml(x.title, true)}`, x.ord)}</li>`).join("");
-        lists = `<div class="rl-sec meaning">${link("rl-sec-head", "book", "意义", "", `意义<b>${its.length}</b>`)}<ol class="rl-items">${lis}</ol></div>` +
-          (examples.length ? `<div class="rl-sec ex">${link("rl-sec-head", "note", "例题", "", `例题<b>${examples.length}</b>`)}<ol class="rl-items">${exLis}</ol></div>` : "");
+        if (appByType(BookEdits.get(id))) {
+          // 题型写法（意义是「#### n.」，例题号跟着题型号）：意义 n 下面紧跟例题 n，和对照里上下叠的顺序一样（2026-10-15）
+          const exLi = (x) => `<li class="rl-ex">${link("rl-item", "note", "例题", "",
+            `<span class="rl-tno">例 ${escapeHtml(x.num)}</span>${mdHtml(x.title, true)}`, x.ord)}</li>`;
+          const used = new Set();
+          let grp = "";
+          const mixed = its.map((x) => {
+            const g = x.group && x.group !== grp ? `<li class="rl-grp">${mdHtml(x.group, true)}</li>` : "";
+            grp = x.group;
+            const exs = examples.filter((e) => e.num === x.num && !used.has(e));
+            exs.forEach((e) => used.add(e));
+            return g + `<li>${link("rl-item", "book", "意义", "", `<span class="rl-tno">${escapeHtml(x.num)}</span>${mdHtml(x.title, true)}`, x.ord)}</li>` +
+              exs.map(exLi).join("");
+          }).join("") + examples.filter((e) => !used.has(e)).map(exLi).join("");
+          lists = `<div class="rl-sec meaning">${link("rl-sec-head", "book", "意义", "", `意义<b>${its.length}</b>`)}` +
+            (examples.length ? ` · ${link("rl-sec-head rl-ex-head", "note", "例题", "", `例题<b>${examples.length}</b>`)}` : "") +
+            `<ol class="rl-items">${mixed}</ol></div>`;
+        } else {
+          lists = `<div class="rl-sec meaning">${link("rl-sec-head", "book", "意义", "", `意义<b>${its.length}</b>`)}<ol class="rl-items">${lis}</ol></div>` +
+            (examples.length ? `<div class="rl-sec ex">${link("rl-sec-head", "note", "例题", "", `例题<b>${examples.length}</b>`)}<ol class="rl-items">${exLis}</ol></div>` : "");
+        }
       }
       types = `<div class="rl-cap">题型 · ${its.length}</div><div class="rl-st rl-types" data-station="题型">` +
         link("rl-name", "book", "意义", "", `<span class="rl-no">题</span><span class="rl-label">意义与例题</span><span class="rl-sum">${sum}</span>`) +
@@ -3625,7 +3644,12 @@ const App = {
     };
     const scan = (box) => [...box.querySelectorAll("h1, h2, h3, h4, h5, h6, li")].filter(matches);
     const track = node.querySelector(".dual-track");
-    if (track) return [...track.querySelectorAll(`.dual-cell[data-part="${part}"][data-sec="${sec}"]`)].flatMap(scan);
+    // 按格子的意义卡（kind-entry）一格就是一个题型，只认开头的「n. 题型名」标题；
+    // 正文里的「* **1. …**」加粗列表不算条目，否则会错位（第 3 章意义 1、2 正文里都有，2026-10-15）
+    if (track) return [...track.querySelectorAll(`.dual-cell[data-part="${part}"][data-sec="${sec}"]`)].flatMap((cell) => {
+      const all = scan(cell);
+      return sec === "意义" && all.length && /^H[1-6]$/.test(all[0].tagName) && cell.closest(".kind-entry") ? [all[0]] : all;
+    });
     const head = this.tocTarget(node, part, sec, "");
     if (!head) return [];
     if (part === "book") return scan(head);
