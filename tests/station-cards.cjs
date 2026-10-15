@@ -29,7 +29,7 @@ const total = (o, part, sec) => o.blocks.reduce((n, b) => n + (b.rows[part + sec
 const expected = {
   'calc-lim-function':              [6, 13, 14, 10, 14, 0],
   'calc-der-derivative':            [6, 10, 8, 6, 6, 0],  // 保留重构后的六组意义／例题，删除旧条目及提示
-  'calc-int-antiderivative':        [7, 6, 10, 2, 2, 0],  // 2026-10-11 Gemini 重写定义、性质（每站 1～2 张），删分组与提示；10-15 意义、例题按方向重写（方向一、二）
+  'calc-int-antiderivative':        [7, 6, 10, 3, 3, 0],  // 2026-10-11 Gemini 重写定义、性质（每站 1～2 张），删分组与提示；10-15 意义、例题按方向重写（方向一～三）
   'calc-vec-coordinates':           [7, 23, 46, 15, 8, 18],
   'calc-mvd-limit-continuity':      [7, 19, 46, 15, 9, 19],
   'calc-mi-double-def':             [7, 15, 31, 18, 11, 19],
