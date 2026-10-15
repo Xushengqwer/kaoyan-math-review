@@ -82,6 +82,23 @@ assert(ch4.includes('<strong class="lbl">为什么能平移</strong>：'));
 assert.equal(emphasisHtml('<h5><strong>甲</strong>：乙</h5>'), '<h5><strong class="lbl">甲</strong>：乙</h5>');
 assert.equal(mdHtml('**本质**：一句话', true), '<strong>本质</strong>：一句话');
 assert.equal(emphasisHtml('<h5>：乙</h5>'), '<h5>：乙</h5>');
+// 审查找到的几种写法（10-16）：
+// ==…== 跨过冒号的五级标题不拆（拆了 <u> 会跨标签，对照拼不起来，整章渲染中断）
+assert(mdHtml('##### ==行列式：一个数==').includes('<h5><u>行列式：一个数</u></h5>'));
+assert(mdHtml('##### 行列式：==一个数==').includes('<span class="h5-punch"><u>一个数</u></span>'));
+{
+  const id = 'la-det-def-n-order', it = KaoyanData.find(id);
+  const [on, off] = both(() => App.dualTrackModel(id, it.md, Notes.get(id) + '\\n\\n##### ==行列式：一个数==\\n'));
+  assert.equal(on.enabled, off.enabled, '标题整行加重点：对照照常（不抛错）');
+  assert.equal(on.pairs.length, off.pairs.length);
+}
+// 小数不是编号
+assert(!mdHtml('#### 0.5 倍的陷阱').includes('hno'));
+assert(!mdHtml('### 3.14 与圆周率').includes('hno'));
+assert(mdHtml('#### 12. 甲').includes('<span class="hno">12</span>'));
+// 旧卡按标题配对：「**甲**：」的 lbl 也拆回去再比
+assert.equal(unshellHead(mdHtml('#### 1. **甲**：乙').match(/<h4>([\\s\\S]*)<\\/h4>/)[1]), mdHtml('1. **甲**：乙', true));
+assert.equal(unshellHead(mdHtml('#### 例题 1：**换元**：求积分').match(/<h4>([\\s\\S]*)<\\/h4>/)[1]), mdHtml('例题 1：**换元**：求积分', true));
 assert(Object.values(seen).every((n) => n > 0), JSON.stringify(seen));
 console.log('PASS: 外壳只加标签：教材 ' + books + ' 张、笔记 ' + notes + ' 条、对照 ' + duals + ' 张拆回后与原渲染逐字相同 ' + JSON.stringify(seen));
 `, context);

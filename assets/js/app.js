@@ -117,9 +117,10 @@ const EMO_HEAD = "(\\p{Extended_Pictographic}\\uFE0F?)";
 function emphasisHtml(html) {
   const emo = (e) => e.replace(/️/g, "");
   return html
-    .replace(/<h([34])>([ \t]*)(\d+(?:-\d+)?)(\.[ \t]*)([\s\S]*?)<\/h\1>/g,
+    .replace(/<h([34])>([ \t]*)(\d+(?:-\d+)?)(\.(?!\d)[ \t]*)([\s\S]*?)<\/h\1>/g,
       '<h$1>$2<span class="hno">$3</span><span class="hdot">$4</span><span class="httl">$5</span></h$1>')
-    .replace(/<h5>([^<]*?)：([\s\S]*?)<\/h5>/g, (m, topic, punch) => (!topic.trim() || !punch.trim()) ? m
+    // ==…== 这时还是原文（underlineAndUnmask 才换成 <u>）：冒号落在一对 == 中间就不拆，否则 <u> 会跨标签
+    .replace(/<h5>([^<]*?)：([\s\S]*?)<\/h5>/g, (m, topic, punch) => (!topic.trim() || !punch.trim() || (topic.match(/==/g) || []).length % 2) ? m
       : '<h5><span class="h5-topic">' + topic + '</span><span class="h5-colon">：</span><span class="h5-punch">' + punch + "</span></h5>")
     .replace(new RegExp("<li>(<p>)?([ \\t]*)" + EMO_HEAD + "([ \\t]*)(<strong>)?", "gu"), (m, p, sp, e, sp2, strong) =>
       '<li class="li-key" data-emo="' + emo(e) + '">' + (p || "") + sp + '<span class="emo">' + e + "</span>" + sp2 + (strong ? '<strong class="key">' : ""))
@@ -128,9 +129,10 @@ function emphasisHtml(html) {
     .replace(/<strong>((?:(?!<\/?strong>)[\s\S])*?)<\/strong>(?=[：:])/g, '<strong class="lbl">$1</strong>');
 }
 
-// 标题里的编号外壳拆回原样（和不加外壳的渲染比较时用）
+// 标题里的外壳拆回原样（和不加外壳的行内渲染比较时用）：编号外壳，以及「**甲**：」加粗上的 lbl / key
 function unshellHead(inner) {
-  return inner.replace(/^([ \t]*)<span class="hno">([^<]*)<\/span><span class="hdot">([^<]*)<\/span><span class="httl">([\s\S]*)<\/span>$/, "$1$2$3$4");
+  return inner.replace(/^([ \t]*)<span class="hno">([^<]*)<\/span><span class="hdot">([^<]*)<\/span><span class="httl">([\s\S]*)<\/span>$/, "$1$2$3$4")
+    .replace(/<strong class="(?:lbl|key)">/g, "<strong>");
 }
 
 // 只给 Markdown 标题上色：保留原文字、公式和层级，也兼容未加〔〕的例题及小题。
