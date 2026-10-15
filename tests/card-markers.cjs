@@ -46,7 +46,8 @@ assert.equal(m0.enabled, true);
 // 编号按位置：原文里两张都写的「1.」，显示成 1、2；分组、站里各自从 1 起
 same(titlesOf(texts), ['1.甲/1.甲：解释', '2.乙/2.乙：解释', '1.丙/1.丙', '1.丁/1.丁']);
 const html0 = App.dualTrackHtml(m0);
-assert(html0.includes('<h4>2. 乙</h4>'), '显示自动编号');
+// 编号显示在 .hno 徽标里（配色改版的外壳，见 tests/emphasis-shell.cjs）
+assert(html0.includes('<h4><span class="hno">2</span><span class="hdot">. </span><span class="httl">乙</span></h4>'), '显示自动编号');
 assert(!html0.includes('没有这一条'));
 assert(!html0.includes('&lt;!--') && !html0.includes('card:'), '记号不显示');
 assert.equal(m0.pairs.find((p) => p.book.title === '丙').book.group, '一组');
@@ -74,7 +75,7 @@ for (const part of ['book', 'note']) {
 // 标题不写编号也行：显示时补上
 {
   const t = { ...texts, book: texts.book.replace('#### 1. 乙', '#### 乙改了名') };
-  assert(App.dualTrackHtml(model(t)).includes('<h4>2. 乙改了名</h4>'));
+  assert(App.dualTrackHtml(model(t)).includes('<h4><span class="hno">2</span><span class="hdot">. </span><span class="httl">乙改了名</span></h4>'));
   assert.equal(model(t).pairs[1].book.title, '乙改了名');
 }
 assert.equal(site.numberCard('#### 例题 3-2：甲\n\n#### 例题 3：乙', '5', '例题'), '#### 例题 5-2：甲\n\n#### 例题 5：乙');

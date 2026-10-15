@@ -103,7 +103,34 @@ function mdHtml(text, inline) {
     ? marked.parseInline(safe, { gfm: true })
     : marked.parse(safe, { gfm: true, breaks: false });
   html = html.split(B1).join("<strong>").split(B2).join("</strong>");
+  if (!inline) html = emphasisHtml(html);
   return underlineAndUnmask(html, store);
+}
+
+// 配色改版（2026-10-15）：给几类结构包一层可着色的外壳，只加标签和属性、不动一个字（去掉外壳就是原来的 HTML，
+// 见 tests/emphasis-shell.cjs）。在 mdHtml 里公式还是占位符的时候做，拆标题不会拆到公式。
+// - 「#### 1. 标题」（第 3 章性质卡写成「### 1.」，一样）：编号 .hno，「. 」.hdot（视觉上收起），标题 .httl
+// - 「##### 话题：一句话」：.h5-topic / .h5-colon / .h5-punch（冒号前面不含标签时才拆）
+// - 以表情开头的条目、引用块：表情 .emo；条目加 .li-key 和 data-emo（去掉 U+FE0F），紧跟的加粗加 .key
+// - 后面紧跟冒号的加粗：.lbl（「**为什么能平移**：」这类小标签）
+const EMO_HEAD = "(\\p{Extended_Pictographic}\\uFE0F?)";
+function emphasisHtml(html) {
+  const emo = (e) => e.replace(/️/g, "");
+  return html
+    .replace(/<h([34])>([ \t]*)(\d+(?:-\d+)?)(\.[ \t]*)([\s\S]*?)<\/h\1>/g,
+      '<h$1>$2<span class="hno">$3</span><span class="hdot">$4</span><span class="httl">$5</span></h$1>')
+    .replace(/<h5>([^<]*?)：([\s\S]*?)<\/h5>/g, (m, topic, punch) => (!topic.trim() || !punch.trim()) ? m
+      : '<h5><span class="h5-topic">' + topic + '</span><span class="h5-colon">：</span><span class="h5-punch">' + punch + "</span></h5>")
+    .replace(new RegExp("<li>(<p>)?([ \\t]*)" + EMO_HEAD + "([ \\t]*)(<strong>)?", "gu"), (m, p, sp, e, sp2, strong) =>
+      '<li class="li-key" data-emo="' + emo(e) + '">' + (p || "") + sp + '<span class="emo">' + e + "</span>" + sp2 + (strong ? '<strong class="key">' : ""))
+    .replace(new RegExp("<blockquote>(\\s*)<p>([ \\t]*)" + EMO_HEAD, "gu"), (m, sp, sp2, e) =>
+      '<blockquote class="bq-emo" data-emo="' + emo(e) + '">' + sp + "<p>" + sp2 + '<span class="emo">' + e + "</span>")
+    .replace(/<strong>((?:(?!<\/?strong>)[\s\S])*?)<\/strong>(?=[：:])/g, '<strong class="lbl">$1</strong>');
+}
+
+// 标题里的编号外壳拆回原样（和不加外壳的渲染比较时用）
+function unshellHead(inner) {
+  return inner.replace(/^([ \t]*)<span class="hno">([^<]*)<\/span><span class="hdot">([^<]*)<\/span><span class="httl">([\s\S]*)<\/span>$/, "$1$2$3$4");
 }
 
 // 只给 Markdown 标题上色：保留原文字、公式和层级，也兼容未加〔〕的例题及小题。
@@ -588,7 +615,7 @@ function dualSide(raw, html, part, byType) {
     if (s.kind === "group") return text === mdHtml(s.line).trim();
     if (s.kind === "entry") {
       const h = text.match(/^<h4\b[^>]*>([\s\S]*?)<\/h4>$/);
-      return h && h[1] === mdHtml(s.sec === "例题" ? s.line.replace(/^####[ 	]+/, "").trim() : s.num + ". " + s.title, true);
+      return h && unshellHead(h[1]) === mdHtml(s.sec === "例题" ? s.line.replace(/^####[ 	]+/, "").trim() : s.num + ". " + s.title, true);
     }
     return false;
   };

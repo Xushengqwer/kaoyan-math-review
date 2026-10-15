@@ -1,30 +1,47 @@
+/* 配色「晴空多彩」（2026-10-15 用户从三版样稿里选定 A）：不用中性灰，次要文字、边线都带一点蓝紫；
+   每种小节色配一个渐变搭档色（--def-2 …），站卡横幅和卡片编号用这两色的渐变 */
 :root {
-  --bg: #fbfbfd;
+  --bg: #f3f5ff;
   --surface: #ffffff;
-  --sidebar-bg: #f5f5f7;
-  --text: #1d1d1f;
-  --text-2: #515154;
-  --text-3: #86868b;
-  --border: #e6e6eb;
-  --hairline: #f0f0f3;
-  --accent: #0071e3;
-  --accent-soft: #eaf3fd;
-  --note-border: #cfe3f9;
-  --highlight-bg: #fff0ad;
+  --sidebar-bg: linear-gradient(180deg, #ebefff 0%, #f4edff 100%);
+  --text: #141a36;
+  --text-2: #3c4878;
+  --text-3: #6c79ad;
+  --border: #dbe2f7;
+  --hairline: #e7ebfa;
+  --accent: #4f46e5;
+  --accent-soft: #ebeaff;
+  --accent-2: #7c3aed;
+  --note-border: #c9c6fb;
+  --highlight-bg: rgba(255, 208, 0, .5);
 
-  --def: #0068d6;
-  --def-bg: #eaf2fc;
-  --thm: #b4620a;
-  --thm-bg: #fbf0e4;
-  --prp: #197f4e;
-  --prp-bg: #e8f5ee;
-  --tip: #7446c2;
-  --method: #c8364a;
-  --example: #0a7d8a;
-  --meaning: #8550a6;
+  --def: #2563eb;
+  --def-2: #7c3aed;
+  --def-bg: #e6efff;
+  --thm: #ea580c;
+  --thm-2: #e11d48;
+  --thm-bg: #fdeee2;
+  --prp: #059669;
+  --prp-2: #0d9488;
+  --prp-bg: #dcf5ea;
+  --tip: #7c3aed;
+  --tip-2: #4f46e5;
+  --method: #e11d48;
+  --method-2: #db2777;
+  --example: #0891b2;
+  --example-2: #2563eb;
+  --meaning: #9333ea;
+  --meaning-2: #db2777;
 
-  --seal-bg: #ececf0;
-  --seal-text: #1d1d1f;
+  /* 以 🔑💡 / 🚧 / ⚠️ 开头的条目各用一种颜色 */
+  --key-gold: #d97706;
+  --key-warn: #ea580c;
+  --key-red: #dc2626;
+  /* 站卡横幅：渐变两色各掺多少（深色模式压暗，白字才看得清） */
+  --banner-mix: 100%;
+
+  --seal-bg: linear-gradient(135deg, #6366f1, #a855f7);
+  --seal-text: #ffffff;
 
   --pend: #9a5b00;
   --pend-bg: #fff2dd;
@@ -34,8 +51,8 @@
   --r-md: 14px;
   --r-sm: 10px;
 
-  --lift: 0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.05);
-  --lift-hi: 0 2px 6px rgba(0,0,0,.05), 0 12px 32px rgba(0,0,0,.09);
+  --lift: 0 1px 2px rgba(40,50,120,.05), 0 6px 18px rgba(60,70,160,.08);
+  --lift-hi: 0 2px 6px rgba(40,50,120,.06), 0 12px 32px rgba(60,70,160,.12);
 
   --sidebar-w: 282px;
   --topbar-h: 60px;
@@ -46,32 +63,45 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #000000;
-    --surface: #1c1c1e;
-    --sidebar-bg: #141416;
-    --text: #f5f5f7;
-    --text-2: #c7c7cc;
-    --text-3: #8e8e93;
-    --border: #2c2c2e;
-    --hairline: #232325;
-    --accent: #2997ff;
-    --accent-soft: #15263c;
-    --note-border: #24405f;
-    --highlight-bg: #54451c;
+    --bg: #090d1d;
+    --surface: #131932;
+    --sidebar-bg: linear-gradient(180deg, #0e142d 0%, #151131 100%);
+    --text: #eef1ff;
+    --text-2: #b8c1ea;
+    --text-3: #8892c6;
+    --border: #252e57;
+    --hairline: #1b2246;
+    --accent: #8b85ff;
+    --accent-soft: #1e1e4e;
+    --accent-2: #a78bfa;
+    --note-border: #3a3782;
+    --highlight-bg: rgba(250, 204, 21, .3);
 
-    --def: #63aaff;
-    --def-bg: #15263c;
-    --thm: #ff9f0a;
-    --thm-bg: #33240d;
-    --prp: #34d266;
-    --prp-bg: #0f2e1c;
-    --tip: #b595f5;
-    --method: #ff6b81;
-    --example: #3fc5d1;
-    --meaning: #c6a0eb;
+    --def: #6aa3ff;
+    --def-2: #a78bfa;
+    --def-bg: #14244c;
+    --thm: #fb923c;
+    --thm-2: #fb7185;
+    --thm-bg: #33220f;
+    --prp: #34d399;
+    --prp-2: #2dd4bf;
+    --prp-bg: #0d2f25;
+    --tip: #a78bfa;
+    --tip-2: #8b85ff;
+    --method: #fb7185;
+    --method-2: #f472b6;
+    --example: #22d3ee;
+    --example-2: #6aa3ff;
+    --meaning: #c084fc;
+    --meaning-2: #f472b6;
 
-    --seal-bg: #2c2c2e;
-    --seal-text: #f5f5f7;
+    --key-gold: #fbbf24;
+    --key-warn: #fb923c;
+    --key-red: #f87171;
+    --banner-mix: 60%;
+
+    --seal-bg: linear-gradient(135deg, #6366f1, #a855f7);
+    --seal-text: #ffffff;
 
     --pend: #ffbf5c;
     --pend-bg: #3a2a0d;
@@ -678,8 +708,10 @@ button { font: inherit; border: none; background: none; color: inherit; cursor: 
 .entry-statement { font-size: 15.5px; line-height: 2.05; color: var(--text); }
 .entry-statement strong { font-weight: 600; }
 .entry-statement u, .entry-note u, .mynote-body u, .mynote-preview u {
-  text-decoration: none; color: inherit; background: var(--highlight-bg);
-  border-radius: 3px; padding: .06em .12em;
+  /* 荧光笔划下半截（配色 A） */
+  text-decoration: none; color: inherit; font-weight: 600;
+  background: linear-gradient(transparent 50%, var(--highlight-bg) 50%);
+  border-radius: 2px; padding: 0 .12em;
   -webkit-box-decoration-break: clone; box-decoration-break: clone;
 }
 /* 公式里的 KaTeX \underline 保持现有下划线样式。 */
@@ -981,10 +1013,16 @@ body.mynote-zoomed { overflow: hidden; }
 .md hr { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
 /* 引用块：笔记和教材同一个样子（教材原来是浏览器默认的左右各缩进 40px） */
 .md blockquote, .term-md blockquote, .entry-note .note-body blockquote {
-  margin: 12px 0; padding: 9px 14px;
-  border-left: 3px solid var(--text-3); border-radius: 0 8px 8px 0;
-  background: color-mix(in srgb, var(--text) 5%, transparent);
-  color: var(--text-2);
+  margin: 12px 0; padding: 12px 16px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--dual-color, var(--accent)) 6%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dual-color, var(--accent)) 18%, transparent);
+  color: var(--text);
+}
+/* 以 💡 开头的引用块（本站定位这类）：暖黄提示框 */
+:is(.md, .term-md, .entry-note .note-body) blockquote.bq-emo[data-emo="💡"] {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--key-gold) 13%, var(--surface)), color-mix(in srgb, var(--key-gold) 4%, var(--surface)));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--key-gold) 24%, transparent);
 }
 .md blockquote p, .term-md blockquote p, .entry-note .note-body blockquote p { margin: 0; }
 .md code {
@@ -1643,3 +1681,197 @@ a.rl-mini:hover { box-shadow: inset 0 0 0 1.5px currentColor; }
 .rl-sec-head.rl-ex-head { color: var(--example); }
 /* 例题之间的分隔线（---）在对照里落在上一格末尾，不显示；同一格里两道例题之间的照常 */
 .dual-cell hr:last-child { display: none; }
+/* ================= 配色改版「晴空多彩」（2026-10-15，用户从 A/B/C 三版样稿里选了 A） =================
+   颜色变量在文件开头的 :root。这里是结构上的改动：站卡做成整条渐变横幅、小卡片编号做成徽标、
+   「##### 话题：一句话」的那句话放大、以表情开头的条目加底色、小标签着色、图标。
+   外壳（.hno .h5-topic .li-key .emo .lbl …）由 app.js 的 emphasisHtml 在渲染时加，只包标签、不改字。 */
+
+/* 图标：Lucide 线条图标（ISC 许可），当 mask 用，颜色跟 currentColor / 背景色走 */
+:root {
+  --ic-book: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M2%203h6a4%204%200%200%201%204%204v14a3%203%200%200%200-3-3H2z%22%2F%3E%3Cpath%20d%3D%22M22%203h-6a4%204%200%200%200-4%204v14a3%203%200%200%201%203-3h7z%22%2F%3E%3C%2Fsvg%3E");
+  --ic-pen: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M13.4%202H6a2%202%200%200%200-2%202v16a2%202%200%200%200%202%202h12a2%202%200%200%200%202-2v-7.4%22%2F%3E%3Cpath%20d%3D%22M2%206h4%22%2F%3E%3Cpath%20d%3D%22M2%2010h4%22%2F%3E%3Cpath%20d%3D%22M2%2014h4%22%2F%3E%3Cpath%20d%3D%22M2%2018h4%22%2F%3E%3Cpath%20d%3D%22M21.378%205.626a1%201%200%201%200-3.004-3.004l-5.01%205.012a2%202%200%200%200-.506.854l-.837%202.87a.5.5%200%200%200%20.62.62l2.87-.837a2%202%200%200%200%20.854-.506z%22%2F%3E%3C%2Fsvg%3E");
+  --ic-edit: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M21.174%206.812a1%201%200%200%200-3.986-3.987L3.842%2016.174a2%202%200%200%200-.5.83l-1.321%204.352a.5.5%200%200%200%20.623.622l4.353-1.32a2%202%200%200%200%20.83-.497z%22%2F%3E%3Cpath%20d%3D%22m15%205%204%204%22%2F%3E%3C%2Fsvg%3E");
+  --ic-check: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%2210%22%2F%3E%3Cpath%20d%3D%22m9%2012%202%202%204-4%22%2F%3E%3C%2Fsvg%3E");
+  --ic-bookmark: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m19%2021-7-4-7%204V5a2%202%200%200%201%202-2h10a2%202%200%200%201%202%202v16z%22%2F%3E%3C%2Fsvg%3E");
+  --ic-layers: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M12.83%202.18a2%202%200%200%200-1.66%200L2.6%206.08a1%201%200%200%200%200%201.83l8.58%203.91a2%202%200%200%200%201.66%200l8.58-3.9a1%201%200%200%200%200-1.83Z%22%2F%3E%3Cpath%20d%3D%22m22%2017.65-9.17%204.16a2%202%200%200%201-1.66%200L2%2017.65%22%2F%3E%3Cpath%20d%3D%22m22%2012.65-9.17%204.16a2%202%200%200%201-1.66%200L2%2012.65%22%2F%3E%3C%2Fsvg%3E");
+  --ic-compass: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%222.2%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2212%22%20cy%3D%2212%22%20r%3D%2210%22%2F%3E%3Cpath%20d%3D%22m16.24%207.76-1.804%205.411a2%202%200%200%201-1.265%201.265L7.76%2016.24l1.804-5.411a2%202%200%200%201%201.265-1.265z%22%2F%3E%3C%2Fsvg%3E");
+  --dual-color: var(--accent);
+  --dual-color-2: var(--accent-2);
+}
+.dual-row[data-sec="定义"], .dual-cell[data-sec="定义"] { --dual-color-2: var(--def-2); }
+.dual-row[data-sec="定理"], .dual-cell[data-sec="定理"] { --dual-color-2: var(--thm-2); }
+.dual-row[data-sec="性质"], .dual-cell[data-sec="性质"] { --dual-color-2: var(--prp-2); }
+.dual-row[data-sec="方法"], .dual-cell[data-sec="方法"] { --dual-color-2: var(--method-2); }
+.dual-row[data-sec="意义"], .dual-cell[data-sec="意义"] { --dual-color-2: var(--meaning-2); }
+.dual-row[data-sec="例题"], .dual-cell[data-sec="例题"] { --dual-color-2: var(--example-2); }
+.dual-row[data-sec="提示"], .dual-cell[data-sec="提示"] { --dual-color-2: var(--tip-2); }
+
+/* 侧栏、章头、右侧目录把手 */
+.sidebar { border-right: 0; }
+.nav-chapter.active, .nav-overview-link.active {
+  color: #fff; background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+.nav-chapter.active .badge { color: rgba(255, 255, 255, .82); }
+.side-search input { box-shadow: inset 0 0 0 1px var(--border); }
+.page-title { font-weight: 800; }
+.page-title-no {
+  padding: 5px 11px; border-radius: 11px; color: #fff; font-weight: 800;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+.page-sub { color: var(--text-2); font-weight: 500; }
+.page-lead b { color: var(--accent); }
+.result-type.summary { color: var(--seal-text); }
+.rail-tab { display: flex; align-items: center; gap: 8px; color: #fff; background: linear-gradient(180deg, var(--accent), var(--accent-2)); }
+.rail-tab:hover { color: #fff; filter: brightness(1.08); }
+.rail-tab::before {
+  content: ""; width: 14px; height: 14px; flex: none; background: currentColor;
+  -webkit-mask: var(--ic-layers) center / contain no-repeat; mask: var(--ic-layers) center / contain no-repeat;
+}
+
+/* 小卡片：4px 色边、带颜色的柔和阴影；笔记格子顶上一抹底色 */
+.dual-track {
+  --dual-edge: 20%;
+  --dual-shadow: 0 1px 2px rgba(30, 40, 100, .05), 0 12px 28px -14px color-mix(in srgb, var(--dual-color) 45%, transparent);
+}
+@media (prefers-color-scheme: dark) {
+  .dual-track { --dual-edge: 34%; --dual-shadow: 0 2px 8px rgba(0, 0, 0, .25), 0 12px 28px -14px rgba(0, 0, 0, .5); }
+}
+.dual-cell:not(.dual-missing):not(.dual-empty) { border-radius: 16px; border-left-width: 4px; }
+.dual-cell.dual-note:not(.dual-missing):not(.dual-empty) {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--dual-color) 5%, var(--surface)), var(--surface) 160px);
+}
+
+/* 站卡：整条渐变横幅，白字，右边一枚罗盘水印 */
+.dual-row.kind-station .dual-shared {
+  position: relative; overflow: hidden; padding: 20px 22px 18px; border: 0; border-radius: 20px;
+  background: linear-gradient(118deg, color-mix(in srgb, var(--dual-color) var(--banner-mix), #0b1030) 0%,
+    color-mix(in srgb, var(--dual-color-2) var(--banner-mix), #0b1030) 100%);
+  box-shadow: 0 16px 32px -16px color-mix(in srgb, var(--dual-color) 80%, transparent);
+}
+.dual-row.kind-station .dual-shared > * { position: relative; z-index: 1; }
+.dual-row.kind-station .dual-shared::after {
+  content: ""; position: absolute; z-index: 0; right: 18px; top: 50%; width: 96px; height: 96px;
+  transform: translateY(-50%) rotate(-8deg); pointer-events: none;
+  background: rgba(255, 255, 255, .16);
+  -webkit-mask: var(--ic-compass) center / contain no-repeat; mask: var(--ic-compass) center / contain no-repeat;
+}
+.dual-row.kind-station :is(.station-no, .station-name) { color: #fff; }
+.dual-row.kind-station .station-no { font-size: 28px; text-shadow: 0 2px 10px rgba(0, 0, 0, .15); }
+.dual-row.kind-station .station-name { font-size: 23px; font-weight: 800; letter-spacing: .01em; }
+.dual-row.kind-station .station-story { color: rgba(255, 255, 255, .88); }
+.dual-row.kind-station .st-grp { color: rgba(255, 255, 255, .78); }
+.dual-row.kind-station .st-label {
+  display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px 3px 8px; border-radius: 999px;
+  color: #fff; background: rgba(255, 255, 255, .22);
+}
+.dual-row.kind-station .st-label::before {
+  content: ""; width: 13px; height: 13px; flex: none; background: currentColor;
+  -webkit-mask: var(--ic-bookmark) center / contain no-repeat; mask: var(--ic-bookmark) center / contain no-repeat;
+}
+.dual-row.kind-station .st-chip {
+  --chip-color: #fff; color: #fff; font-weight: 600;
+  background: rgba(255, 255, 255, .14); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .38);
+}
+.dual-row.kind-station .st-chip::before { background: #fff; box-shadow: 0 0 0 3px rgba(255, 255, 255, .25); }
+.dual-row.kind-station .st-chip:hover { color: #fff; background: rgba(255, 255, 255, .28); }
+.dual-row.kind-station .st-chip:focus-visible { outline-color: #fff; }
+@media (max-width: 720px) {
+  .dual-row.kind-station .dual-shared { padding: 16px 16px 14px; }
+  .dual-row.kind-station .dual-shared::after { width: 72px; height: 72px; right: 10px; }
+  .dual-row.kind-station .station-name { font-size: 20px; }
+}
+
+/* 小卡片顶上的工具行：左边「教材 / 笔记」带图标，右边「仓库版」「编辑」带图标、着色 */
+.cell-tools > .dual-label { margin-right: auto; }
+.dual-book > .cell-tools::before {
+  content: "教材"; margin-right: auto;
+  display: inline-flex; align-items: center; padding: 3px 10px 3px 27px; border-radius: 999px;
+  font-size: 11.5px; font-weight: 800; line-height: 1.6; letter-spacing: .06em;
+  color: var(--dual-color); background: color-mix(in srgb, var(--dual-color) 11%, var(--surface));
+}
+.dual-book > .cell-tools::after {
+  content: ""; position: absolute; left: 10px; top: 50%; width: 13px; height: 13px; transform: translateY(-50%);
+  background: var(--dual-color);
+  -webkit-mask: var(--ic-book) center / contain no-repeat; mask: var(--ic-book) center / contain no-repeat;
+}
+.dual-label {
+  padding: 3px 10px 3px 9px; font-size: 11.5px; font-weight: 800; letter-spacing: .06em;
+  color: var(--dual-color); background: color-mix(in srgb, var(--dual-color) 11%, var(--surface));
+}
+.dual-label::before {
+  flex: 0 0 13px; width: 13px; height: 13px; border-radius: 0; background: currentColor;
+  -webkit-mask: var(--ic-pen) center / contain no-repeat; mask: var(--ic-pen) center / contain no-repeat;
+}
+.cell-state.repo, .cell-edit { display: inline-flex; align-items: center; gap: 4px; }
+.cell-state.repo { font-weight: 600; color: var(--prp); background: color-mix(in srgb, var(--prp) 11%, var(--surface)); }
+.cell-state.repo::before, .cell-edit::before {
+  content: ""; width: 12px; height: 12px; flex: none; background: currentColor;
+  -webkit-mask: var(--ic-check) center / contain no-repeat; mask: var(--ic-check) center / contain no-repeat;
+}
+.cell-edit { font-weight: 600; color: var(--accent); background: var(--accent-soft); }
+.cell-edit::before { -webkit-mask-image: var(--ic-edit); mask-image: var(--ic-edit); }
+.cell-edit:hover { color: #fff; background: var(--accent); }
+.cell-more { color: var(--accent); }
+
+/* 卡片标题「1. 向量与坐标」：编号做成渐变徽标（第 3 章性质卡的标题是三级，一样处理） */
+.dual-row.kind-entry :is(.term-md, .mynote-body) > :is(h3, h4):first-child {
+  display: flex; align-items: center; gap: 10px; margin: 0 0 12px;
+  font-size: 18px; font-weight: 800; line-height: 1.5; letter-spacing: -.01em; color: var(--text); padding-bottom: 12px;
+  border-bottom: 2px solid color-mix(in srgb, var(--dual-color) 16%, transparent);
+}
+.hno {
+  display: inline-grid; place-items: center; min-width: 1.6em; height: 1.6em; padding: 0 .4em; margin-right: .45em;
+  border-radius: .5em; vertical-align: .05em; font-size: .82em; font-weight: 800; line-height: 1; color: #fff;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--dual-color) var(--banner-mix), #0b1030),
+    color-mix(in srgb, var(--dual-color-2) var(--banner-mix), #0b1030));
+  box-shadow: 0 6px 12px -6px color-mix(in srgb, var(--dual-color) 80%, transparent);
+}
+.dual-row.kind-entry :is(h3, h4):first-child > .hno { flex: none; margin-right: 0; font-size: 14px; min-width: 28px; height: 28px; padding: 0 7px; border-radius: 9px; }
+/* 编号后面的「. 」视觉上收起，复制、朗读仍在 */
+.hdot, .h5-colon {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* 五级标题：单独一个话题 → 色条 + 彩色字；「话题：一句话」→ 话题做成小标签，那句话放大加粗 */
+:is(.term-md, .md) h5 { margin: 20px 0 8px; font-size: 14px; font-weight: 800; line-height: 1.5; color: var(--dual-color); }
+:is(.term-md, .md) h5:not(:has(> .h5-topic)) { display: flex; align-items: center; gap: 8px; }
+:is(.term-md, .md) h5:not(:has(> .h5-topic))::before {
+  content: ""; flex: none; width: 4px; height: 15px; border-radius: 2px;
+  background: linear-gradient(var(--dual-color), var(--dual-color-2));
+}
+:is(.term-md, .md) h5:has(> .h5-topic) { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 10px; row-gap: 4px; position: relative; }
+.h5-topic {
+  padding: 2px 11px; border-radius: 999px; font-size: 12.5px; color: var(--dual-color);
+  background: color-mix(in srgb, var(--dual-color) 12%, var(--surface));
+}
+.h5-punch { font-size: 16.5px; font-weight: 800; letter-spacing: .01em; color: var(--text); }
+:is(.term-md, .md) h5 :is(.h5-topic, .h5-punch) .katex { font-weight: 400; }
+
+/* 以表情开头的条目：表情放进圆角小方块；🎯🔑💡🚧⚠️ 这几种整条加底色，开头那句加大 */
+li.li-key { --k: var(--dual-color); }
+li.li-key[data-emo="🔑"], li.li-key[data-emo="💡"] { --k: var(--key-gold); }
+li.li-key[data-emo="🚧"] { --k: var(--key-warn); }
+li.li-key[data-emo="⚠"] { --k: var(--key-red); }
+.li-key > .emo, .li-key > p:first-child > .emo, .bq-emo > p:first-child > .emo {
+  display: inline-grid; place-items: center; width: 1.75em; height: 1.75em; margin-right: .35em;
+  border-radius: .55em; font-size: 14px; line-height: 1; vertical-align: -.35em;
+  background: color-mix(in srgb, var(--k, var(--key-gold)) 16%, var(--surface));
+}
+li.li-key:is([data-emo="🎯"], [data-emo="🔑"], [data-emo="💡"], [data-emo="🚧"], [data-emo="⚠"]) {
+  list-style: none; margin: 10px 0 10px -22px; padding: 10px 14px; border-radius: 14px;
+  background: color-mix(in srgb, var(--k) 7%, var(--surface));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--k) 20%, transparent);
+}
+li li.li-key:is([data-emo="🎯"], [data-emo="🔑"], [data-emo="💡"], [data-emo="🚧"], [data-emo="⚠"]) { margin-left: -20px; padding: 6px 12px; }
+li.li-key:is([data-emo="🎯"], [data-emo="🔑"], [data-emo="💡"], [data-emo="🚧"], [data-emo="⚠"]) > :is(strong.key, p:first-child > strong.key) {
+  font-size: 16.5px; font-weight: 800; color: color-mix(in srgb, var(--k) 78%, var(--text));
+}
+li li.li-key:is([data-emo="🎯"], [data-emo="🔑"], [data-emo="💡"], [data-emo="🚧"], [data-emo="⚠"]) > :is(strong.key, p:first-child > strong.key) { font-size: 15px; }
+
+/* 加粗：「**小标签**：」着小节色；其余加粗更重 */
+:is(.term-md, .md, .entry-statement, .note-body) strong.lbl { font-weight: 800; color: var(--dual-color); }
+:is(.term-md, .md, .entry-statement, .note-body) strong:not(.lbl):not(.key) { font-weight: 800; }
+.term-md li::marker, .md li::marker, .entry-statement li::marker { color: var(--dual-color); }
