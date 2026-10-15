@@ -41,7 +41,7 @@ const ch3 = subjects.flatMap(s => s.items).find(i => i.id === 'calc-int-antideri
 const html3 = site.App.dualTrackHtml(site.App.dualTrackModel(ch3.id, ch3.md, notes[ch3.id]));
 const order = Array.from(html3.matchAll(/<h4[^>]*>([\s\S]*?)<\/h4>/g), m => m[1].replace(/<[^>]+>/g, ''))
   .map(t => (t.trim().match(/^(\d+\. 方向.|例题 \d+)(?=：|（)/) || [])[0]).filter(Boolean);
-assert.deepEqual(order, ['1. 方向一', '例题 1', '2. 方向二', '例题 2', '3. 方向三', '例题 3'], '第 3 章意义、例题交替排列');
+assert.deepEqual(order, ['1. 方向一', '例题 1', '2. 方向二', '例题 2', '3. 方向三', '例题 3', '4. 方向四', '例题 4'], '第 3 章意义、例题交替排列');
 
 // 右侧目录：题型写法（意义是「#### n.」）的卡，意义 n 下面紧跟例题 n；旧写法（意义是一整张列表）仍分两段
 const railOrder = (id, chapter) => {
@@ -50,7 +50,7 @@ const railOrder = (id, chapter) => {
   return Array.from((typeof r === 'string' ? r : r.body).matchAll(/<li( class="rl-ex")?>[\s\S]*?<span class="rl-tno">([^<]*)<\/span>/g),
     m => (m[1] ? '例' : '意') + m[2].replace(/^例 /, ''));
 };
-assert.deepEqual(railOrder('calc-int-antiderivative', 'integral'), ['意1', '例1', '意2', '例2', '意3', '例3'], '第 3 章目录：意义、例题交替');
+assert.deepEqual(railOrder('calc-int-antiderivative', 'integral'), ['意1', '例1', '意2', '例2', '意3', '例3', '意4', '例4'], '第 3 章目录：意义、例题交替');
 const lim = railOrder('calc-lim-function', 'limit');
 assert.deepEqual(lim.slice(0, 4), ['意1', '例1', '例1', '意2'], '第 1 章目录：题型 1 的两道例题挂在意义 1 下面');
 const vec = site.App.stationRailHtml(subjects.flatMap(s => s.items).find(i => i.id === 'calc-vec-coordinates'), 'calculus', 'vector-geometry');

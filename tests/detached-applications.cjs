@@ -14,7 +14,7 @@ site.App.subjects = subjects;
 const expectedCounts = new Map([
   ['calc-lim-function', [10, 14]],
   ['calc-der-derivative', [6, 6]],
-  ['calc-int-antiderivative', [3, 3]],
+  ['calc-int-antiderivative', [4, 4]],
   ['calc-vec-coordinates', [15, 8]],
   ['calc-mvd-limit-continuity', [15, 9]],
   ['calc-mi-double-def', [18, 11]],
