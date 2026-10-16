@@ -15,7 +15,7 @@ registerSuperseded({
     "calc-ls-line-first": ["242o6v78rc2","1qbmmz3b8qa"],
     "calc-mi-double-def": ["2bykbr3gy8v","1luryt5z9r5"],
     "calc-mvd-limit-continuity": ["1n35auteskm","20pyhrddszv"],
-    "calc-vec-coordinates": ["yl71crhza1","20ykrg8h4lw","11tr2mpbhnz","1srh7gdqm88","2318t3jkz8z","1a5ddoj9pjq","137i4yf3ovd","23y3cay10em","164vua422vo"],
+    "calc-vec-coordinates": ["yl71crhza1","20ykrg8h4lw","11tr2mpbhnz","1srh7gdqm88","2318t3jkz8z","1a5ddoj9pjq","137i4yf3ovd","23y3cay10em","164vua422vo","1859winxv2x"],
     "calc-int-antiderivative": ["ziuyiiblwo","13mz925uazn","9th4wuvm16","1tu4apbvrsi","21tcrvqzhpp","1dqvibof5cn","1bgw8w0md99","1xfq9i3vxje","1rgrk4k7pto","1jmpaxoryqp","1q2vbdims4w","1l9oysb4rm2","29ift34sekr","hf3aitf8bp","cuj82cfn53","ac337zm7rp","23lpntlq3t","1divydewi6r","2abq7zufs5a"],
     "calc-der-derivative": ["12dtznb396p","1kk3sgdq8kg","6bqvyf9wwi","1yjughmv5w5","1y67dgcbc1n","1gms36wl0z1","urw7jfg5z8","2ee1kz0fm1x","1lrpr92bfml","27ghuz9v2jn","16cotcoq0bl","15sgzm1fxeu","cnaesh4jaf","1mot3exkcai","1adxjn2pend","91d3v2ureg","1idaslqva3l","15ogwlkjgts","qdf2lezmfv","1ij89nisf4y","1yr84rjevfi","1ybevdu3an5","1lrbm7rp14z","1im2m22xzl7","16wcql5mfqd","1pj7pym5a4v","24xean31npa","3je8b2ecea"],
     "ch:calculus/limit": ["1lnvonnfhze","1mmz58gutdj"],
