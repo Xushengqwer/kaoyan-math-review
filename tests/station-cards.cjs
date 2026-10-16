@@ -30,7 +30,7 @@ const expected = {
   'calc-lim-function':              [6, 13, 14, 10, 14, 0],
   'calc-der-derivative':            [6, 10, 8, 6, 6, 0],  // 保留重构后的六组意义／例题，删除旧条目及提示
   'calc-int-antiderivative':        [7, 6, 10, 4, 4, 0],  // 2026-10-11 Gemini 重写定义、性质（每站 1～2 张），删分组与提示；10-15 意义、例题按四个方向重写
-  'calc-vec-coordinates':           [7, 20, 35, 15, 8, 18],  // 2026-10-15/16 Gemini 重写：①站定义 5 → 2、性质 4 → 2；②站性质 12 → 3（去掉分组）
+  'calc-vec-coordinates':           [7, 20, 29, 15, 8, 18],  // 2026-10-15/16 Gemini 重写：①站定义 5 → 2、性质 4 → 2；②站性质 12 → 3；③站性质 9 → 3（去掉分组）
   'calc-mvd-limit-continuity':      [7, 19, 46, 15, 9, 19],
   'calc-mi-double-def':             [7, 15, 31, 18, 11, 19],
   'calc-ls-line-first': [7,16,39,20,10,18],
