@@ -1,4 +1,4 @@
-// 生成给 Antigravity 审稿 / 写稿用的只读镜像：全部章节的可读 markdown + 规矩文档 + 交稿文件夹。
+// 生成给 Antigravity（Gemini 写稿）用的只读镜像：全部章节的可读 markdown + 规矩文档 + 交稿文件夹。
 // 内容取 git 的某一版（默认 HEAD，就是推送上线的那一版），不带工作区里没提交的改动。
 // 每次推送后跑一次（CLAUDE.md「提交导出的固定步骤」第 5 条）。
 //
@@ -7,13 +7,14 @@
 //   默认目录：E:\AI_lunwen\kaoyan-mirror（仓库旁边，路径全是英文，Antigravity 打开不出问题）
 //
 // 镜像里：
-//   README.md      给 Antigravity 的说明（docs/mirror-readme.md）
+//   README.md      给 Gemini 的说明（docs/mirror-readme.md）
 //   章节/          每章一个文件：教材 + 笔记（含意义、例题、提示）+ 决策流 + 本章总结，卡片记号行保留
 //   规矩/          学习方法、内容组织原则、网站排版规则、进度（只读）
 //   共同维护/      设计口味、写作格式要求：以镜像里这份为准，用户和 Antigravity 可以改；
 //                  没有就从仓库 docs/ 抄一份，和仓库工作区那份不一样就抄回仓库（要提交，git 里留底）
 //   待提交/        交稿文件放这里；提交后挪进 待提交/已提交/
-// 重新生成时只删 README.md、章节/、规矩/ 再写；共同维护/、待提交/ 从不删。目录里要有 .kaoyan-mirror 才会删东西。
+//   审稿意见/      Claude Code 审出问题时写的意见（和交稿文件同名），审过的版本/ 里是审过的那一版
+// 重新生成时只删 README.md、章节/、规矩/ 再写；共同维护/、待提交/、审稿意见/ 从不删。目录里要有 .kaoyan-mirror 才会删东西。
 const fs = require("fs");
 const path = require("path");
 const { main, must, REPO, read, gitShow, loadSubjects, loadNotes } = require("./lib.cjs");
@@ -112,6 +113,7 @@ function write(dir, files, hash) {
     for (const name of ["README.md", "章节", "规矩"]) fs.rmSync(path.join(dir, name), { recursive: true, force: true });
   }
   fs.mkdirSync(path.join(dir, "待提交", "已提交"), { recursive: true });
+  fs.mkdirSync(path.join(dir, "审稿意见"), { recursive: true });
   fs.writeFileSync(path.join(dir, MARK), "tools/mirror.cjs 生成的只读镜像；当前版本 " + hash + "\n", "utf8");
   for (const [rel, text] of files) {
     fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });
