@@ -93,6 +93,8 @@
 | `node tools/test-all.cjs` | 全部测试（`tests/*.cjs`）+ 全站体检，提交前必跑 |
 | `node tools/wait-live.cjs` | 推送后等到线上缓存版本号等于本地的，确认已上线 |
 | `node tools/preview.cjs <输出.html> "<标题>" note\|book <草稿.md> "<小标题>" ...` | 生成草稿预览页（公式预渲染，可离线打开） |
+| `node tools/mirror.cjs [镜像目录] [--rev HEAD\|work]` | 生成给 Antigravity 的只读镜像（默认 `E:\AI_lunwen\kaoyan-mirror`），推送后跑 |
+| `node tools/apply-handoff.cjs <交稿.md> [--write] [--id xxxx]` | 接 Antigravity 的交稿（追加意义例题 / 替换卡）：查格式、存档、接到正确位置、写入；不加 `--write` 只预览 |
 | `node tools/mindmap.cjs <内容.cjs> <输出.webp>` | 章节路线图（思维导图）由 Claude 用它画：内容文件在 `drafts/`，本机 Edge 截图、ffmpeg 转 webp |
 
 草稿读入时只做三件事：去 BOM、CRLF 统一成 LF、去掉末尾空白。
