@@ -68,7 +68,7 @@ function css(p) {
     const o = mix(p.out[0], p.out[1], t), n = mix(p.inn[0], p.inn[1], t);
     r.push(`.o${i}{fill:${o};stroke:${o}}.i${i}{fill:${n};stroke:${n}}`);
   }
-  r.push(`.pl{fill:${p.plane};fill-opacity:${p.planeOp}}.ple{stroke:${p.planeEdge};stroke-opacity:.7}`);
+  r.push(`.rg{fill:${p.k2};stroke:none}.pl{fill:${p.plane};fill-opacity:${p.planeOp}}.ple{stroke:${p.planeEdge};stroke-opacity:.7}`);
   r.push(`.ax{stroke:${p.ink}}.axa{fill:${p.ink}}.ct,.bd{stroke:${p.contour}}.ms{stroke:${p.mesh}}`);
   r.push(`text{fill:${p.text}}.lead{stroke:${p.ink}}.bar{stroke:${p.text}}`);
   for (const k of ["k1", "k2", "k3", "k4", "k5"]) r.push(`path.${k}{stroke:${p[k]}}.${k}f{fill:${p[k]}}text.${k}{fill:${p[k]}}`);
@@ -355,7 +355,10 @@ function build(fig) {
   const all2 = [];           // 拟合范围
 
   const surfaces = (fig.surfaces || []).map((S0) => {
-    const S = { contour: true, boundary: true, out: 1, ...S0 };
+    // region: true → 平面上的一块区域（如投影区域 D_xy），淡绿色半透明、不分明暗、不画轮廓；
+    // alpha: 0~1 → 半透明曲面（看得见后面的交线）；occlude: false → 不挡线；ramp: "o" | "i" → 整张固定用蓝 / 紫（两张面好分）
+    const S = { contour: !S0.region, boundary: !S0.region, out: 1, ...S0 };
+    const alpha = S.region ? (S.alpha ?? 0.2) : S.alpha;
     const [nu, nv] = S.fill || [48, 24];
     const probe = [0, 0.37, 1].map((t) => S.v[0] + (S.v[1] - S.v[0]) * t);
     if (S.wrapU === undefined) S.wrapU = probe.every((v) => nearly(S.f(S.u[0], v), S.f(S.u[1], v)));
@@ -369,16 +372,18 @@ function build(fig) {
       const facing = dot(n, cam.V);
       const nl = facing >= 0 ? n : mul(n, -1);
       const lam = max(0, dot(nl, cam.L));
-      const shade = min(SHADES - 1, max(0, round((0.18 + 0.82 * Math.pow(lam, 0.85)) * (SHADES - 1))));
+      let shade = min(SHADES - 1, max(0, round((0.18 + 0.82 * Math.pow(lam, 0.85)) * (SHADES - 1))));
+      // 半透明的面看不出细的明暗差，档位放粗（每 3 档并一档），相邻面片能合成一条路径，文件小一半
+      if (alpha !== undefined) shade = min(SHADES - 1, round(shade / 3) * 3);
       const c2 = [Pc[i][j], Pc[i + 1][j], Pc[i + 1][j + 1], Pc[i][j + 1]];
       const dep = (c2[0][2] + c2[1][2] + c2[2][2] + c2[3][2]) / 4;
-      polys.push({ d: dep, pts: c2, cls: (facing >= 0 ? "o" : "i") + shade });
+      polys.push({ d: dep, pts: c2, cls: S.region ? "rg" : (S.ramp || (facing >= 0 ? "o" : "i")) + shade, alpha, crisp: alpha !== undefined });
     }
     // 遮挡网格（更细）
     const [ou, ov] = S.occ || [nu * 2, nv * 2];
     const GO = grid(S, ou, ov);
     const Oc = GO.P.map((row) => row.map(cam.p));
-    for (let i = 0; i < ou; i++) for (let j = 0; j < ov; j++) {
+    if (S.occlude !== false) for (let i = 0; i < ou; i++) for (let j = 0; j < ov; j++) {
       tris.push([Oc[i][j], Oc[i + 1][j], Oc[i + 1][j + 1]], [Oc[i][j], Oc[i + 1][j + 1], Oc[i][j + 1]]);
     }
     Oc.forEach((row) => row.forEach((p) => all2.push(p)));
@@ -475,7 +480,9 @@ function build(fig) {
   const eqBox = fig.eq ? layoutMath(parseMath(fig.eq), 22) : null;
   const top = titleBox ? max(titleBox.asc, eqBox ? eqBox.asc : 0) + max(titleBox.desc, eqBox ? eqBox.desc : 0) + 30 : 0;
   const caps = [].concat(fig.caption || []).map((c) => layoutLabel(c, 19));
-  const capLine = 19 * 1.45, capH = caps.length ? caps.length * capLine + 8 : 0;
+  // 每行图注的高度按实际排版算（有分数的行更高），行距 6
+  const capRow = (c) => max(c.asc, 19 * 0.8) + max(c.desc, 19 * 0.25) + 6;
+  const capH = caps.length ? caps.reduce((a, c) => a + capRow(c), 0) + 8 : 0;
   const availW = W - pad[0] - pad[2], availH = maxH - top - capH - pad[1] - pad[3];
   const extents = (s) => {
     let x0 = bx0 * s, x1 = bx1 * s, y0 = -by1 * s, y1 = -by0 * s;
@@ -485,8 +492,11 @@ function build(fig) {
     });
     return { x0, x1, y0, y1 };
   };
-  let s = min(availW / (bx1 - bx0), availH / (by1 - by0));
-  for (let k = 0; k < 30; k++) { const e = extents(s); s *= min(availW / (e.x1 - e.x0), availH / (e.y1 - e.y0)); }
+  // 先只按图形拟合，再把标签算进去缩小；最多缩到 60%（标签太长时宁可让它出界，也不把图缩没，出界要改标签）
+  const s0 = min(availW / (bx1 - bx0), availH / (by1 - by0));
+  let s = s0;
+  for (let k = 0; k < 30; k++) { const e = extents(s); s = max(0.6 * s0, s * min(availW / (e.x1 - e.x0), availH / (e.y1 - e.y0))); }
+  { const e = extents(s); if (e.x1 - e.x0 > availW + 1) console.warn("  ⚠ " + fig.name + "：标签太宽，超出画布 " + round(e.x1 - e.x0 - availW) + "px"); }
   s *= fig.zoom || 1;
   const E = extents(s);
   const ox = pad[0] + (availW - (E.x1 - E.x0)) / 2 - E.x0, oy = top + pad[1] - E.y0;
@@ -498,13 +508,14 @@ function build(fig) {
   polys.sort((a, b) => a.d - b.d);
   const surfOut = [];
   let run = null;
-  const flush = () => { if (run) surfOut.push(`<path class="${run.cls}"${run.crisp ? ' shape-rendering="crispEdges"' : ""} d="${run.d.join("")}"/>`); run = null; };
+  // 半透明的面片不描边（描边和相邻面片叠两层会出网格），crispEdges 让相邻面片严丝合缝
+  const flush = () => { if (run) surfOut.push(`<path class="${run.cls}"${run.alpha !== undefined ? ` style="fill-opacity:${run.alpha};stroke:none"` : ""}${run.crisp ? ' shape-rendering="crispEdges"' : ""} d="${run.d.join("")}"/>`); run = null; };
   polys.forEach((p) => {
     let q = p.pts.map((c) => [X(c), Y(c)]);
     let area = 0;
     for (let k = 0; k < 4; k++) { const a = q[k], b = q[(k + 1) % 4]; area += a[0] * b[1] - b[0] * a[1]; }
     if (area < 0) q = q.reverse();
-    if (!run || run.cls !== p.cls) { flush(); run = { cls: p.cls, crisp: p.crisp, d: [] }; }
+    if (!run || run.cls !== p.cls || run.alpha !== p.alpha) { flush(); run = { cls: p.cls, crisp: p.crisp, alpha: p.alpha, d: [] }; }
     run.d.push(pathD(q, true));
   });
   flush();
@@ -567,7 +578,9 @@ function build(fig) {
     head.push(emitText(titleBox, pad[0], y, "ttl"));
     if (eqBox) head.push(emitText(eqBox, pad[0] + titleBox.w + 14, y, "eq"));
   }
-  caps.forEach((c, k) => head.push(emitText(c, (W - c.w) / 2, H - pad[3] - c.desc - (caps.length - 1 - k) * capLine, "cap")));
+  let capY = H - pad[3] - capH + 8;
+  caps.forEach((c) => { const row = capRow(c); head.push(emitText(c, (W - c.w) / 2, capY + max(c.asc, 19 * 0.8), "cap")); capY += row; });
+  caps.forEach((c) => { if (c.w > W - 8) console.warn("  ⚠ " + fig.name + "：图注太宽 " + round(c.w) + "px"); });
 
   const aria = esc((fig.title || fig.name) + (fig.alt ? "：" + fig.alt : ""));
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${aria}">` +
