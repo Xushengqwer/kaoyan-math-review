@@ -16,15 +16,19 @@ try {
   assert.match(ch4, /#### 例题 1：向量的度量/, '笔记里的例题在');
   for (const name of ['学习方法', '网站排版规则', '内容组织原则', '进度'])
     assert(fs.existsSync(path.join(dir, '规矩', name + '.md')), '规矩：' + name);
-  const readme = fs.readFileSync(path.join(dir, 'README.md'), 'utf8');
-  assert(!readme.includes('{生成说明}') && readme.includes('生成自仓库'), 'README 填上了生成说明');
+  const rules = fs.readFileSync(path.join(dir, 'GEMINI.md'), 'utf8');
+  assert(!rules.includes('{生成说明}') && rules.includes('生成自仓库'), 'GEMINI.md 填上了生成说明');
+  assert(rules.includes('## 踩过的坑') && rules.includes('## 交稿格式'), 'GEMINI.md 是写稿守则');
+  assert(!fs.existsSync(path.join(dir, 'README.md')), '不再生成 README.md');
   assert(!files.some(([, t]) => t.includes('\r')), '一律 LF');
 
   fs.writeFileSync(path.join(dir, '待提交', '方向2.md'), '交稿');
   fs.writeFileSync(path.join(dir, '章节', '多余.md'), '旧的');
+  fs.writeFileSync(path.join(dir, 'README.md'), '旧版的说明');
   write(dir, files, hash);
   assert.equal(fs.readFileSync(path.join(dir, '待提交', '方向2.md'), 'utf8'), '交稿', '重新生成不动待提交');
   assert(!fs.existsSync(path.join(dir, '章节', '多余.md')), '章节/ 整个重写');
+  assert(!fs.existsSync(path.join(dir, 'README.md')), '旧版的 README.md 删掉');
 
   // 共同维护：镜像里没有就从仓库抄；镜像里改了就抄回仓库（保持仓库原来的换行符）；重新生成不删
   const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'fake-repo-'));

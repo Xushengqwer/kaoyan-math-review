@@ -7,14 +7,13 @@
 //   默认目录：E:\AI_lunwen\kaoyan-mirror（仓库旁边，路径全是英文，Antigravity 打开不出问题）
 //
 // 镜像里：
-//   README.md      给 Gemini 的说明（docs/mirror-readme.md）
+//   GEMINI.md      给 Gemini 的写稿守则（docs/mirror-gemini.md）：Antigravity 每个对话自动读工作区根目录的这个文件
 //   章节/          每章一个文件：教材 + 笔记（含意义、例题、提示）+ 决策流 + 本章总结，卡片记号行保留
 //   规矩/          学习方法、内容组织原则、网站排版规则、进度（只读）
 //   共同维护/      设计口味、写作格式要求：以镜像里这份为准，用户和 Antigravity 可以改；
 //                  没有就从仓库 docs/ 抄一份，和仓库工作区那份不一样就抄回仓库（要提交，git 里留底）
 //   待提交/        交稿文件放这里；提交后挪进 待提交/已提交/
-//   审稿意见/      Claude Code 审出问题时写的意见（和交稿文件同名），审过的版本/ 里是审过的那一版
-// 重新生成时只删 README.md、章节/、规矩/ 再写；共同维护/、待提交/、审稿意见/ 从不删。目录里要有 .kaoyan-mirror 才会删东西。
+// 重新生成时只删 GEMINI.md、README.md（旧版的说明）、章节/、规矩/ 再写；共同维护/、待提交/ 从不删。目录里要有 .kaoyan-mirror 才会删东西。
 const fs = require("fs");
 const path = require("path");
 const { main, must, REPO, read, gitShow, loadSubjects, loadNotes } = require("./lib.cjs");
@@ -81,7 +80,7 @@ function build(dir, rev) {
   const src = (rel) => (work ? read(rel) : gitShow(rel, r));
   const files = chapterFiles(work ? loadSubjects() : loadSubjects(r), work ? loadNotes() : loadNotes(r), stamp);
   for (const [rel, name] of RULES) files.push([path.join("规矩", name), src(rel)]);
-  files.push(["README.md", src("docs/mirror-readme.md").replace("{生成说明}", stamp)]);
+  files.push(["GEMINI.md", src("docs/mirror-gemini.md").replace("{生成说明}", stamp)]);
   return { files: files.map(([rel, text]) => [rel, text.replace(/\r\n/g, "\n")]), hash };
 }
 
@@ -110,10 +109,9 @@ function write(dir, files, hash) {
   if (fs.existsSync(dir)) {
     const entries = fs.readdirSync(dir);
     must(!entries.length || entries.includes(MARK), "目录已存在、不是空的，也不是镜像（没有 " + MARK + "），不动它：" + dir);
-    for (const name of ["README.md", "章节", "规矩"]) fs.rmSync(path.join(dir, name), { recursive: true, force: true });
+    for (const name of ["GEMINI.md", "README.md", "章节", "规矩"]) fs.rmSync(path.join(dir, name), { recursive: true, force: true });
   }
   fs.mkdirSync(path.join(dir, "待提交", "已提交"), { recursive: true });
-  fs.mkdirSync(path.join(dir, "审稿意见"), { recursive: true });
   fs.writeFileSync(path.join(dir, MARK), "tools/mirror.cjs 生成的只读镜像；当前版本 " + hash + "\n", "utf8");
   for (const [rel, text] of files) {
     fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });

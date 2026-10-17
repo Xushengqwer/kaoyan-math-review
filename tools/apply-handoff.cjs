@@ -1,11 +1,13 @@
-// 接 Antigravity 交来的稿（镜像目录 待提交/ 里的 .md）：查格式 → 接到卡片里正确的位置 → 存档 → 写入。
-// 交稿格式见 docs/mirror-readme.md「交稿」一节。不加 --write 只预览。
+// 接 Gemini 在 Antigravity 里写的稿（镜像目录 待提交/ 里的 .md）：查格式 → 接到卡片里正确的位置 → 存档 → 写入。
+// 交稿格式见 docs/mirror-gemini.md（镜像里的 GEMINI.md）「交稿格式」一节。不加 --write 只预览。
 //
 // 用法：
-//   node tools/apply-handoff.cjs <交稿.md | 待提交目录>... [--write] [--id xxxx]
+//   node tools/apply-handoff.cjs <交稿.md | 待提交目录>... [--reviewed | --write] [--id xxxx]
 //   给目录就接里面所有 .md（不含 已提交/），按文件名排序；几份先全部体检，都过了才一起接、每张卡存档一次、写一次
 //   --id：只交一份、追加时指定新记号（默认随机取一个没用过的 4 位）
-//   --write 写完把 待提交/ 里的文件挪进 待提交/已提交/
+//   --reviewed：Claude 审完这几份，把它们复制进仓库 drafts/审过/（同名），记下「审过的是这一版」
+//   --write 只接和 drafts/审过/ 里一字不差的（审过后改过的，先 git diff --no-index 只审改动，再 --reviewed）；
+//           写完把 待提交/ 里的文件挪进 待提交/已提交/，drafts/审过/ 里这几份删掉
 //
 // 两种操作（文件开头 --- 之间的「操作:」）：
 //   追加意义例题  <!-- 意义 --> 接在〔意义〕末尾、<!-- 例题 --> 接在〔例题〕末尾（这一节后面的 --- 分隔线之前），共用一个新记号
@@ -18,6 +20,18 @@ const cp = require("child_process");
 const { main, must, fail, REPO, read, SUBJECTS, subjectFile, loadSubjects, loadNotes, findItem, readDraft, loadSite, makeChecker } = require("./lib.cjs");
 
 const PART = { 意义: "book", 教材: "book", 例题: "note", 笔记: "note" };
+const REVIEWED = path.join(REPO, "drafts", "审过");
+
+// 审稿状态：drafts/审过/ 里的同名文件就是 Claude 审过的那一版
+function reviewState(file, dir = REVIEWED) {
+  const snap = path.join(dir, path.basename(file));
+  if (!fs.existsSync(snap)) return "没审过";
+  return fs.readFileSync(snap, "utf8") === fs.readFileSync(file, "utf8") ? "审过" : "审过后改过";
+}
+function markReviewed(file, dir = REVIEWED) {
+  fs.mkdirSync(dir, { recursive: true });
+  fs.copyFileSync(file, path.join(dir, path.basename(file)));
+}
 
 // 交稿文件 → { head: {卡片, 操作, 记号, 说明, …}, parts: { book: {name, text}, note: {name, text} } }
 function parseHandoff(text) {
@@ -156,14 +170,15 @@ function applyAll(bases, list, nextId) {
   return out;
 }
 
-module.exports = { parseHandoff, lintPart, appendToSection, replaceCard, applyHandoff, applyAll };
+module.exports = { parseHandoff, lintPart, appendToSection, replaceCard, applyHandoff, applyAll, reviewState, markReviewed, REVIEWED };
 if (require.main === module) main(() => {
   const args = process.argv.slice(2);
-  const write = args.includes("--write");
+  const write = args.includes("--write"), reviewed = args.includes("--reviewed");
+  must(!(write && reviewed), "--reviewed 和 --write 分开跑：先记审过，再写入");
   const ii = args.indexOf("--id");
   const forced = ii >= 0 ? args[ii + 1] : null;
   const inputs = args.filter((a, i) => !a.startsWith("--") && args[i - 1] !== "--id");
-  must(inputs.length, "用法：node tools/apply-handoff.cjs <交稿.md | 待提交目录>... [--write] [--id xxxx]");
+  must(inputs.length, "用法：node tools/apply-handoff.cjs <交稿.md | 待提交目录>... [--reviewed | --write] [--id xxxx]");
   const files = inputs.flatMap((p) => fs.statSync(p).isDirectory()
     ? fs.readdirSync(p).filter((f) => f.endsWith(".md")).sort().map((f) => path.join(p, f)) : [p]);
   must(files.length, "没有要接的交稿（目录里没有 .md）");
@@ -187,16 +202,22 @@ if (require.main === module) main(() => {
     must(!issues.length, card + "：接完记号不完整：" + JSON.stringify(issues).slice(0, 200));
   }
 
+  if (reviewed) for (const x of list) markReviewed(x.file);
   for (const x of list) {
-    console.log("交稿：" + path.basename(x.file) + (x.h.head["说明"] ? "（" + x.h.head["说明"] + "）" : ""));
+    x.state = reviewState(x.file);
+    console.log("交稿：" + path.basename(x.file) + (x.h.head["说明"] ? "（" + x.h.head["说明"] + "）" : "") + " · " + x.state);
     console.log("  " + x.h.head["卡片"] + " · " + x.h.head["操作"] + " · 记号 " + x.id + " · " +
       Object.values(x.h.parts).map((p) => p.name + " " + p.text.length + " 字").join("、") + (x.h.head["审稿"] ? " · 审稿：" + x.h.head["审稿"] : ""));
     for (const w of x.warns) console.log("  ⚠ " + w);
     for (const e of x.errors) console.log("  ✗ " + e);
+    if (x.state === "审过后改过") console.log("  只审改动：git diff --no-index \"" + path.join(REVIEWED, path.basename(x.file)) + "\" \"" + path.resolve(x.file) + "\"");
   }
   const bad = list.filter((x) => x.errors.length);
-  if (bad.length) fail(bad.length + " 份有要先改的地方（改交稿文件，或请用户转给 Antigravity）；一份都没写");
-  if (!write) { console.log("✓ 预览通过（" + list.length + " 份）；加 --write 写入"); return; }
+  if (bad.length) fail(bad.length + " 份有要先改的地方（改交稿文件，或请用户转给 Gemini）；一份都没写");
+  if (reviewed) { console.log("✓ 已记为审过（" + list.length + " 份，drafts/审过/）"); return; }
+  if (!write) { console.log("✓ 预览通过（" + list.length + " 份）；审过的加 --write 写入"); return; }
+  const unreviewed = list.filter((x) => x.state !== "审过");
+  must(!unreviewed.length, unreviewed.map((x) => path.basename(x.file) + "（" + x.state + "）").join("、") + " 还没审：审完加 --reviewed 记下再写；一份都没写");
 
   const hash = cp.execSync("git rev-parse --short HEAD", { cwd: REPO, encoding: "utf8" }).trim();
   const d = new Date(), date = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
@@ -223,5 +244,6 @@ if (require.main === module) main(() => {
     fs.mkdirSync(done, { recursive: true });
     fs.renameSync(x.file, path.join(done, path.basename(x.file)));
   }
-  console.log("下一步：supersede → bump-sw → test-all → 提交推送 → wait-live → mirror（交稿文件已挪进 已提交/）");
+  for (const x of list) fs.rmSync(path.join(REVIEWED, path.basename(x.file)), { force: true });
+  console.log("下一步：supersede → bump-sw → test-all → 提交推送 → wait-live → mirror（交稿文件已挪进 已提交/，审过的副本已删）");
 });

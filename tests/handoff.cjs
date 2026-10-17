@@ -74,4 +74,23 @@ assert.deepEqual(lint('意义', '#### 1. 甲\n\n$$\na + b\n$$').warns, [], '跨�
 assert.throws(() => H.parseHandoff('<!-- 意义 -->\n\n#### 1. 甲'), /---/);
 assert.throws(() => H.applyHandoff(base, H.parseHandoff(handoff({ 卡片: id, 操作: '整节换掉' }, [['意义', '#### 1. 甲']])), 'abcd'), /不认识的操作/);
 
+// 审稿状态（10-17 晚起 Claude 审稿）：--reviewed 把审过的那一版复制进 drafts/审过/，--write 只接一字不差的
+{
+  const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'handoff-review-'));
+  try {
+    const draft = path.join(tmp, '方向2.md'), snaps = path.join(tmp, '审过');
+    fs.writeFileSync(draft, '第一版');
+    assert.equal(H.reviewState(draft, snaps), '没审过');
+    H.markReviewed(draft, snaps);
+    assert.equal(H.reviewState(draft, snaps), '审过');
+    fs.writeFileSync(draft, '按意见改过');
+    assert.equal(H.reviewState(draft, snaps), '审过后改过');
+    assert.equal(fs.readFileSync(path.join(snaps, '方向2.md'), 'utf8'), '第一版', '副本留着审过的那一版，好只看改动');
+  } finally {
+    fs.rmSync(tmp, { recursive: true, force: true });
+  }
+  assert.equal(path.relative(require('../tools/lib.cjs').REPO, H.REVIEWED), path.join('drafts', '审过'), '副本在仓库 drafts/ 里，Gemini 看不到');
+}
+
 console.log('handoff ok');
