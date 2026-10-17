@@ -48,6 +48,7 @@
     - 图里只有浅色一套：SVG 当 <img> 时内部的 prefers-color-scheme 不认打印（CDP 实测），深色由 style.css 给 `img[src*="images/surfaces/"]` 加 `invert(1) hue-rotate(180deg)`，只在 screen 下。
     - 离线：sw.js 的 `IMAGES` 清单 + 单独缓存 `kaoyan-math-images`（升版本号不删）。**新增图片要加进 `IMAGES`**，`tests/surface-figures.cjs` 会查。
     - 以后别的章要示意图（第 6、7 章积分区域、投影）可以复用这个生成器。
+  - 10-17 第⑥站投影示意图上线（`f671453`，v200；生成器扩展 `14f92bf`）：6 张，内容 `drafts/calculus-vec-projections-v1.cjs`（两曲面交线、投影柱面与投影曲线、消元多出一段、锥面与上半球面、侧面是柱面、轮廓线才是边界），位置见 `f671453` 的提交说明；两栏差 112 / 127 / 116px。生成器新增半透明曲面（`alpha`、`ramp`、`occlude: false`）和投影区域填色（`region: true`）。离线图片清单共 27 张。
   - 待做：第⑥站，照用户转给 Gemini 的四条：二次曲面三层判断、旋转曲面「同一高度上到轴距离相同」、投影的范围和轮廓线两条边界、标「（边界）」的前提条件留在〔性质〕。
   - 开场白模板 `docs/gemini-kickoff.md` 里「梳理每张卡的定位」会引出清单，第①站走通后改成「先给推导链和分卡方案」。
 - 第 3 章章末的决策流、本章总结、思维导图和本卡主线里的叙事词，用户决定不弄了，留着（10-15）。
