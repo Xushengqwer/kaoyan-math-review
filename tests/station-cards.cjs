@@ -104,6 +104,10 @@ assert.equal((limRail.body.match(/class="rl-st rl-types"/g) || []).length, 1);
 assert.equal((limRail.body.match(/data-sec="意义" data-station="" data-ord=/g) || []).length, 10);
 assert.equal((limRail.body.match(/class="rl-mini /g) || []).length, 0);
 assert.equal((rail.body.match(/class="rl-extra"/g) || []).length, 3);
+// 第 4 章 ③④⑤ 的〔定义〕并进了〔性质〕卡（这几站只在〔性质〕里，原文中出现在⑥之后）：站卡和右侧目录仍按圈号排
+assert.deepEqual(outline('calc-vec-coordinates').blocks.map(b => b.mark).filter(Boolean), ['①', '②', '③', '④', '⑤', '⑥']);
+const vecRail = App.stationRailHtml(KaoyanData.find('calc-vec-coordinates'), 'calculus', 'vector-geometry');
+assert.deepEqual([...vecRail.body.matchAll(/class="rl-st" data-station="([^"]*)"/g)].map(m => m[1]), ['①', '②', '③', '④', '⑤', '⑥']);
 for (const id of ['la-det-def-n-order', 'la-mat-def-matrix', 'la-vec-def-linear-dependence', 'prob-evt-events']) {
   assert(!outline(id).structured, id);
 }

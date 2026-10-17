@@ -263,6 +263,16 @@ function sectionStations(text, part) {
 // → { structured: 有站或有分组（都没有就不用大纲）, blocks: [{ mark, name, rows: { 部分+小节: { part, sec, items: [{ title, num, ord, group }] } } }] }
 const OUTLINE_SECS = [["book", "定义"], ["book", "性质"], ["book", "意义"], ["note", "例题"], ["note", "提示"]];
 
+// 某站只在〔性质〕里（定义并进了性质卡）时，它在原文里比〔定义〕的后几站出现得晚：
+// 有圈号的站按圈号排回自然顺序（⑤′ 在⑤之后，同 dualStationRows），没有站号的块留在原位
+function outlineBlocks(blocks) {
+  const out = blocks.filter((b) => b.mark || Object.keys(b.rows).length);
+  const slots = out.map((b, i) => (/^[①-⑳]/.test(b.mark) ? i : -1)).filter((i) => i >= 0);
+  const sorted = slots.map((i) => out[i]).sort((a, b) => a.mark.codePointAt(0) - b.mark.codePointAt(0) || a.mark.length - b.mark.length);
+  slots.forEach((i, k) => { out[i] = sorted[k]; });
+  return out;
+}
+
 function cardOutline(book, note) {
   // 有格子记号的卡按记号取结构；只有一边有记号（本机旧副本）先去掉记号再照旧认
   const mode = markMode(book, note);
@@ -322,7 +332,7 @@ function cardOutline(book, note) {
   };
   scan(book, "book");
   scan(note, "note");
-  return { structured, blocks: blocks.filter((b) => b.mark || Object.keys(b.rows).length) };
+  return { structured, blocks: outlineBlocks(blocks) };
 }
 
 // 「本卡主线」那一段：开头一句（lead，章节标题下面用）和每一站的一句话（st，站卡上用）。没有就是空的。
@@ -1015,7 +1025,7 @@ function markedOutline(book, note) {
   };
   scan(bb, "book");
   scan(nb, "note");
-  return { structured, blocks: blocks.filter((b) => b.mark || Object.keys(b.rows).length) };
+  return { structured, blocks: outlineBlocks(blocks) };
 }
 
 // 卡片按钮（上移、下移、在下面加一张、复制到、删除）：同时改教材、笔记两段原文，只挪动、增删记号块，卡片里的字一个不动。
