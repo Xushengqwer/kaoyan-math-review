@@ -1386,6 +1386,11 @@ body.mynote-zoomed { overflow: hidden; }
 .dual-cell .katex-display { max-width: 100%; overflow-x: auto; overflow-y: hidden; }
 .dual-cell table, .dual-cell pre { max-width: 100%; overflow-x: auto; }
 .dual-cell img { max-width: 100%; height: auto; }
+/* 曲面示意图（第 4 章第⑤站，assets/images/surfaces/，tools/surface-fig.cjs 生成）：单独一段、居中。
+   图里只有浅色一套：SVG 当 <img> 用时，里面的 prefers-color-scheme 不认打印，系统深色时导出的 PDF 会是深色图；
+   所以深色模式在这里反相（只给屏幕），打印、导出 PDF 仍是浅色图（tests/surface-figures.cjs） */
+img[src*="images/surfaces/"] { display: block; margin: 6px auto 12px; max-width: 100%; height: auto; }
+@media screen and (prefers-color-scheme: dark) { img[src*="images/surfaces/"] { filter: invert(1) hue-rotate(180deg); } }
 .dual-cell .term-md > .station:first-child, .dual-cell .mynote-body > .station:first-child { margin-top: 0; }
 .dual-shared > .term-label, .dual-shared > :is(h1, h2, h3, h4, h5, h6, p, .station) { margin: 0; }
 .dual-shared > :is(h1, h2, h3, h4, h5, h6) { font-size: 17px; font-weight: 700; line-height: 1.5; }

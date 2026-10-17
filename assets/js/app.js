@@ -5,6 +5,8 @@ const SUBJECT_SEAL = { calculus: "微", linalg: "代", probability: "概" };
 // 去 HTML 标签。必须认准「<」后面紧跟字母才算标签 —— 数学里 r(A) < n … > 0 这种
 // 写法会被 /<[^>]+>/ 当成一个大标签整段吃掉，中间的字就再也搜不到了。
 const HTML_TAG = /<\/?[a-zA-Z][a-zA-Z0-9-]*(?:\s[^<>]*)?>/g;
+// Markdown 图片「![说明](路径)」：搜索、摘要只留说明文字，不露出文件路径（第 4 章曲面示意图）
+const MD_IMAGE = /!\[([^\]\n]*)\]\([^)\s]*\)/g;
 
 // 搜索用的纯文本。笔记是 Markdown，「**零因子**陷阱」按原文是搜不到「零因子陷阱」的，
 // 所以匹配之前把会夹在词中间的那三个记号（* ` ~）去掉，只去这三个：
@@ -13,6 +15,7 @@ const HTML_TAG = /<\/?[a-zA-Z][a-zA-Z0-9-]*(?:\s[^<>]*)?>/g;
 function searchText(raw) {
   return String(raw || "")
     .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(MD_IMAGE, " $1 ")
     .replace(HTML_TAG, " ")
     .replace(/[*`~]/g, "")
     .replace(/==/g, "")
@@ -24,6 +27,7 @@ function searchText(raw) {
 function plainText(raw) {
   return String(raw || "")
     .replace(/<!--[\s\S]*?-->/g, " ")
+    .replace(MD_IMAGE, " $1 ")
     .replace(HTML_TAG, " ")
     .replace(/\$\$?[^$]*\$\$?/g, " ▫ ")
     .replace(/^[ \t]*(?:[-*+]|\d+\.)\s+/gm, " ")

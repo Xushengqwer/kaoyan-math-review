@@ -1,14 +1,14 @@
 // 简单的离线缓存：优先使用缓存，后台静默更新，方便在地铁/宿舍弱网环境下阅读。
-const CACHE_NAME = "kaoyan-math-v197";
+const CACHE_NAME = "kaoyan-math-v198";
 const ASSETS = [
   "./",
   "index.html",
   "manifest.json",
-  "assets/css/style.css?v=182",
+  "assets/css/style.css?v=198",
   "assets/js/data-loader.js",
   "assets/js/storage.js",
   "assets/js/katex-init.js?v=111",
-  "assets/js/app.js?v=196",
+  "assets/js/app.js?v=198",
   "assets/data/calculus.js",
   "assets/data/linalg.js",
   "assets/data/probability.js",
@@ -22,23 +22,63 @@ const ASSETS = [
   "assets/icons/favicon.svg",
 ];
 
+// 卡片里的示意图（第 4 章第⑤站曲面图）单独放一个缓存，升版本号时不删：每台设备只下载一次（约 290 KB），
+// 安装时补齐还没缓存的，没打开过的章节离线也能看。图改了照常后台静默更新；从清单里去掉的图，激活时清出缓存。
+// 新增图片要加进这个清单（tests/surface-figures.cjs 会查数据里引用的图都在清单里）。
+const IMAGE_CACHE = "kaoyan-math-images";
+const IMAGES = [
+  "assets/images/surfaces/cylinder-circular.svg",
+  "assets/images/surfaces/cylinder-elliptic.svg",
+  "assets/images/surfaces/cylinder-generic.svg",
+  "assets/images/surfaces/cylinder-hyperbolic.svg",
+  "assets/images/surfaces/cylinder-offset.svg",
+  "assets/images/surfaces/cylinder-parabolic.svg",
+  "assets/images/surfaces/ellipsoid.svg",
+  "assets/images/surfaces/elliptic-cone.svg",
+  "assets/images/surfaces/elliptic-paraboloid.svg",
+  "assets/images/surfaces/hyperboloid-one-sheet.svg",
+  "assets/images/surfaces/hyperboloid-two-sheets.svg",
+  "assets/images/surfaces/line-intersect-cone.svg",
+  "assets/images/surfaces/line-parallel-cylinder.svg",
+  "assets/images/surfaces/line-skew-hyperboloid.svg",
+  "assets/images/surfaces/paraboloid-of-revolution.svg",
+  "assets/images/surfaces/revolution-generic.svg",
+  "assets/images/surfaces/saddle.svg",
+  "assets/images/surfaces/sphere.svg",
+  "assets/images/surfaces/torus.svg",
+  "assets/images/surfaces/upper-cone.svg",
+  "assets/images/surfaces/upper-hemisphere.svg",
+];
+const IMAGE_SET = new Set(IMAGES);
+// 请求地址 → 清单里的写法（网站挂在 /kaoyan-math-review/ 下，只看 assets/images/ 往后的部分）
+function imageKey(url) {
+  const p = new URL(url).pathname, i = p.indexOf("/assets/images/");
+  return i >= 0 ? p.slice(i + 1) : null;
+}
+
 // 装新缓存时绕过浏览器的 HTTP 缓存（cache: "reload"）：GitHub Pages 让文件在 HTTP 缓存里留 10 分钟，
 // 不绕过的话，新版本的缓存里装进去的可能还是旧的数据文件，刷新多少次都看不到更新（2026-10-12 v163 就是这样）。
 self.addEventListener("install", (event) => {
-  event.waitUntil(
+  event.waitUntil(Promise.all([
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(ASSETS.map((url) => new Request(url, { cache: "reload" }))))
-      .catch(() => {})
-  );
+      .catch(() => {}),
+    caches.open(IMAGE_CACHE)
+      .then((cache) => Promise.all(IMAGES.map((url) => cache.match(url).then((hit) => hit || cache.add(url).catch(() => {})))))
+      .catch(() => {}),
+  ]));
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(
+  event.waitUntil(Promise.all([
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
-  );
+      Promise.all(keys.filter((k) => k !== CACHE_NAME && k !== IMAGE_CACHE).map((k) => caches.delete(k)))
+    ),
+    caches.open(IMAGE_CACHE)
+      .then((cache) => cache.keys().then((reqs) => Promise.all(reqs.filter((r) => !IMAGE_SET.has(imageKey(r.url))).map((r) => cache.delete(r)))))
+      .catch(() => {}),
+  ]));
   self.clients.claim();
 });
 
@@ -54,7 +94,8 @@ self.addEventListener("fetch", (event) => {
         .then((res) => {
           if (res && res.status === 200) {
             const clone = res.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+            const store = IMAGE_SET.has(imageKey(event.request.url)) ? IMAGE_CACHE : CACHE_NAME;
+            caches.open(store).then((cache) => cache.put(event.request, clone));
           }
           return res;
         })
