@@ -32,12 +32,14 @@ AGENTS.md 原本写给 Codex。Codex 从 2026-10-09 起不用了，其中的工�
 
 写稿、审稿都在 Antigravity 里做（Gemini 写，单独一个 Claude 对话审），我只管落地和代码。
 
-- **只读镜像** `E:\AI_lunwen\kaoyan-mirror`：`node tools/mirror.cjs` 从 HEAD 生成——全部章节的可读 markdown（记号行保留）、`规矩/`（学习方法、设计口味 `docs/reviewer-taste.md`、网站排版规则 `docs/site-format.md`、内容组织原则、写作格式要求、进度）、给 Antigravity 的 README（`docs/mirror-readme.md`）。**每次推送后都要重新生成**；`待提交/` 从不动。网站显示规则、用户新定的口味有变化时，同步改这两份 docs。
-- **交稿**：Antigravity 把定稿放进 `待提交/`，开头写 卡片、操作（`追加意义例题` / `替换卡` + 记号）。用户说「提交待提交里的 ××」时：
-  1. `node tools/apply-handoff.cjs <文件>` 预览（查记号行、反引号、HTML、[cite]、KaTeX、$ 成对、标题格式、⚠️ 前的 ---）；有 ✗ 就停，告诉用户哪里要改。
-  2. `--write`：自动存档（Downloads）、生成新记号、接到〔意义〕/〔例题〕末尾（〔提示〕前的 --- 之前）或换掉那张卡，用 write.cjs 写入。
-  3. 追加时改测试条数（`tests/station-cards.cjs`、`detached-applications.cjs`、`dual-track.cjs`，第 4 章还有 `app-stack.cjs` 的目录断言）→ `supersede` → `bump-sw` → `test-all` → 提交推送 → `wait-live` → `mirror` → 把交稿文件挪进 `待提交/已提交/`。
+- **镜像** `E:\AI_lunwen\kaoyan-mirror`：`node tools/mirror.cjs` 从 HEAD 生成——全部章节的可读 markdown（记号行保留）、只读的 `规矩/`（学习方法、网站排版规则 `docs/site-format.md`、内容组织原则、进度）、给 Antigravity 的 README（`docs/mirror-readme.md`）。**每次推送后都要重新生成**；`待提交/`、`共同维护/` 从不删。网站显示规则变了就改 `docs/site-format.md`。
+- **共同维护**（镜像里的 `共同维护/设计口味.md`、`写作格式要求.md`）：**正本在镜像里**，用户和 Antigravity 直接改；`mirror.cjs` 发现和仓库的 `docs/reviewer-taste.md`、`docs/gemini-kickoff.md` 不一样就抄回仓库（会打印「要提交」），跟下一次提交一起存档。我要改这两份时也改镜像里的，别直接改仓库那份（下次生成会被镜像版盖掉）。
+- **交稿**：Antigravity 把定稿放进 `待提交/`，开头写 卡片、操作（`追加意义例题` / `替换卡` + 记号）。用户说「提交待提交里的 ××」或「提交待提交」时：
+  1. `node tools/apply-handoff.cjs <文件或 待提交 目录>` 预览：给目录就接里面所有 .md（按文件名排序），先全部体检（记号行、反引号、HTML、[cite]、KaTeX、$ 成对、标题格式、⚠️ 前的 ---），有 ✗ 就一份都不写，告诉用户哪里要改。
+  2. `--write`：每张卡存档一次（Downloads）、生成新记号、依次接到〔意义〕/〔例题〕末尾（〔提示〕前的 --- 之前）或换掉那张卡，用 write.cjs 写入，交稿文件挪进 `待提交/已提交/`。
+  3. 追加了几对就改测试条数（`tests/station-cards.cjs`、`detached-applications.cjs`、`dual-track.cjs`，第 4 章还有 `app-stack.cjs` 的目录断言）→ `supersede` → `bump-sw` → `test-all` → 提交推送 → `wait-live` → `mirror`。
 - 交稿说「已审」时，我不再逐步重算数学，只看工具查出来的；读到明显不对的地方照样说。删卡、合卡、整节换掉这类结构改动不走交稿，用户直接找我。
+- **省额度**：用户可以在 Antigravity 攒几份一起交，一次提交；接稿最好在新开的会话里做（规矩都在这里和记忆里，不用带着很长的历史）。
 
 ## 两栏长度要对齐（用户的固定要求，只管〔定义〕〔性质〕）
 

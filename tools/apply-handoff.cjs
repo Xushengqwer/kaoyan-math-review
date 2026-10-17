@@ -2,8 +2,10 @@
 // 交稿格式见 docs/mirror-readme.md「交稿」一节。不加 --write 只预览。
 //
 // 用法：
-//   node tools/apply-handoff.cjs <交稿.md> [--write] [--id xxxx]
-//   --id：追加时指定新记号（默认随机取一个没用过的 4 位）
+//   node tools/apply-handoff.cjs <交稿.md | 待提交目录>... [--write] [--id xxxx]
+//   给目录就接里面所有 .md（不含 已提交/），按文件名排序；几份先全部体检，都过了才一起接、每张卡存档一次、写一次
+//   --id：只交一份、追加时指定新记号（默认随机取一个没用过的 4 位）
+//   --write 写完把 待提交/ 里的文件挪进 待提交/已提交/
 //
 // 两种操作（文件开头 --- 之间的「操作:」）：
 //   追加意义例题  <!-- 意义 --> 接在〔意义〕末尾、<!-- 例题 --> 接在〔例题〕末尾（这一节后面的 --- 分隔线之前），共用一个新记号
@@ -19,7 +21,7 @@ const PART = { 意义: "book", 教材: "book", 例题: "note", 笔记: "note" };
 
 // 交稿文件 → { head: {卡片, 操作, 记号, 说明, …}, parts: { book: {name, text}, note: {name, text} } }
 function parseHandoff(text) {
-  const t = text.replace(/^﻿/, "").replace(/\r\n?/g, "\n");
+  const t = text.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
   const m = t.match(/^---\n([\s\S]*?)\n---\n/);
   must(m, "交稿文件开头要有 --- 包起来的几行（卡片、操作……）");
   const head = {};
@@ -128,61 +130,98 @@ function applyHandoff(base, h, id) {
   return out;
 }
 
-module.exports = { parseHandoff, lintPart, appendToSection, replaceCard, applyHandoff };
-if (require.main === module) main(() => {
-  const args = process.argv.slice(2);
-  const write = args.includes("--write");
-  const ii = args.indexOf("--id");
-  const forced = ii >= 0 ? args[ii + 1] : null;
-  const file = args.filter((a, i) => !a.startsWith("--") && args[i - 1] !== "--id")[0];
-  must(file, "用法：node tools/apply-handoff.cjs <交稿.md> [--write] [--id xxxx]");
+// 一份交稿：读、解析、体检（errors 挡写入，warns 只提醒）
+function inspect(file, check) {
   const h = parseHandoff(readDraft(file).text);
-  const cardId = h.head["卡片"];
-  must(cardId, "开头缺「卡片: <卡片id>」");
-  const hit = findItem(cardId, loadSubjects());
-  must(hit, "找不到卡片：" + cardId);
-  const base = { book: hit.item.md, note: loadNotes()[cardId] || "" };
-
+  must(h.head["卡片"], path.basename(file) + "：开头缺「卡片: <卡片id>」");
   const lint = Object.values(h.parts).map((p) => lintPart(p.name, p.text));
-  const check = makeChecker();
   for (const [part, p] of Object.entries(h.parts)) {
     const r = check(p.text, part);
     if (r.katex.length) lint.push({ errors: r.katex.map((e) => p.name + " 公式报错：" + e), warns: [] });
     if (r.stray.length) lint.push({ errors: r.stray.map((e) => p.name + " 漏出记号：" + e), warns: [] });
     if (r.pre > 0) lint.push({ errors: [p.name + "：有 " + r.pre + " 处会变成代码块（行首缩进 4 格？）"], warns: [] });
   }
-  const errors = lint.flatMap((x) => x.errors), warns = lint.flatMap((x) => x.warns);
+  return { file, h, errors: lint.flatMap((x) => x.errors), warns: lint.flatMap((x) => x.warns) };
+}
 
-  const op = h.head["操作"];
+// 几份交稿依次接到各自的卡上：bases = { 卡片id: { book, note } }，nextId() 给追加的新记号 → { 卡片id: { book, note } }，并把记号记在每份上
+function applyAll(bases, list, nextId) {
+  const out = { ...bases };
+  for (const x of list) {
+    const card = x.h.head["卡片"];
+    must(out[card], "找不到卡片：" + card);
+    x.id = x.h.head["操作"] === "替换卡" ? x.h.head["记号"] : nextId();
+    out[card] = applyHandoff(out[card], x.h, x.id);
+  }
+  return out;
+}
+
+module.exports = { parseHandoff, lintPart, appendToSection, replaceCard, applyHandoff, applyAll };
+if (require.main === module) main(() => {
+  const args = process.argv.slice(2);
+  const write = args.includes("--write");
+  const ii = args.indexOf("--id");
+  const forced = ii >= 0 ? args[ii + 1] : null;
+  const inputs = args.filter((a, i) => !a.startsWith("--") && args[i - 1] !== "--id");
+  must(inputs.length, "用法：node tools/apply-handoff.cjs <交稿.md | 待提交目录>... [--write] [--id xxxx]");
+  const files = inputs.flatMap((p) => fs.statSync(p).isDirectory()
+    ? fs.readdirSync(p).filter((f) => f.endsWith(".md")).sort().map((f) => path.join(p, f)) : [p]);
+  must(files.length, "没有要接的交稿（目录里没有 .md）");
+  must(!forced || files.length === 1, "--id 只能在交一份时用");
+
+  const check = makeChecker();
+  const list = files.map((f) => inspect(f, check));
+  const subjects = loadSubjects(), notes = loadNotes();
+  const bases = {};
+  for (const x of list) {
+    const card = x.h.head["卡片"], hit = findItem(card, subjects);
+    must(hit, path.basename(x.file) + "：找不到卡片 " + card);
+    bases[card] = bases[card] || { book: hit.item.md, note: notes[card] || "" };
+  }
   const used = usedIds();
-  const id = op === "替换卡" ? h.head["记号"] : forced || newId(used);
-  if (op === "追加意义例题") must(!used.has(id), "记号 " + id + " 已经用过了");
-  const out = applyHandoff(base, h, id);
+  if (forced) must(!used.has(forced), "记号 " + forced + " 已经用过了");
+  const out = applyAll(bases, list, () => { const id = forced || newId(used); used.add(id); return id; });
   const site = loadSite();
-  const issues = site.markerIssues(out.book, out.note);
-  must(!issues.length, "接完记号不完整：" + JSON.stringify(issues).slice(0, 200));
+  for (const [card, v] of Object.entries(out)) {
+    const issues = site.markerIssues(v.book, v.note);
+    must(!issues.length, card + "：接完记号不完整：" + JSON.stringify(issues).slice(0, 200));
+  }
 
-  console.log("交稿：" + path.basename(file) + (h.head["说明"] ? "（" + h.head["说明"] + "）" : ""));
-  console.log("  " + cardId + " · " + op + " · 记号 " + id + " · " + Object.values(h.parts).map((p) => p.name + " " + p.text.length + " 字").join("、"));
-  if (h.head["审稿"]) console.log("  审稿：" + h.head["审稿"]);
-  for (const w of warns) console.log("  ⚠ " + w);
-  for (const e of errors) console.log("  ✗ " + e);
-  if (errors.length) fail("有 " + errors.length + " 处要先改（改交稿文件，或请用户转给 Antigravity）");
-  if (!write) { console.log("✓ 预览通过；加 --write 写入"); return; }
+  for (const x of list) {
+    console.log("交稿：" + path.basename(x.file) + (x.h.head["说明"] ? "（" + x.h.head["说明"] + "）" : ""));
+    console.log("  " + x.h.head["卡片"] + " · " + x.h.head["操作"] + " · 记号 " + x.id + " · " +
+      Object.values(x.h.parts).map((p) => p.name + " " + p.text.length + " 字").join("、") + (x.h.head["审稿"] ? " · 审稿：" + x.h.head["审稿"] : ""));
+    for (const w of x.warns) console.log("  ⚠ " + w);
+    for (const e of x.errors) console.log("  ✗ " + e);
+  }
+  const bad = list.filter((x) => x.errors.length);
+  if (bad.length) fail(bad.length + " 份有要先改的地方（改交稿文件，或请用户转给 Antigravity）；一份都没写");
+  if (!write) { console.log("✓ 预览通过（" + list.length + " 份）；加 --write 写入"); return; }
 
   const hash = cp.execSync("git rev-parse --short HEAD", { cwd: REPO, encoding: "utf8" }).trim();
   const d = new Date(), date = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-  const subj = { calculus: "高数", linalg: "线代", probability: "概率" }[hit.subject.id];
-  const ch = hit.subject.chapters.find((c) => c.id === hit.item.chapterId);
-  const what = (h.head["说明"] || op).replace(/[\\/:*?"<>|]/g, "-");
-  const arch = path.join(os.homedir(), "Downloads", subj + "第" + ch.order + "章-教材与笔记存档（" + what + "前）-" + date + "-" + hash + ".md");
-  const r = cp.spawnSync(process.execPath, [path.join(REPO, "tools", "archive.cjs"), arch, subj + "第" + ch.order + "章 教材与笔记存档（" + what + "前）", cardId, "book:" + cardId],
-    { cwd: REPO, encoding: "utf8" });
-  must(r.status === 0, "存档失败：" + (r.stderr || r.stdout).trim());
-  console.log("  " + (r.stdout || "").trim());
   const { writeBook, writeNote } = require("./write.cjs");
-  if (out.book !== base.book) console.log("✓ 教材：" + writeBook(cardId, out.book));
-  if (out.note !== base.note) console.log("✓ 笔记：" + writeNote(cardId, out.note));
-  console.log("下一步：" + (op === "追加意义例题" ? "改测试条数（station-cards、detached-applications、dual-track、app-stack）→ " : "") +
-    "supersede → bump-sw → test-all → 提交推送 → wait-live → mirror；交稿文件挪进 待提交/已提交/");
+  for (const [card, v] of Object.entries(out)) {
+    const hit = findItem(card, subjects);
+    const subj = { calculus: "高数", linalg: "线代", probability: "概率" }[hit.subject.id];
+    const ch = hit.subject.chapters.find((c) => c.id === hit.item.chapterId);
+    const mine = list.filter((x) => x.h.head["卡片"] === card);
+    const what = ((mine[0].h.head["说明"] || mine[0].h.head["操作"]).split(/[：:]/)[0] + (mine.length > 1 ? "等 " + mine.length + " 份" : "")).replace(/[\\/:*?"<>|]/g, "-");
+    const arch = path.join(os.homedir(), "Downloads", subj + "第" + ch.order + "章-教材与笔记存档（交稿" + what + "前）-" + date + "-" + hash + ".md");
+    const r = cp.spawnSync(process.execPath, [path.join(REPO, "tools", "archive.cjs"), arch, subj + "第" + ch.order + "章 教材与笔记存档（交稿" + what + "前）", card, "book:" + card],
+      { cwd: REPO, encoding: "utf8" });
+    must(r.status === 0, "存档失败：" + (r.stderr || r.stdout).trim());
+    console.log("  " + (r.stdout || "").trim());
+    if (v.book !== bases[card].book) console.log("✓ " + card + " 教材：" + writeBook(card, v.book));
+    if (v.note !== bases[card].note) console.log("✓ " + card + " 笔记：" + writeNote(card, v.note));
+    const added = mine.filter((x) => x.h.head["操作"] === "追加意义例题").length;
+    if (added) console.log("  " + card + " 追加了 " + added + " 对：测试条数要改（station-cards、detached-applications、dual-track，第 4 章还有 app-stack）");
+  }
+  for (const x of list) {
+    if (path.basename(path.dirname(path.resolve(x.file))) !== "待提交") continue;
+    const done = path.join(path.dirname(path.resolve(x.file)), "已提交");
+    fs.mkdirSync(done, { recursive: true });
+    fs.renameSync(x.file, path.join(done, path.basename(x.file)));
+  }
+  console.log("下一步：supersede → bump-sw → test-all → 提交推送 → wait-live → mirror（交稿文件已挪进 已提交/）");
 });

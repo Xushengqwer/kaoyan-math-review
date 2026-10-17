@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { build, write } = require('../tools/mirror.cjs');
+const { build, write, syncShared } = require('../tools/mirror.cjs');
 
 // 只读镜像（tools/mirror.cjs，2026-10-17）：每章一个文件、规矩文档齐全；重新生成不动 待提交/；不是镜像的目录不碰
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kaoyan-mirror-'));
@@ -14,7 +14,7 @@ try {
   const ch4 = fs.readFileSync(path.join(dir, '章节', '高等数学', '第04章-向量代数与空间解析几何.md'), 'utf8');
   assert.match(ch4, /<!-- card:f6rk -->/, '卡片记号保留');
   assert.match(ch4, /#### 例题 1：向量的度量/, '笔记里的例题在');
-  for (const name of ['学习方法', '设计口味', '网站排版规则', '内容组织原则', '写作格式要求', '进度'])
+  for (const name of ['学习方法', '网站排版规则', '内容组织原则', '进度'])
     assert(fs.existsSync(path.join(dir, '规矩', name + '.md')), '规矩：' + name);
   const readme = fs.readFileSync(path.join(dir, 'README.md'), 'utf8');
   assert(!readme.includes('{生成说明}') && readme.includes('生成自仓库'), 'README 填上了生成说明');
@@ -25,6 +25,21 @@ try {
   write(dir, files, hash);
   assert.equal(fs.readFileSync(path.join(dir, '待提交', '方向2.md'), 'utf8'), '交稿', '重新生成不动待提交');
   assert(!fs.existsSync(path.join(dir, '章节', '多余.md')), '章节/ 整个重写');
+
+  // 共同维护：镜像里没有就从仓库抄；镜像里改了就抄回仓库（保持仓库原来的换行符）；重新生成不删
+  const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'fake-repo-'));
+  fs.mkdirSync(path.join(repo, 'docs'));
+  fs.writeFileSync(path.join(repo, 'docs', 'reviewer-taste.md'), '# 设计口味\r\n\r\n1. 甲\r\n');
+  fs.writeFileSync(path.join(repo, 'docs', 'gemini-kickoff.md'), '# 开场白\n');
+  assert.deepEqual(syncShared(dir, repo), ['新建 共同维护/设计口味.md', '新建 共同维护/写作格式要求.md']);
+  assert.equal(fs.readFileSync(path.join(dir, '共同维护', '设计口味.md'), 'utf8'), '# 设计口味\n\n1. 甲\n', '镜像里一律 LF');
+  assert.deepEqual(syncShared(dir, repo), [], '没改就不动');
+  fs.writeFileSync(path.join(dir, '共同维护', '设计口味.md'), '# 设计口味\n\n1. 甲\n2. 乙（和 Antigravity 磨合出来的）\n');
+  assert.deepEqual(syncShared(dir, repo), ['共同维护/设计口味.md 有改动，已抄回 docs/reviewer-taste.md（要提交）']);
+  assert.equal(fs.readFileSync(path.join(repo, 'docs', 'reviewer-taste.md'), 'utf8'), '# 设计口味\r\n\r\n1. 甲\r\n2. 乙（和 Antigravity 磨合出来的）\r\n', '抄回仓库保持 CRLF');
+  write(dir, files, hash);
+  assert(fs.readFileSync(path.join(dir, '共同维护', '设计口味.md'), 'utf8').includes('2. 乙'), '重新生成不动共同维护');
+  fs.rmSync(repo, { recursive: true, force: true });
 
   const other = fs.mkdtempSync(path.join(os.tmpdir(), 'not-mirror-'));
   fs.writeFileSync(path.join(other, '别人的.md'), 'x');

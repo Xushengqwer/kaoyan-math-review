@@ -41,6 +41,24 @@ assert.equal(changed.note, target.note.slice(0, b0.start) + '#### 1. 向量与�
 assert.equal(site.markerIssues(changed.book, changed.note).length, 0);
 assert.throws(() => H.applyHandoff(target, H.parseHandoff(handoff({ 卡片: id, 操作: '替换卡', 记号: 'zzzz' }, [['笔记', 'x']])), 'zzzz'), /找不到记号/);
 
+// 一次接几份（攒着交）：同一张卡按顺序依次接上，记号各不相同；结果和一份一份接一样
+{
+  const one = H.parseHandoff(handoff({ 卡片: id, 操作: '追加意义例题' }, [['意义', yiyi], ['例题', liti]]));
+  const two = H.parseHandoff(handoff({ 卡片: id, 操作: '追加意义例题' }, [['意义', '#### 2. 方向二：乙'], ['例题', '#### 例题 2：乙']]));
+  const ids = ['f6rk', 'q7zz'];
+  const list = [{ h: one }, { h: two }];
+  const all = H.applyAll({ [id]: base }, list, () => ids.shift());
+  assert.deepEqual(list.map(x => x.id), ['f6rk', 'q7zz'], '每份记下自己的记号');
+  const stepwise = H.applyHandoff(H.applyHandoff(base, one, 'f6rk'), two, 'q7zz');
+  assert.equal(all[id].book, stepwise.book);
+  assert.equal(all[id].note, stepwise.note);
+  assert(all[id].book.indexOf('<!-- card:f6rk -->') < all[id].book.indexOf('<!-- card:q7zz -->'), '按顺序接');
+  assert(all[id].note.includes('#### 例题 2：乙\n\n---\n\n<!-- section:提示 -->'), '第二份例题也在〔提示〕前的分隔线之前');
+  assert.equal(site.markerIssues(all[id].book, all[id].note).length, 0);
+  const swap = H.applyAll({ [id]: target }, [{ h: H.parseHandoff(handoff({ 卡片: id, 操作: '替换卡', 记号: 'f6rk' }, [['例题', liti]])) }], () => assert.fail('替换卡不该要新记号'));
+  assert.equal(swap[id].note, target.note);
+}
+
 // 体检：挡住记号行、[cite]、反引号、HTML；提醒标题、⚠️ 前的分隔线、$ 不成对
 const lint = (name, t) => H.lintPart(name, t);
 assert.match(lint('例题', '#### 例题 1：甲\n\n走 `##### ❶` 的分支').errors.join(), /反引号/);
