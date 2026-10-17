@@ -33,16 +33,17 @@ main(() => {
   const ch = subj.chapters.find((c) => c.id === target.item.chapterId);
   const subjName = subj.name.replace(/（.*$/, "");
 
-  // 站列表：教材〔定义〕里的站名行「**① 名字**」
-  const stations = [];
+  // 站列表：教材〔定义〕〔性质〕里的站名行「**① 名字**」，同一站只取一次，按圈号排（有的站定义并进了性质卡，只在〔性质〕里）
+  const byMark = new Map();
   let sec = "";
   for (const l of target.item.md.split("\n")) {
     const m = l.trim().match(/^<!-- section:(.+) -->$/);
     if (m) sec = m[1];
-    const st = sec === "定义" && l.trim().match(/^\*\*([①②③④⑤⑥⑦⑧⑨⑩][′']?[\s\S]*?)\*\*$/);
-    if (st) stations.push(st[1].trim());
+    const st = (sec === "定义" || sec === "性质") && l.trim().match(/^\*\*(([①②③④⑤⑥⑦⑧⑨⑩][′']?)[\s\S]*?)\*\*$/);
+    if (st && !byMark.has(st[2])) byMark.set(st[2], st[1].trim());
   }
-  must(stations.length, "这张卡的〔定义〕里没有站名行");
+  const stations = [...byMark.keys()].sort((a, b) => a.codePointAt(0) - b.codePointAt(0) || a.length - b.length).map((k) => byMark.get(k));
+  must(stations.length, "这张卡的〔定义〕〔性质〕里没有站名行");
 
   const tpl = read("docs/gemini-kickoff.md");
   const lm = read("docs/learning-method.md");

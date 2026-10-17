@@ -27,7 +27,7 @@ function onlySections(md, names) {
   return out.join("\n");
 }
 
-// 去掉记号行和紧跟的一个空行
+// 去掉记号行和紧跟的一个空行；卡片里的示意图 ![图注](地址) Gemini 看不到，只留「（图：图注）」
 function stripMarkers(md) {
   const lines = md.split("\n");
   const out = [];
@@ -36,7 +36,7 @@ function stripMarkers(md) {
       if (lines[i + 1] !== undefined && lines[i + 1].trim() === "") i++;
       continue;
     }
-    out.push(lines[i]);
+    out.push(lines[i].replace(/!\[([^\]]*)\]\([^)]*\)/g, "（图：$1）"));
   }
   return out.join("\n");
 }
