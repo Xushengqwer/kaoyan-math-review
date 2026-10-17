@@ -1,5 +1,5 @@
 // 简单的离线缓存：优先使用缓存，后台静默更新，方便在地铁/宿舍弱网环境下阅读。
-const CACHE_NAME = "kaoyan-math-v199";
+const CACHE_NAME = "kaoyan-math-v200";
 const ASSETS = [
   "./",
   "index.html",
@@ -22,7 +22,7 @@ const ASSETS = [
   "assets/icons/favicon.svg",
 ];
 
-// 卡片里的示意图（第 4 章第⑤站曲面图）单独放一个缓存，升版本号时不删：每台设备只下载一次（约 290 KB），
+// 卡片里的示意图（第 4 章第⑤站曲面图、第⑥站投影图）单独放一个缓存，升版本号时不删：每台设备只下载一次（约 390 KB），
 // 安装时补齐还没缓存的，没打开过的章节离线也能看。图改了照常后台静默更新；从清单里去掉的图，激活时清出缓存。
 // 新增图片要加进这个清单（tests/surface-figures.cjs 会查数据里引用的图都在清单里）。
 const IMAGE_CACHE = "kaoyan-math-images";
@@ -42,6 +42,12 @@ const IMAGES = [
   "assets/images/surfaces/line-parallel-cylinder.svg",
   "assets/images/surfaces/line-skew-hyperboloid.svg",
   "assets/images/surfaces/paraboloid-of-revolution.svg",
+  "assets/images/surfaces/proj-ball-contour.svg",
+  "assets/images/surfaces/proj-cone-hemisphere.svg",
+  "assets/images/surfaces/proj-cylinder-and-curve.svg",
+  "assets/images/surfaces/proj-cylinder-solid.svg",
+  "assets/images/surfaces/proj-elimination-extra.svg",
+  "assets/images/surfaces/proj-intersection-curve.svg",
   "assets/images/surfaces/revolution-generic.svg",
   "assets/images/surfaces/saddle.svg",
   "assets/images/surfaces/sphere.svg",
