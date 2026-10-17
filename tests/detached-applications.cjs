@@ -15,7 +15,7 @@ const expectedCounts = new Map([
   ['calc-lim-function', [10, 14]],
   ['calc-der-derivative', [6, 6]],
   ['calc-int-antiderivative', [4, 4]],
-  ['calc-vec-coordinates', [15, 8]],
+  ['calc-vec-coordinates', [16, 9]],  // 10-17 旧版后面接上新方向 1
   ['calc-mvd-limit-continuity', [15, 9]],
   ['calc-mi-double-def', [18, 11]],
   ['calc-ls-line-first', [20, 10]],

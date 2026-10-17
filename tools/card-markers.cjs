@@ -92,7 +92,9 @@ function verifyCard(site, id, before, after, legacy) {
   });
   must(plainView(App.dualTrackHtml(now)) === plainView(App.dualTrackHtml(old)), id + "：整个对照页面的 HTML 不一样");
   const J = JSON.stringify;
-  must(J(site.cardOutline(after.book, after.note)) === J(site.cardOutline(before.book, before.note)), id + "：站卡小标题（cardOutline）不一样");
+  // 条目的 card（格子记号 id，右侧目录按它配对意义、例题）只有加了记号才有，不算显示差别
+  const noCard = (o) => JSON.stringify(o, (k, v) => (k === "card" ? undefined : v));
+  must(noCard(site.cardOutline(after.book, after.note)) === noCard(site.cardOutline(before.book, before.note)), id + "：站卡小标题（cardOutline）不一样");
   must(J(site.cardStory(after.book)) === J(site.cardStory(before.book)), id + "：本卡主线（cardStory）不一样");
   must(J(App.stationMap(id, after)) === J(App.stationMap(id, before)), id + "：站牌的小节表（stationMap）不一样");
   const page = (t) => {

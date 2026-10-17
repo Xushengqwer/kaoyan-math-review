@@ -983,12 +983,12 @@ function markedOutline(book, note) {
     if (!cb) return;
     const src = cb.raw, counts = {}, groupTitle = {};
     const want = (sec) => OUTLINE_SECS.some(([p, s]) => p === part && s === sec) || (part === "note" && (sec === "定义" || sec === "性质"));
-    const push = (sec, station, title, num, group) => {
+    const push = (sec, station, title, num, group, card) => {
       const rows = block(station, "").rows;
       const row = rows[part + sec] || (rows[part + sec] = { part, sec, items: [] });
       const n = counts[sec + station] || 0;
       counts[sec + station] = n + 1;
-      row.items.push({ title, num, ord: n, group: sec === "定义" || sec === "性质" || sec === "意义" ? group : "" });
+      row.items.push({ title, num, ord: n, group: sec === "定义" || sec === "性质" || sec === "意义" ? group : "", ...(card ? { card } : {}) });
     };
     const lines = (sec, st, text) => {
       if (sec !== "意义" && sec !== "例题" && sec !== "提示") return;
@@ -1022,8 +1022,8 @@ function markedOutline(book, note) {
         const text = src.slice(b.start, b.end), num = nums.has(b.id) ? String(nums.get(b.id)) : "";
         // 例题卡里「例题 n-1」「例题 n-2」两道，站卡上各列一个小标题
         const exs = b.sec === "例题" ? [...text.matchAll(/^#{2,6}[ \t]+例题[ \t]*\d+(?:-\d+)?(?![\d.])[ \t]*[：:]?[ \t]*(.*?)[ \t]*\r?$/gm)] : [];
-        if (exs.length) exs.forEach((m) => push(b.sec, b.station, m[1], num, ""));
-        else push(b.sec, b.station, cardTitle(text, b.sec), num, b.group ? groupTitle[b.group] || "" : "");
+        if (exs.length) exs.forEach((m) => push(b.sec, b.station, m[1], num, "", b.id));
+        else push(b.sec, b.station, cardTitle(text, b.sec), num, b.group ? groupTitle[b.group] || "" : "", b.id);
       }
     });
   };
@@ -3292,16 +3292,20 @@ const App = {
         const examples = app.rows.note例题 && app.rows.note例题.items || [];
         const exLis = examples.map((x) => `<li>${link("rl-item", "note", "例题", "",
           `<span class="rl-tno">${escapeHtml(x.num)}</span>${mdHtml(x.title, true)}`, x.ord)}</li>`).join("");
-        if (appByType(BookEdits.get(id))) {
+        // 新旧并存（有的意义是记号卡、有的是旧列表，第 4 章 10-17）：先不交替，两段各按原文顺序
+        const mixedOld = its.some((x) => x.card) && its.some((x) => !x.card);
+        if (appByType(BookEdits.get(id)) && !mixedOld) {
           // 题型写法（意义是「#### n.」，例题号跟着题型号）：意义 n 下面紧跟例题 n，和对照里上下叠的顺序一样（2026-10-15）
           const exLi = (x) => `<li class="rl-ex">${link("rl-item", "note", "例题", "",
             `<span class="rl-tno">例 ${escapeHtml(x.num)}</span>${mdHtml(x.title, true)}`, x.ord)}</li>`;
           const used = new Set();
+          // 有记号的卡按格子配对（同一个记号 = 意义 n 和例题 n），没有记号的照旧按编号
+          const byCard = its.some((x) => x.card);
           let grp = "";
           const mixed = its.map((x) => {
             const g = x.group && x.group !== grp ? `<li class="rl-grp">${mdHtml(x.group, true)}</li>` : "";
             grp = x.group;
-            const exs = examples.filter((e) => e.num === x.num && !used.has(e));
+            const exs = examples.filter((e) => !used.has(e) && (byCard ? x.card && e.card === x.card : e.num === x.num));
             exs.forEach((e) => used.add(e));
             return g + `<li>${link("rl-item", "book", "意义", "", `<span class="rl-tno">${escapeHtml(x.num)}</span>${mdHtml(x.title, true)}`, x.ord)}</li>` +
               exs.map(exLi).join("");

@@ -53,8 +53,12 @@ const railOrder = (id, chapter) => {
 assert.deepEqual(railOrder('calc-int-antiderivative', 'integral'), ['意1', '例1', '意2', '例2', '意3', '例3', '意4', '例4'], '第 3 章目录：意义、例题交替');
 const lim = railOrder('calc-lim-function', 'limit');
 assert.deepEqual(lim.slice(0, 4), ['意1', '例1', '例1', '意2'], '第 1 章目录：题型 1 的两道例题挂在意义 1 下面');
+// 第 4 章新旧并存（10-17）：旧意义是列表、新意义是记号卡，先不交替，意义、例题两段各按原文顺序
 const vec = site.App.stationRailHtml(subjects.flatMap(s => s.items).find(i => i.id === 'calc-vec-coordinates'), 'calculus', 'vector-geometry');
-assert(!/class="rl-ex"/.test(typeof vec === 'string' ? vec : vec.body), '旧写法的章（意义是列表）目录不交替');
+assert(!/class="rl-ex"/.test(typeof vec === 'string' ? vec : vec.body), '新旧并存的章（旧意义是列表）目录不交替');
+const old = n => Array.from({ length: n }, (_, i) => String(i + 1));
+// 两段分列时例题不带 rl-ex，railOrder 里都记成「意」：先意义 15 + 1，再例题 8 + 1
+assert.deepEqual(railOrder('calc-vec-coordinates', 'vector-geometry'), [...old(15), '1', ...old(8), '1'].map(n => '意' + n), '第 4 章目录：意义、例题各按原文顺序');
 
 dataFiles.forEach((file, i) => assert(dataBefore[i].equals(fs.readFileSync(file)), '数据文件不变：' + file));
 console.log('app-stack ok: ' + stacked + ' 行叠成满格，检查 ' + checked + ' 行意义/例题');
