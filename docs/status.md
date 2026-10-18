@@ -61,7 +61,8 @@
   - 10-17 分工改了：写稿、审稿都在 Antigravity（Gemini 网页额度用完；审稿用 Antigravity 里单独一个 Claude 对话），我只管落地和代码。为此做了只读镜像 `E:\AI_lunwen\kaoyan-mirror`（`tools/mirror.cjs`，每次推送后重新生成）和交稿工具 `tools/apply-handoff.cjs`，规矩见 CLAUDE.md「Antigravity 交稿」；给审稿用的两份新文档 `docs/reviewer-taste.md`（设计口味，从我的记忆整理）、`docs/site-format.md`（网站排版规则）。Downloads 里的「审稿提示词-高等数学第4章-意义例题.md」被镜像 README 取代。同日加了 `共同维护/`（设计口味、写作格式要求以镜像为正本，用户和 Antigravity 可改，生成镜像时抄回仓库）、交稿工具一次接多份；Antigravity 里写稿直接读镜像的章节文件，不再用素材包和 kickoff.cjs。
   - 10-17 晚分工又改：Antigravity 里的 Claude 额度只够几次对话，审稿改回我做；Gemini 4 仍在 Antigravity 读镜像写稿。稿子走文件（Gemini 写进 `待提交/`，草稿箱）、意见走对话（用户贴给 Gemini）；写好一份审一份，上线攒着（一章剩下的方向写完或至少三份）。镜像的 README 换成 `GEMINI.md`（正本 `docs/mirror-gemini.md`，Antigravity 每个对话自动读）：分工流程、格式规矩、内容规矩、自查清单、交稿格式、踩过的坑（审稿时我往里加）；`共同维护/写作格式要求.md` 去掉重复的格式条款，只留两段开场白。`apply-handoff` 加 `--reviewed`（审过的一版存进 `drafts/审过/`），`--write` 只接审过的。规矩见 CLAUDE.md「Gemini 写稿、我审稿上线」。
   - 10-17 第①站小修（`0da1e22`，v201，用户要求）：〔定义〕向量的投影（教材 it92）补「计算公式（用第 ② 站的数量积）」$\operatorname{Prj}_{\boldsymbol b}\boldsymbol a = \frac{\boldsymbol a\cdot\boldsymbol b}{|\boldsymbol b|}$，笔记本站边界一句相应改；〔性质〕坐标运算与长度（笔记 tgkt）删「勾股定理用两次」，改成「模就是坐标的平方和开根号，不管几维」。存档 Downloads/高数第4章-教材与笔记存档（补投影公式、删勾股推导前）-2026-10-17-831bf04.md。
-  - 开场白模板 `docs/gemini-kickoff.md` 里「梳理每张卡的定位」会引出清单，第①站走通后改成「先给推导链和分卡方案」。
+  - 开场白模板 `docs/gemini-kickoff.md` 里「梳理每张卡的定位」会引出清单，第①站走通后改成「先给推导链和分卡方案」。（10-18 已改；GEMINI.md 也写进了第 4 章定下的〔定义〕〔性质〕写法和「重写站」交稿格式。）
+- **下一步：高数第 5 章 `calc-mvd-limit-continuity` 重写**（10-18 起，新开 Claude 会话）。Gemini 在 Antigravity 里读镜像写（开场白在对话里给了用户：读 `章节/高等数学/第05章-多元函数微分学.md` + `规矩/学习方法.md`，每站先给推导链和分卡方案），整站定稿写进 `待提交/`，`操作: 重写站`。**`apply-handoff` 还不认「重写站」**：第一份来之前，要么给它加上（四段按顺序配对、生成新记号、删旧卡和分组、存档），要么手工接。第 5 章〔性质〕里还有分组（twyj、icv9……），重写时一起去掉，照第 4 章。
 - 第 3 章章末的决策流、本章总结、思维导图和本卡主线里的叙事词，用户决定不弄了，留着（10-15）。
 
 - 第 1 章：思维导图按五站重做（决策流、本章总结 v2 已写入）。
