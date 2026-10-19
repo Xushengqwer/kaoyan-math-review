@@ -12,6 +12,7 @@
 // 三种操作（文件开头 --- 之间的「操作:」）：
 //   追加意义例题  <!-- 意义 --> 接在〔意义〕末尾、<!-- 例题 --> 接在〔例题〕末尾（这一节后面的 --- 分隔线之前），共用一个新记号
 //   替换卡        「记号: xxxx」那张卡：<!-- 教材 -->/<!-- 意义 --> 换教材那一半，<!-- 笔记 -->/<!-- 例题 --> 换笔记那一半
+//   替换本卡主线  <!-- 教材 --> 换掉〔定义〕开头「### 〔定义〕」和第一个站记号之间的「本卡主线」
 //   重写站        「站: ①」那一站：<!-- 教材·定义 --> <!-- 笔记·定义 --> <!-- 教材·性质 --> <!-- 笔记·性质 --> 各是这一站这一节的全部卡
 //                 （一张卡一个 ####，第一个 #### 前面的字是站引子，不写就沿用旧的；写「（无）」删掉这一节的这一站）；
 //                 教材第 n 张和笔记第 n 张配成一对、共用一个新记号，旧卡和分组整站换掉，站记号和站名行照旧；
@@ -266,6 +267,21 @@ function newId(used) {
   }
 }
 
+// 换掉〔定义〕开头的「本卡主线」：「### 〔定义〕」标题行之后、第一个站记号之前的那段（2026-10-19，第 5 章五站）
+function replaceStoryline(book, text) {
+  const site = loadSite();
+  const cb = site.cardBlocks(book);
+  must(cb, "教材没有格子记号");
+  const b = cb.blocks.find((x) => x.kind === "section" && x.value === "定义");
+  must(b, "教材里没有〔定义〕这一节");
+  const body = book.slice(b.start, b.end);
+  const head = body.match(/^\s*###[^\n]*\n/);
+  must(head, "〔定义〕这一节开头不是 ### 标题");
+  must(/本卡主线/.test(body), "〔定义〕开头原来没有「本卡主线」，不知道换哪段");
+  must(/^\*\*本卡主线\*\*/.test(String(text).trim()), "新的主线要以「**本卡主线**」开头");
+  return book.slice(0, b.start) + head[0] + "\n" + String(text).trim() + body.match(/\s*$/)[0] + book.slice(b.end);
+}
+
 // 纯函数：base = { book, note } → { book, note }（测试用它对着历史版本复现）；重写站时 id 是给新记号的函数
 function applyHandoff(base, h, id) {
   const op = h.head["操作"];
@@ -282,7 +298,10 @@ function applyHandoff(base, h, id) {
   } else if (op === "重写站") {
     must(typeof id === "function", "重写站要一个给新记号的函数");
     return rewriteStation(base, h, id).out;
-  } else fail("不认识的操作「" + (op || "") + "」：只有 追加意义例题、替换卡、重写站");
+  } else if (op === "替换本卡主线") {
+    must(h.parts.book && Object.keys(h.parts).length === 1, "替换本卡主线只收一段 <!-- 教材 -->");
+    out.book = replaceStoryline(base.book, h.parts.book.text);
+  } else fail("不认识的操作「" + (op || "") + "」：只有 追加意义例题、替换卡、重写站、替换本卡主线");
   return out;
 }
 
@@ -330,14 +349,14 @@ function applyAll(bases, list, nextId) {
       out[card] = r.out;
       continue;
     }
-    x.id = x.h.head["操作"] === "替换卡" ? x.h.head["记号"] : nextId();
+    x.id = x.h.head["操作"] === "替换卡" ? x.h.head["记号"] : x.h.head["操作"] === "替换本卡主线" ? "" : nextId();
     out[card] = applyHandoff(out[card], x.h, x.id);
   }
   return out;
 }
 
 module.exports = { parseHandoff, lintPart, appendToSection, replaceCard, applyHandoff, applyAll, reviewState, markReviewed, reviewNotes, REVIEWED,
-  splitStationPart, stationPieces, rewriteStation, pendingCards };
+  splitStationPart, stationPieces, rewriteStation, pendingCards, replaceStoryline };
 if (require.main === module) main(() => {
   const args = process.argv.slice(2);
   const write = args.includes("--write"), reviewed = args.includes("--reviewed");
@@ -374,7 +393,7 @@ if (require.main === module) main(() => {
   for (const x of list) {
     x.state = reviewState(x.file);
     console.log("交稿：" + path.basename(x.file) + (x.h.head["说明"] ? "（" + x.h.head["说明"] + "）" : "") + " · " + x.state);
-    console.log("  " + x.h.head["卡片"] + " · " + x.h.head["操作"] + (x.ids ? " · 第" + x.h.head["站"] + "站" : " · 记号 " + x.id) + " · " +
+    console.log("  " + x.h.head["卡片"] + " · " + x.h.head["操作"] + (x.ids ? " · 第" + x.h.head["站"] + "站" : x.id ? " · 记号 " + x.id : "") + " · " +
       Object.values(x.h.parts).map((p) => p.name + " " + p.text.length + " 字").join("、") + (x.h.head["审稿"] ? " · 审稿：" + x.h.head["审稿"] : ""));
     for (const line of x.summary || []) console.log("  " + line);
     for (const w of x.warns) console.log("  ⚠ " + w);
@@ -402,8 +421,9 @@ if (require.main === module) main(() => {
     const ch = hit.subject.chapters.find((c) => c.id === hit.item.chapterId);
     const mine = list.filter((x) => x.h.head["卡片"] === card);
     // 存档名：重写站写「重写第①②③站」（说明往往是一长句）；其他取说明冒号前那段
-    const stations = mine.every((x) => x.h.head["操作"] === "重写站") ? mine.map((x) => x.h.head["站"]).join("") : "";
-    const what = (stations ? "重写第" + stations + "站" : (mine[0].h.head["说明"] || mine[0].h.head["操作"]).split(/[：:]/)[0] + (mine.length > 1 ? "等 " + mine.length + " 份" : "")).replace(/[\\/:*?"<>|]/g, "-");
+    const rest = mine.filter((x) => x.h.head["操作"] !== "重写站");
+    const stations = rest.every((x) => x.h.head["操作"] === "替换本卡主线") ? mine.filter((x) => x.ids || x.h.head["操作"] === "重写站").map((x) => x.h.head["站"]).join("") : "";
+    const what = (stations ? "重写第" + stations + "站" + (rest.length ? "与本卡主线" : "") :(mine[0].h.head["说明"] || mine[0].h.head["操作"]).split(/[：:]/)[0] + (mine.length > 1 ? "等 " + mine.length + " 份" : "")).replace(/[\\/:*?"<>|]/g, "-");
     const arch = path.join(os.homedir(), "Downloads", subj + "第" + ch.order + "章-教材与笔记存档（交稿" + what + "前）-" + date + "-" + hash + ".md");
     const r = cp.spawnSync(process.execPath, [path.join(REPO, "tools", "archive.cjs"), arch, subj + "第" + ch.order + "章 教材与笔记存档（交稿" + what + "前）", card, "book:" + card],
       { cwd: REPO, encoding: "utf8" });

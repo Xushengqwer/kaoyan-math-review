@@ -160,6 +160,23 @@ assert.throws(() => H.applyHandoff(base, H.parseHandoff(handoff({ 卡片: id, �
     [['教材·性质', '#### 1. 甲\n\n写了「（待写）」这几个字不算'], ['笔记·性质', '#### 1. 甲\n\n笔记']]))), 0, '只认单独一行的（待写）');
 }
 
+// 替换本卡主线（10-19，第 5 章五站）：换回同样的字不变；换成新的只动「### 〔定义〕」到第一个站记号之间
+{
+  const book = at('124e1c1').book;
+  const sec = site.cardBlocks(book).blocks.find(b => b.kind === 'section' && b.value === '定义');
+  const old = book.slice(sec.start, sec.end).replace(/^\s*###[^\n]*\n/, '').trim();
+  assert.match(old, /^\*\*本卡主线\*\*/);
+  const swap = (text) => H.applyHandoff(at('124e1c1'), H.parseHandoff(handoff({ 卡片: id, 操作: '替换本卡主线' }, [['教材', text]])), '');
+  assert.equal(swap(old).book, book, '换回原样，一字不差');
+  const changed = swap('**本卡主线**：新的一句。\n* **依赖**：无。');
+  assert.equal(changed.book, book.replace(old, '**本卡主线**：新的一句。\n* **依赖**：无。'));
+  assert.equal(changed.note, at('124e1c1').note, '笔记不动');
+  assert.equal(site.markerIssues(changed.book, changed.note).length, 0);
+  assert.throws(() => swap('没有标签的一句'), /本卡主线/);
+  const list = [{ h: H.parseHandoff(handoff({ 卡片: id, 操作: '替换本卡主线' }, [['教材', old]])) }];
+  H.applyAll({ [id]: at('124e1c1') }, list, () => assert.fail('替换本卡主线不该要新记号'));
+}
+
 // 审稿状态（10-17 晚起 Claude 审稿）：--reviewed 把审过的那一版复制进 drafts/审过/，--write 只接一字不差的
 {
   const fs = require('node:fs'), os = require('node:os'), path = require('node:path');
