@@ -31,7 +31,7 @@ const expected = {
   'calc-der-derivative':            [6, 10, 8, 6, 6, 0],  // 保留重构后的六组意义／例题，删除旧条目及提示
   'calc-int-antiderivative':        [7, 6, 10, 4, 4, 0],  // 2026-10-11 Gemini 重写定义、性质（每站 1～2 张），删分组与提示；10-15 意义、例题按四个方向重写
   'calc-vec-coordinates':           [7, 5, 17, 4, 4, 0],  // 2026-10-15/17 Gemini 重写：①站定义 5 → 2、性质 4 → 2；②站性质 12 → 3；③④⑤⑥站定义并进性质（一个工具一张卡），各 3 张；10-17 旧意义 15、例题 8 后面接上新方向 1
-  'calc-mvd-limit-continuity':      [7, 19, 46, 15, 9, 19],
+  'calc-mvd-limit-continuity':      [7, 11, 27, 15, 9, 19],  // 2026-10-19 Gemini 重写①②③站：定义 19 → 11（③站并进性质），性质去掉①②③站的分组、合卡
   'calc-mi-double-def':             [7, 15, 31, 18, 11, 19],
   'calc-ls-line-first': [7,16,39,20,10,18],
   'calc-ser-convergence': [7,16,36,19,10,18],
