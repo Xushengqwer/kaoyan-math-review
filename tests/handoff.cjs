@@ -69,10 +69,96 @@ assert.deepEqual(lint('意义', '#### 1. 甲\n\n$a<b$ 与 $c>d$').errors, [], '�
 assert.match(lint('意义', '## 1. 甲').warns.join(), /####/);
 assert.match(lint('意义', '#### 1. 甲\n\n* 乙\n\n* ⚠️ **边界与避坑**：丙').warns.join(), /分隔线/);
 assert.deepEqual(lint('意义', '#### 1. 甲\n\n---\n\n* ⚠️ **边界与避坑**：丙').warns, []);
+assert.deepEqual(lint('笔记·性质 第 1 张', '#### 1. 甲\n\n* 乙\n* ⚠️ **边界与避坑**：丙').warns, [], '〔性质〕的卡里 ⚠️ 前不用 ---');
 assert.match(lint('意义', '#### 1. 甲\n\n截断的 $x + y').warns.join(), /不成对/);
 assert.deepEqual(lint('意义', '#### 1. 甲\n\n$$\na + b\n$$').warns, [], '跨行的 $$ 不算不成对');
 assert.throws(() => H.parseHandoff('<!-- 意义 -->\n\n#### 1. 甲'), /---/);
 assert.throws(() => H.applyHandoff(base, H.parseHandoff(handoff({ 卡片: id, 操作: '整节换掉' }, [['意义', '#### 1. 甲']])), 'abcd'), /不认识的操作/);
+
+// 重写站（10-18，第 5 章起交稿）：拿第 4 章手工提交的两次整站重写当样本，把新站的卡抽出来做成交稿，接到上一版上，
+// 记号按当时用的顺序给，必须逐字等于当时的教材和笔记。
+//   88b33f2 第③站：定义、性质都换（站引子换新、去掉分组）
+//   68d344a 第③④站：定义写「（无）」整站删掉，性质换成一个工具一张卡、加站引子
+{
+  const stationOf = (src, sec, st) => {
+    const bs = site.cardBlocks(src).blocks;
+    const i = bs.findIndex(b => b.kind === 'station' && b.sec === sec && b.value === st);
+    if (i < 0) return null;
+    let j = i + 1;
+    while (j < bs.length && bs[j].kind !== 'station' && bs[j].kind !== 'section') j++;
+    const cards = bs.slice(i + 1, j).filter(b => b.kind === 'card');
+    return { intro: src.slice(bs[i].start, bs[i].end).trim().split('\n').slice(1).join('\n').trim(), ids: cards.map(b => b.id),
+      texts: cards.map(b => src.slice(b.start, b.end).replace(/\n+---[ \t]*\n\s*$/, '').trim()) };
+  };
+  const segment = (s) => s ? [s.intro, ...s.texts].filter(Boolean).join('\n\n') : '（无）';
+  const restation = (target, st) => {
+    const parts = [], ids = [];
+    for (const sec of ['定义', '性质']) {
+      for (const [part, name] of [['book', '教材'], ['note', '笔记']]) parts.push([name + '·' + sec, segment(stationOf(target[part], sec, st))]);
+      ids.push(...(stationOf(target.book, sec, st) || { ids: [] }).ids);
+    }
+    return { h: H.parseHandoff(handoff({ 卡片: id, 操作: '重写站', 站: st, 说明: '第' + st + '站' }, parts)), ids };
+  };
+  const run = (base, x) => H.applyHandoff(base, x.h, () => x.ids.shift());
+
+  const t3 = at('88b33f2'), s3 = restation(t3, '③');
+  assert.deepEqual(Object.keys(s3.h.parts).sort(), ['book:定义', 'book:性质', 'note:定义', 'note:性质']);
+  const o3 = run(at('7df07dc'), s3);
+  assert.equal(o3.book, t3.book, '第③站教材整站换掉，和手工提交的一样');
+  assert.equal(o3.note, t3.note, '第③站笔记整站换掉，和手工提交的一样');
+
+  const t34 = at('68d344a'), a3 = restation(t34, '③'), a4 = restation(t34, '④');
+  assert.equal(a3.h.parts['book:定义'].text, '（无）');
+  const list = [{ h: a3.h }, { h: a4.h }], ids = [...a3.ids, ...a4.ids];
+  const o34 = H.applyAll({ [id]: at('0a24ce3') }, list, () => ids.shift())[id];
+  assert.equal(o34.book, t34.book, '第③④站〔定义〕删掉、〔性质〕换掉，和手工提交的一样');
+  assert.equal(o34.note, t34.note);
+  assert.equal(site.markerIssues(o34.book, o34.note).length, 0);
+  assert.deepEqual(list.map(x => Object.keys(x.ids)), [['定义', '性质'], ['定义', '性质']]);
+  assert.match(list[0].summary[0], /〔定义〕删掉这一站：旧 3 张/);
+
+  // 只交〔性质〕两段：〔定义〕不动；没写站引子就沿用旧的
+  const base = at('0a24ce3'), p = stationOf(t34.book, '性质', '③'), pn = stationOf(t34.note, '性质', '③');
+  const only = H.rewriteStation(base, H.parseHandoff(handoff({ 卡片: id, 操作: '重写站', 站: '③' },
+    [['教材·性质', p.texts.join('\n\n')], ['笔记·性质', pn.texts.join('\n\n')]])), (() => { const q = [...p.ids]; return () => q.shift(); })());
+  assert.equal(only.summary[0], '〔定义〕不动');
+  assert.equal(stationOf(only.out.book, '定义', '③').texts.join(), stationOf(base.book, '定义', '③').texts.join());
+  assert.equal(stationOf(only.out.book, '性质', '③').intro, stationOf(base.book, '性质', '③').intro);
+  assert.equal(site.markerIssues(only.out.book, only.out.note).length, 0);
+
+  // 这一节原来没有这一站：按圈号插进去（把删掉的〔定义〕第③站加回去）
+  const addBack = (src) => H.rewriteStation(src, H.parseHandoff(handoff({ 卡片: id, 操作: '重写站', 站: '③' },
+    [['教材·定义', '#### 1. 甲\n\n教材甲'], ['笔记·定义', '#### 1. 甲\n\n笔记甲']])), () => 'zq01').out;
+  const defStations = (src) => Array.from(site.cardBlocks(src).blocks.filter(b => b.kind === 'station' && b.sec === '定义'), b => b.value);
+  const mid = addBack(t34);   // 68d344a：〔定义〕还有 ⑤⑥
+  assert.deepEqual(defStations(mid.book), ['①', '②', '③', '⑤', '⑥'], '插在第⑤站前面');
+  assert(mid.note.includes('笔记甲\n\n<!-- station:⑤ -->'));
+  const end = addBack(at('124e1c1'));   // 〔定义〕只剩 ①②
+  assert.deepEqual(defStations(end.book), ['①', '②', '③'], '插在〔定义〕末尾');
+  assert(end.book.includes('#### 1. 甲\n\n教材甲\n\n---\n\n<!-- section:性质 -->'), '在〔定义〕末尾的分隔线之前');
+  for (const o of [mid, end]) assert.equal(site.markerIssues(o.book, o.note).length, 0);
+
+  // 拦住的写法
+  const bad = (parts, st = '③') => () => H.rewriteStation(base, H.parseHandoff(handoff({ 卡片: id, 操作: '重写站', 站: st }, parts)), () => 'zq02');
+  assert.throws(bad([['教材·性质', '#### 1. 甲'], ['笔记·性质', '#### 1. 甲\n\n#### 2. 乙']]), /一样多/);
+  assert.throws(bad([['教材·性质', '#### 1. 甲']]), /成对/);
+  assert.throws(bad([['教材·定义', '（无）'], ['笔记·定义', '#### 1. 甲']]), /（无）/);
+  assert.throws(bad([['教材·性质', '#### 1. 甲'], ['笔记·性质', '#### 1. 甲']], '3'), /站的圈号/);
+  assert.throws(bad([['教材·性质', '只有字没有卡'], ['笔记·性质', '#### 1. 甲']]), /分不出卡/);
+  const pieces = H.stationPieces({ name: '教材·性质', text: '**③ 平面和直线**\n\n引子\n\n#### 1. 甲\n\n正文\n\n---\n\n乙\n\n#### 丙' });
+  assert.match(pieces.errors.join(), /站名行不用写/);
+  assert.match(pieces.warns.join(), /不是「#### n. 标题」/);
+  assert.deepEqual(pieces.pieces.map(q => q.name), ['教材·性质 站引子', '教材·性质 第 1 张', '教材·性质 第 2 张']);
+  assert.match(H.stationPieces({ name: '笔记·定义', text: '#### 1. 甲\n\n正文\n\n---' }).warns.join(), /末尾有 ---/);
+  // 先只交教材（10-19 起）：笔记卡写「（待写）」也能接成一站（预览、审教材用），记下还有几张没写
+  const draft = H.parseHandoff(handoff({ 卡片: id, 操作: '重写站', 站: '③' },
+    [['教材·性质', '#### 1. 甲\n\n* **甲**：定义\n\n#### 2. 乙\n\n* **乙**：定理'], ['笔记·性质', '#### 1. 甲\n\n（待写）\n\n#### 2. 乙\n\n（待写）']]));
+  assert.equal(H.pendingCards(draft), 2);
+  const drafted = H.rewriteStation(base, draft, (() => { const q = ['zq03', 'zq04']; return () => q.shift(); })()).out;
+  assert.equal(site.markerIssues(drafted.book, drafted.note).length, 0, '待写的笔记卡照样配对');
+  assert.equal(H.pendingCards(H.parseHandoff(handoff({ 卡片: id, 操作: '重写站', 站: '③' },
+    [['教材·性质', '#### 1. 甲\n\n写了「（待写）」这几个字不算'], ['笔记·性质', '#### 1. 甲\n\n笔记']]))), 0, '只认单独一行的（待写）');
+}
 
 // 审稿状态（10-17 晚起 Claude 审稿）：--reviewed 把审过的那一版复制进 drafts/审过/，--write 只接一字不差的
 {
@@ -87,6 +173,9 @@ assert.throws(() => H.applyHandoff(base, H.parseHandoff(handoff({ 卡片: id, �
     fs.writeFileSync(draft, '按意见改过');
     assert.equal(H.reviewState(draft, snaps), '审过后改过');
     assert.equal(fs.readFileSync(path.join(snaps, '方向2.md'), 'utf8'), '第一版', '副本留着审过的那一版，好只看改动');
+    // 审稿意见在镜像根目录的 审稿意见/ 里，和稿子同名；稿子不在 待提交/ 里就没有
+    assert.equal(H.reviewNotes(path.join(tmp, '待提交', '方向2.md')), path.join(tmp, '审稿意见', '方向2.md'));
+    assert.equal(H.reviewNotes(draft), null);
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }

@@ -23,10 +23,12 @@ try {
   assert(!files.some(([, t]) => t.includes('\r')), '一律 LF');
 
   fs.writeFileSync(path.join(dir, '待提交', '方向2.md'), '交稿');
+  fs.writeFileSync(path.join(dir, '审稿意见', '方向2.md'), '意见');
   fs.writeFileSync(path.join(dir, '章节', '多余.md'), '旧的');
   fs.writeFileSync(path.join(dir, 'README.md'), '旧版的说明');
   write(dir, files, hash);
   assert.equal(fs.readFileSync(path.join(dir, '待提交', '方向2.md'), 'utf8'), '交稿', '重新生成不动待提交');
+  assert.equal(fs.readFileSync(path.join(dir, '审稿意见', '方向2.md'), 'utf8'), '意见', '重新生成不动审稿意见');
   assert(!fs.existsSync(path.join(dir, '章节', '多余.md')), '章节/ 整个重写');
   assert(!fs.existsSync(path.join(dir, 'README.md')), '旧版的 README.md 删掉');
 

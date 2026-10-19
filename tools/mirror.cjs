@@ -13,7 +13,8 @@
 //   共同维护/      设计口味、写作格式要求：以镜像里这份为准，用户和 Antigravity 可以改；
 //                  没有就从仓库 docs/ 抄一份，和仓库工作区那份不一样就抄回仓库（要提交，git 里留底）
 //   待提交/        交稿文件放这里；提交后挪进 待提交/已提交/
-// 重新生成时只删 GEMINI.md、README.md（旧版的说明）、章节/、规矩/ 再写；共同维护/、待提交/ 从不删。目录里要有 .kaoyan-mirror 才会删东西。
+//   审稿意见/      Claude 的审稿意见，一份稿一个同名文件（2026-10-18 起：用户从对话里复制公式会乱码）；稿子上线后挪进 审稿意见/已提交/
+// 重新生成时只删 GEMINI.md、README.md（旧版的说明）、章节/、规矩/ 再写；共同维护/、待提交/、审稿意见/ 从不删。目录里要有 .kaoyan-mirror 才会删东西。
 const fs = require("fs");
 const path = require("path");
 const { main, must, REPO, read, gitShow, loadSubjects, loadNotes } = require("./lib.cjs");
@@ -112,6 +113,7 @@ function write(dir, files, hash) {
     for (const name of ["GEMINI.md", "README.md", "章节", "规矩"]) fs.rmSync(path.join(dir, name), { recursive: true, force: true });
   }
   fs.mkdirSync(path.join(dir, "待提交", "已提交"), { recursive: true });
+  fs.mkdirSync(path.join(dir, "审稿意见", "已提交"), { recursive: true });
   fs.writeFileSync(path.join(dir, MARK), "tools/mirror.cjs 生成的只读镜像；当前版本 " + hash + "\n", "utf8");
   for (const [rel, text] of files) {
     fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });
