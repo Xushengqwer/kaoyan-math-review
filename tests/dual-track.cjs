@@ -15,7 +15,7 @@ const expected = new Map([
   ['calc-der-derivative', 24],
   ['calc-int-antiderivative', 20],
   ['calc-vec-coordinates', 26],  // 10-17 加意义 1～4 + 例题 1～4（四对）
-  ['calc-mvd-limit-continuity', 38],  // 10-19 重写①②③站：定义、性质 48 对 → 21 对
+  ['calc-mvd-limit-continuity', 14],  // 10-19 按五站重写：定义、性质 48 对 → 14 对
   ['calc-mi-double-def', 46],
   ['calc-ls-line-first', 55],
   ['calc-ser-convergence', 52],
