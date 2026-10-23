@@ -8,9 +8,9 @@
 - 三科，每章若干张卡：**教材** = 数据文件 `assets/data/{calculus,linalg,probability}.js` 里卡片的 `md` 字段，**笔记** = `assets/data/notes.js` 里以卡片 id 为 key 的一条。
 - 网站上的笔记和总结大量是**用户自己的文字**，这是整个项目最重要的资产。
 
-## 分工（2026-10-20 起）
+## 分工（2026-10-20 起，10-24 用户再确认；Codex 彻底不用）
 
-- **内容由 Gemini 4 写**（Google AI Studio）；Antigravity 里不限额的模型只把定稿存进镜像 `E:\AI_lunwen\kaoyan-mirror\待提交/`，用户同意后跑 `tools/publish.cjs` 上线。
+- **内容由 Gemini 4 写**（Google AI Studio）。Antigravity 里不限额的模型负责其余机械活：给 AI Studio 整理开场白和素材包（放在镜像 `共同维护/`）、把定稿存进镜像 `E:\AI_lunwen\kaoyan-mirror\待提交/`、用户同意后跑 `tools/publish.cjs` 上线。
 - **Claude 只做审稿和真正的网站改动**（功能、排版、结构改动、测试、处理 publish 报错）。上线、删卡这类机械活不做；用户叫我上线时也只跑 publish.cjs，不再手工一步步做。
 - **你不写、不改任何数学内容和用户的文字。** 草稿或导出文件里发现问题（错字、公式报错、漏出的 `**`），只报告，由用户决定怎么改。
 
