@@ -1,23 +1,73 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-const storage = {};
-const context = vm.createContext({
-  console,
-  window: {},
-  document: {
-    addEventListener() {},
-    querySelectorAll() { return []; },
-    getElementById() { return null; },
-  },
-  localStorage: { getItem: k => storage[k] || null, setItem: (k, v) => { storage[k] = v; } },
-});
-for (const f of ['assets/vendor/marked/marked.umd.js', 'assets/js/data-loader.js', 'assets/js/storage.js',
-  'assets/data/calculus.js', 'assets/data/linalg.js', 'assets/data/probability.js', 'assets/data/notes.js',
-  'assets/data/superseded.js', 'assets/js/katex-init.js', 'assets/js/app.js']) {
-  vm.runInContext(fs.readFileSync(f, 'utf8'), context);
+const { PINNED, siteSource } = require('../tools/lib.cjs');
+// rev：内容数据取 git 的这一版（不给就是工作区）；代码总是工作区的
+function siteContext(rev) {
+  const storage = {};
+  const context = vm.createContext({
+    console,
+    window: {},
+    document: {
+      addEventListener() {},
+      querySelectorAll() { return []; },
+      getElementById() { return null; },
+    },
+    localStorage: { getItem: k => storage[k] || null, setItem: (k, v) => { storage[k] = v; } },
+  });
+  for (const f of ['assets/vendor/marked/marked.umd.js', 'assets/js/data-loader.js', 'assets/js/storage.js',
+    'assets/data/calculus.js', 'assets/data/linalg.js', 'assets/data/probability.js', 'assets/data/notes.js',
+    'assets/data/superseded.js', 'assets/js/katex-init.js', 'assets/js/app.js']) {
+    vm.runInContext(siteSource(f, rev), context);
+  }
+  context.assert = assert;
+  return context;
 }
-context.assert = assert;
+
+// ── 现在的内容：只查规矩（以后上线追加、替换、删卡、删旧版、重写站都不用改这里）──
+vm.runInContext(`
+App.subjects = KaoyanData.subjects();
+const stOrder = (st) => (st.codePointAt(0) - 0x2460) * 2 + (st.includes('′') ? 1 : 0);
+const total = (o, part, sec) => o.blocks.reduce((n, b) => n + (b.rows[part + sec] || { items: [] }).items.length, 0);
+const cardsOf = (src, sec) => (cardBlocks(src) || { blocks: [] }).blocks.filter((b) => b.kind === 'card' && (!sec || b.sec === sec));
+const gridCards = App.subjects.flatMap((s) => s.items).filter((it) => hasMarkers(it.md));
+assert(gridCards.length, '有按格子的卡');
+let cells = 0, pairs = 0;
+for (const it of gridCards) {
+  const id = it.id, book = it.md, note = Notes.has(id) ? Notes.get(id) : '';
+  const o = cardOutline(book, note);
+  assert(o.structured, id + ' 按站或分组组织');
+  o.blocks.forEach((b) => Object.values(b.rows).forEach((r) => r.items.forEach((x, k) => assert.equal(x.ord, k, id + b.mark + r.sec + ' 序号连续'))));
+  // 〔定义〕〔性质〕每张卡一条，笔记和教材一样多；意义、例题至少每张卡一条（旧版正文还在的，多出旧版的条目）
+  for (const sec of ['定义', '性质']) {
+    assert.equal(total(o, 'book', sec), cardsOf(book, sec).length, id + ' 教材' + sec + '：一张卡一条');
+    assert.equal(total(o, 'note', sec), total(o, 'book', sec), id + ' 笔记' + sec + '：和教材一样多');
+  }
+  assert(total(o, 'book', '意义') >= cardsOf(book, '意义').length, id + ' 意义一张卡至少一条');
+  assert(total(o, 'note', '例题') >= cardsOf(note, '例题').length, id + ' 例题一张卡至少一条');
+  // 两半里有站记号的站都有站卡，按圈号排（旧版没记号的〔提示〕还按旧站分时，会多出旧站的块，不管）
+  const sts = [...new Set([book, note].flatMap((src) => (cardBlocks(src) || { blocks: [] }).blocks.filter((b) => b.kind === 'station').map((b) => b.value)))]
+    .sort((a, b) => stOrder(a) - stOrder(b));
+  assert.deepEqual(o.blocks.map((b) => b.mark).filter((m) => sts.includes(m)), sts, id + ' 有记号的站都有站卡、按圈号排');
+  // 每一张小卡片记着它在原文里的位置，原样拼回去一字不差；〔定义〕〔性质〕每一对两半各是一格
+  const html = App.dualTrackHtml(App.dualTrackModel(id, book, note));
+  for (const m of html.matchAll(/<div class="dual-cell dual-(book|note)" data-part="[^"]*" data-sec="([^"]*)" data-station="[^"]*" data-src="(\\d+)-(\\d+)">/g)) {
+    const full = m[1] === 'book' ? book : note, start = +m[3], end = +m[4];
+    assert(start <= end && end <= full.length, id + ' 位置在原文范围内');
+    const { core } = cellSource(full, start, end);
+    assert.equal(cellSplice(full, start, end, core), full, id + ' 原样拼回');
+    assert.equal(cellSplice(full, start, end, '\\n\\n' + core + '\\n\\n\\n'), full, id + ' 前后多的空行不算改动');
+    // 只数落在某张卡里的格子（站引子、本卡主线那些格子不算）
+    if ((m[2] === '定义' || m[2] === '性质') && cardsOf(full, m[2]).some((b) => b.start <= start && end <= b.end)) cells++;
+  }
+  const noteIds = new Set(cardsOf(note).map((b) => b.id));
+  pairs += cardsOf(book).filter((b) => (b.sec === '定义' || b.sec === '性质') && noteIds.has(b.id)).length;
+}
+assert.equal(cells, 2 * pairs, '每一对〔定义〕〔性质〕卡片两半都能单独编辑');
+`, siteContext());
+
+// ── 钉住的那一版内容（tools/lib.cjs 的 PINNED）：条数、标题、目录快照照旧逐个核对，查的是显示代码 ──
+const context = siteContext(PINNED);
 vm.runInContext(`
 // 站卡小标题（cardOutline）、本卡主线（cardStory）、按站的右侧目录、单张小卡片编辑（cellSource / cellSplice）：只读原文、只改显示
 App.subjects = KaoyanData.subjects();

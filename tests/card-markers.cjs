@@ -2,8 +2,8 @@
 // 卡片按钮（上移、下移、在下面加一张、复制到、删除）只挪动、增删记号块；迁移往返逐字节相同。
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const { loadSite, loadSubjects, loadNotes, findItem } = require('../tools/lib.cjs');
-const { migrateCard, verifyCard } = require('../tools/card-markers.cjs');
+const { loadSite, loadSubjects, loadNotes, findItem, PINNED } = require('../tools/lib.cjs');
+const { verifyCard } = require('../tools/card-markers.cjs');
 
 const site = loadSite();
 // 网站代码跑在 vm 里，数组、对象跨上下文，按 JSON 比
@@ -156,50 +156,54 @@ const okTexts = (t, label) => same(site.markerIssues(t.book, t.note), [], label 
   assert(!mixed.marked);
 }
 
-// ── 真实数据：带记号的卡记号完整、去掉记号还能照旧显示；没带记号的对照卡，迁移预演逐格一致 ──
+// ── 真实数据：带记号的卡记号完整、两边都有的卡都配上、每张卡能上下移再挪回来 ──
+// 按格子的卡 = 教材有记号的卡（不再列名单：以后上线追加、删卡、删旧版都不用改这里）
 const subjects = loadSubjects(), notes = loadNotes();
-const DUAL = ['calc-lim-function', 'calc-der-derivative', 'calc-int-antiderivative', 'calc-vec-coordinates',
-  'calc-mvd-limit-continuity', 'calc-mi-double-def', 'calc-ls-line-first', 'calc-ser-convergence', 'calc-ode-concepts',
-  'la-eig-def-eigen', 'la-vec-def-max-independent-set'];
-// 迁移以后用户在网站上改过结构的卡（合并、删卡、标题改成 ### 等）：边界和配对只认记号，
-// 去掉记号的旧对照已经认不出这些标题，不再逐格比；改查两边都有的卡都配上（意义可以没有例题，笔记的卡教材里都有）
-// 第 4 章新旧并存时（10-17 方向 1～4 接在旧版后面）去掉记号配不上，曾放在这里；旧版整节删掉后又能逐格比，移出
-const RESTRUCTURED = new Set(['calc-der-derivative', 'calc-int-antiderivative']);
-let marked = 0;
+const DUAL = subjects.flatMap((s) => s.items).filter((it) => site.hasMarkers(it.md)).map((it) => it.id);
+assert(DUAL.length, '有按格子的卡');
 for (const did of DUAL) {
   const book = findItem(did, subjects).item.md, note = notes[did];
-  if (site.hasMarkers(book)) {
-    marked++;
-    same(site.markerIssues(book, note), [], did + '：记号完整');
-    if (RESTRUCTURED.has(did)) {
-      const m = App.dualTrackModel(did, book, note);
-      assert(m.marked && m.enabled, did + '：按格子对照');
-      const cards = (t) => new Set(site.cardBlocks(t).blocks.filter((b) => b.kind === 'card').map((b) => b.id));
-      const bookIds = cards(book), noteIds = [...cards(note)];
-      assert(noteIds.every((x) => bookIds.has(x)), did + '：笔记的卡教材里都有');
-      assert.equal(m.pairs.length, noteIds.length, did + '：两边都有的卡都配上');
-    } else {
-      verifyCard(site, did, { book: site.stripMarkers(book), note: site.stripMarkers(note) }, { book, note });
+  same(site.markerIssues(book, note), [], did + '：记号完整');
+  const m = App.dualTrackModel(did, book, note);
+  assert(m.marked && m.enabled, did + '：按格子对照');
+  const cards = (t) => new Set(site.cardBlocks(t).blocks.filter((b) => b.kind === 'card').map((b) => b.id));
+  const bookIds = cards(book), noteIds = [...cards(note)];
+  assert(noteIds.every((x) => bookIds.has(x)), did + '：笔记的卡教材里都有');
+  assert.equal(m.pairs.length, noteIds.length, did + '：两边都有的卡都配上（意义可以没有例题）');
+  // 每张卡都能上下移再挪回来，逐字节回到原样
+  const t = { book, note };
+  const ids = site.cardBlocks(book).blocks.filter((b) => b.kind === 'card').map((b) => b.id);
+  for (const cid of ids.filter((_, i) => i % 7 === 0)) {
+    for (const dir of [-1, 1]) {
+      if (!CardOps.canMove(t, cid, dir)) continue;
+      const moved = CardOps.move(t, cid, dir);
+      same(site.markerIssues(moved.book, moved.note), [], did + ' ' + cid + '：挪完记号完整');
+      same(CardOps.move(moved, cid, -dir), t, did + ' ' + cid + '：挪回去逐字节一样');
     }
-    // 每张卡都能上下移再挪回来，逐字节回到原样
-    const t = { book, note };
-    const ids = site.cardBlocks(book).blocks.filter((b) => b.kind === 'card').map((b) => b.id);
-    for (const cid of ids.filter((_, i) => i % 7 === 0)) {
-      for (const dir of [-1, 1]) {
-        if (!CardOps.canMove(t, cid, dir)) continue;
-        const moved = CardOps.move(t, cid, dir);
-        same(site.markerIssues(moved.book, moved.note), [], did + ' ' + cid + '：挪完记号完整');
-        same(CardOps.move(moved, cid, -dir), t, did + ' ' + cid + '：挪回去逐字节一样');
-      }
-    }
-  } else {
-    migrateCard(site, did, book, note);
   }
 }
-console.log('  带记号的对照卡 ' + marked + ' 张，其余 ' + (DUAL.length - marked) + ' 张迁移预演通过');
-// 别的卡都没有记号
+console.log('  带记号的对照卡 ' + DUAL.length + ' 张');
+// 别的卡都没有记号：笔记有记号、教材没有的（只有一边）不该出现
 for (const s of subjects) for (const it of s.items) {
-  if (!DUAL.includes(it.id)) assert(!site.hasMarkers(it.md) && !site.hasMarkers(notes[it.id] || ''), it.id + '：不在对照卡里，不该有记号');
+  if (!DUAL.includes(it.id)) assert(!site.hasMarkers(notes[it.id] || ''), it.id + '：教材没有记号，笔记也不该有');
+}
+
+// ── 钉住的那一版（tools/lib.cjs 的 PINNED）：去掉记号的旧对照逐格一致（查迁移工具和旧写法的配对）──
+// 迁移以后用户在网站上改过结构的卡（合并、删卡、标题改成 ### 等）去掉记号认不出来，不逐格比
+{
+  const pinnedSite = loadSite(PINNED), ps = loadSubjects(PINNED), pn = loadNotes(PINNED);
+  const RESTRUCTURED = new Set(['calc-der-derivative', 'calc-int-antiderivative']);
+  const PINNED_DUAL = ['calc-lim-function', 'calc-der-derivative', 'calc-int-antiderivative', 'calc-vec-coordinates',
+    'calc-mvd-limit-continuity', 'calc-mi-double-def', 'calc-ls-line-first', 'calc-ser-convergence', 'calc-ode-concepts',
+    'la-eig-def-eigen', 'la-vec-def-max-independent-set'];
+  for (const did of PINNED_DUAL) {
+    const book = findItem(did, ps).item.md, note = pn[did];
+    assert(pinnedSite.hasMarkers(book), did);
+    if (!RESTRUCTURED.has(did)) verifyCard(pinnedSite, did, { book: pinnedSite.stripMarkers(book), note: pinnedSite.stripMarkers(note) }, { book, note });
+  }
+  for (const s of ps) for (const it of s.items) {
+    if (!PINNED_DUAL.includes(it.id)) assert(!pinnedSite.hasMarkers(it.md) && !pinnedSite.hasMarkers(pn[it.id] || ''), it.id + '：不在对照卡里，不该有记号');
+  }
 }
 
 for (let i = 0; i < dataFiles.length; i++) {

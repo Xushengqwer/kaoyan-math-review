@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { build, write, syncShared } = require('../tools/mirror.cjs');
+const { PINNED } = require('../tools/lib.cjs');
 
 // 只读镜像（tools/mirror.cjs，2026-10-17）：每章一个文件、规矩文档齐全；重新生成不动 待提交/；不是镜像的目录不碰
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'kaoyan-mirror-'));
@@ -11,7 +12,8 @@ try {
   write(dir, files, hash);
   const chapters = files.filter(([rel]) => /^章节[\\/].+[\\/]第\d\d章-/.test(rel));
   assert.equal(chapters.length, 9 + 4 + 8, '三科每章一个文件');
-  const ch4 = fs.readFileSync(path.join(dir, '章节', '高等数学', '第04章-向量代数与空间解析几何.md'), 'utf8');
+  // 具体内容对着钉住的那一版（tools/lib.cjs 的 PINNED）查，以后上线不用改这里
+  const ch4 = build(dir, PINNED).files.find(([rel]) => rel === path.join('章节', '高等数学', '第04章-向量代数与空间解析几何.md'))[1];
   assert.match(ch4, /<!-- card:f6rk -->/, '卡片记号保留');
   assert.match(ch4, /#### 例题 1：向量的度量/, '笔记里的例题在');
   for (const name of ['学习方法', '网站排版规则', '内容组织原则', '进度'])

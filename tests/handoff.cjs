@@ -177,6 +177,73 @@ assert.throws(() => H.applyHandoff(base, H.parseHandoff(handoff({ 卡片: id, �
   H.applyAll({ [id]: at('124e1c1') }, list, () => assert.fail('替换本卡主线不该要新记号'));
 }
 
+// 站名（10-20，以前写在说明里、Claude 手改）：重写站开头写「站名: ⑤ 新名字」，两半所有小节里第⑤站的站名行都换掉，别的不动
+{
+  const base = at('aac0e76');
+  const mk = (name) => H.parseHandoff(handoff({ 卡片: id, 操作: '重写站', 站: '⑤', 站名: name }, [['教材·性质', '#### 1. 甲\n\n教材'], ['笔记·性质', '#### 1. 甲\n\n笔记']]));
+  const r = H.rewriteStation(base, mk('⑤ 新的站名：测试'), () => 'zq09');
+  // 网站代码跑在 vm 里，数组跨上下文：Array.from 换成这边的数组再比
+  const names = (src, st) => Array.from(site.cardBlocks(src).blocks.filter(b => b.kind === 'station' && b.value === st), b => src.slice(b.start, b.end).trim().split('\n')[0]);
+  for (const part of ['book', 'note']) {
+    assert.deepEqual(names(r.out[part], '⑤'), ['**⑤ 新的站名：测试**'], part + '：站名行换掉');
+    assert.deepEqual(names(r.out[part], '⑥'), names(base[part], '⑥'), part + '：别的站不动');
+  }
+  assert.match(r.summary.join('\n'), /站名改成 \*\*⑤ 新的站名：测试\*\*（原来 \*\*⑤ /);
+  assert.equal(site.markerIssues(r.out.book, r.out.note).length, 0);
+  assert.throws(() => H.rewriteStation(base, mk('⑥ 圈号写错'), () => 'zq10'), /圈号 ⑤ 开头/);
+  assert.throws(() => H.rewriteStation(base, mk('⑤′ 带撇的是另一站'), () => 'zq11'), /圈号 ⑤ 开头/);
+}
+
+// 删旧版（10-20）：拿 aac0e76 当样本——第 4 章只留四个方向，旧版〔意义〕15 条、〔例题〕8 道和笔记〔提示〕整节删掉，
+// 交稿只有开头几行；接到 19946a7 上必须逐字等于 aac0e76
+{
+  const head = (h) => '---\n' + Object.entries(h).map(([k, v]) => k + ': ' + v).join('\n') + '\n---';
+  const drop = H.parseHandoff(head({ 卡片: id, 操作: '删旧版', 保留: 'f6rk e3c0 mxtz uhid', 说明: '删旧版' }));
+  assert.deepEqual(drop.parts, {}, '只有开头几行（末尾没有换行也认）');
+  const t = at('aac0e76'), list = [{ h: drop }];
+  const out = H.applyAll({ [id]: at('19946a7') }, list, () => assert.fail('删旧版不该要新记号'))[id];
+  assert.equal(out.book, t.book, '〔意义〕只留四个方向，和手工提交的一样');
+  assert.equal(out.note, t.note, '〔例题〕只留四个方向、〔提示〕整节删掉，和手工提交的一样');
+  assert.match(list[0].summary.join('\n'), /笔记〔提示〕整节删掉/);
+  assert.match(list[0].summary.join('\n'), /教材〔意义〕删掉开头旧版正文 \d+ 字/);
+  // 已经删干净的再删一次：不变
+  assert.deepEqual(H.applyHandoff(t, drop, ''), t);
+  // 记号写错（会把要留的卡删掉）、没写保留、带了正文：都拦下
+  assert.throws(() => H.applyHandoff(at('19946a7'), H.parseHandoff(head({ 卡片: id, 操作: '删旧版', 保留: 'f6rk e3c0 mxtz uhld' })), ''), /uhld/);
+  assert.throws(() => H.applyHandoff(at('19946a7'), H.parseHandoff(head({ 卡片: id, 操作: '删旧版' })), ''), /保留/);
+  assert.throws(() => H.applyHandoff(at('19946a7'), H.parseHandoff(head({ 卡片: id, 操作: '删旧版', 保留: 'f6rk' }) + '\n\n<!-- 意义 -->\n\n#### 1. 甲'), ''), /不用正文/);
+}
+
+// 删卡（10-20）：教材、笔记两半一起删，别的块一字不动；删的是这一节最后一张，它后面紧挨下一节的 --- 留给下一节
+{
+  const head = (h) => '---\n' + Object.entries(h).map(([k, v]) => k + ': ' + v).join('\n') + '\n---\n';
+  const base = at('aac0e76');
+  const cut = (src, cid) => {
+    const b = site.cardBlocks(src).blocks.find(x => x.kind === 'card' && x.id === cid);
+    const sep = src.slice(b.mstart, b.end).match(/\n+---[ \t]*\n\s*$/);
+    return src.slice(0, b.mstart) + (sep ? sep[0].replace(/^\n+/, '') : '') + src.slice(b.end);
+  };
+  const one = H.applyHandoff(base, H.parseHandoff(head({ 卡片: id, 操作: '删卡', 记号: 'it92' })), '');
+  assert.equal(one.book, cut(base.book, 'it92'));
+  assert.equal(one.note, cut(base.note, 'it92'));
+  assert(!one.book.includes('card:it92') && !one.note.includes('card:it92'));
+  assert.equal(site.markerIssues(one.book, one.note).length, 0, '删完记号完整');
+  // r1ws 是〔定义〕最后一张：它后面的 --- 留着，〔性质〕前面照样有分隔线
+  const last = H.applyHandoff(base, H.parseHandoff(head({ 卡片: id, 操作: '删卡', 记号: 'r1ws' })), '');
+  assert(/\n\n---\n\n<!-- section:性质 -->/.test(last.book) && /\n\n---\n\n<!-- section:性质 -->/.test(last.note), '下一节前的 --- 还在');
+  assert.equal(site.markerIssues(last.book, last.note).length, 0);
+  // 文件最后一张（意义、例题 uhid）：连前面的空行一起去掉，结尾没有多余空白
+  const end = H.applyHandoff(base, H.parseHandoff(head({ 卡片: id, 操作: '删卡', 记号: 'uhid mxtz' })), '');
+  assert(!/\s$/.test(end.book) && !/\s$/.test(end.note));
+  const e3 = site.cardBlocks(base.book).blocks.find(b => b.id === 'e3c0');
+  assert(end.book.endsWith(base.book.slice(e3.start, e3.end).trim()), '前面那张 e3c0 成了最后一张');
+  const list = [{ h: H.parseHandoff(head({ 卡片: id, 操作: '删卡', 记号: 'it92' })) }];
+  H.applyAll({ [id]: base }, list, () => assert.fail('删卡不该要新记号'));
+  assert.match(list[0].summary[0], /删掉 it92：教材〔定义〕第①站「/);
+  assert.throws(() => H.applyHandoff(base, H.parseHandoff(head({ 卡片: id, 操作: '删卡', 记号: 'zzzz' })), ''), /找不到记号/);
+  assert.throws(() => H.applyHandoff(base, H.parseHandoff(head({ 卡片: id, 操作: '删卡' })), ''), /记号/);
+}
+
 // 审稿状态（10-17 晚起 Claude 审稿）：--reviewed 把审过的那一版复制进 drafts/审过/，--write 只接一字不差的
 {
   const fs = require('node:fs'), os = require('node:os'), path = require('node:path');

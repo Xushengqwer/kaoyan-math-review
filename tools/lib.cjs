@@ -52,6 +52,14 @@ const subjectFile = (id) => "assets/data/" + id + ".js";
 const loadSubjects = (rev) => SUBJECTS.map((id) => parseSubject(rev ? gitShow(subjectFile(id), rev) : read(subjectFile(id))));
 const loadNotes = (rev) => parseNotes(rev ? gitShow("assets/data/notes.js", rev) : read("assets/data/notes.js"));
 
+// 测试里对着具体内容的断言（每章条数、标题、目录顺序快照）只对这一版的数据跑（2026-10-20 起）：
+// 内容以后怎么上线（追加、替换、删卡、删旧版、重写站）都不用改测试；当前数据另有一套只查规矩的断言。
+// 改了显示代码、钉住的断言不过，才是真问题。要换一版钉住：挑一个 test-all 全过的提交，改这里。
+const PINNED = "bc85563";
+const CONTENT = new Set(SUBJECTS.map(subjectFile).concat("assets/data/notes.js"));
+// 网站文件的原文：内容数据（各科教材、笔记）可以取 git 的某一版，代码、样式、superseded.js 总取工作区
+const siteSource = (rel, rev) => (rev && CONTENT.has(rel) ? gitShow(rel, rev) : read(rel));
+
 // 找一张卡：{ subject, item, file }
 function findItem(itemId, subjects) {
   for (const s of subjects || loadSubjects()) {
@@ -84,8 +92,8 @@ function firstDiff(a, b) {
   return { index: i, line, site: ctx(a), draft: ctx(b) };
 }
 
-// 在网站自己的代码里渲染（和 tests/*.cjs 同一种载法）：返回 { App, bookParts, noteMdHtml, stationBarHtml, … }
-function loadSite() {
+// 在网站自己的代码里渲染（和 tests/*.cjs 同一种载法；rev：内容数据取 git 的这一版）：返回 { App, bookParts, noteMdHtml, stationBarHtml, … }
+function loadSite(rev) {
   const storage = {};
   const ctx = vm.createContext({
     console,
@@ -95,7 +103,7 @@ function loadSite() {
   });
   const files = ["assets/vendor/marked/marked.umd.js", "assets/js/data-loader.js", "assets/js/storage.js"]
     .concat(SUBJECTS.map(subjectFile), ["assets/data/notes.js", "assets/data/superseded.js", "assets/js/katex-init.js", "assets/js/app.js"]);
-  files.forEach((f) => vm.runInContext(read(f), ctx, { filename: f }));
+  files.forEach((f) => vm.runInContext(siteSource(f, rev), ctx, { filename: f }));
   return vm.runInContext("({ App, bookParts, noteMdHtml, mathRe: () => App.MATH_RE(), cardBlocks, stripMarkers, hasMarkers, markMode, " +
     "markerIssues, markedPieces, cardNumbers, cardOutline, cardStory, CardOps, dualSource, appByType, cellSource, cellSpliceMarked, " +
     "numberCard, cardTitle, mdHtml })", ctx);
@@ -142,5 +150,5 @@ function makeChecker() {
 module.exports = {
   REPO, SUBJECTS, abs, read, gitShow, fail, must, main, splitLines, writeLines,
   parseSubject, parseNotes, parseSuperseded, subjectFile, loadSubjects, loadNotes, findItem,
-  readDraft, firstDiff, loadSite, loadKatex, makeChecker,
+  readDraft, firstDiff, loadSite, loadKatex, makeChecker, PINNED, siteSource,
 };

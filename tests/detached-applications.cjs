@@ -1,17 +1,15 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const { abs, loadSite, loadSubjects, loadNotes } = require('../tools/lib.cjs');
+const { abs, loadSite, loadSubjects, loadNotes, PINNED } = require('../tools/lib.cjs');
 
 // 2026-10-10：去掉了与 HEAD 比较的断言（定义/性质、意义/例题 id 与标题、其他科目不变）。
 // 它们只适合核对 2a0967c 那一次改动；留着的话，任何内容改动在提交前都过不了。
 const dataFiles = ['calculus', 'linalg', 'probability', 'notes', 'superseded', 'mindmaps']
   .map(name => abs('assets/data/' + name + '.js'));
 const dataBefore = dataFiles.map(file => fs.readFileSync(file));
-const subjects = loadSubjects(), notes = loadNotes();
-const site = loadSite();
-site.App.subjects = subjects;
 
-const expectedCounts = new Map([
+// 钉住的那一版内容（tools/lib.cjs 的 PINNED）里每张卡〔意义〕〔例题〕的条数；现在的内容只查规矩（每张卡至少一条）
+const pinnedCounts = new Map([
   ['calc-lim-function', [10, 14]],
   ['calc-der-derivative', [6, 6]],
   ['calc-int-antiderivative', [4, 4]],
@@ -22,7 +20,6 @@ const expectedCounts = new Map([
   ['calc-ser-convergence', [19, 10]],
   ['calc-ode-concepts', [17, 8]],
 ]);
-const same = (a, b, message) => assert(JSON.stringify(a) === JSON.stringify(b), message);
 const attributes = text => Object.fromEntries(Array.from(text.matchAll(/([a-z][a-z0-9-]*)="([^"]*)"/gi),
   match => [match[1], match[2].replace(/&quot;/g, '"').replace(/&amp;/g, '&')]));
 const details = (outline, part, sec) => outline.blocks.flatMap(block =>
@@ -45,7 +42,7 @@ function renderedRows(html) {
     return secs;
   });
 }
-function assertSourceCoverage(model, originals, id) {
+function assertSourceCoverage(site, model, originals, id) {
   for (const part of ['book', 'note']) {
     const side = model[part];
     assert(side.raw === originals[part], id + ': complete ' + part + ' source is preserved');
@@ -64,24 +61,29 @@ function assertSourceCoverage(model, originals, id) {
   }
 }
 
+// rev：内容取 git 的这一版（不给就是工作区）；counts：钉住那一版的条数，不给就只查每张卡至少一条
+function checkCalculus(rev, counts) {
+const subjects = loadSubjects(rev), notes = loadNotes(rev);
+const site = loadSite(rev);
+site.App.subjects = subjects;
 const calculus = subjects.find(subject => subject.id === 'calculus');
-assert.equal(calculus.items.length, expectedCounts.size, 'Exercise all nine calculus cards');
+if (counts) assert.equal(calculus.items.length, counts.size, 'Exercise all nine calculus cards');
 for (const item of calculus.items) {
   const id = item.id;
   const originals = { book: item.md, note: notes[id] };
   const outline = site.cardOutline(originals.book, originals.note);
-  const counts = expectedCounts.get(id);
-  assert(counts, 'Known calculus card: ' + id);
-  for (const [part, sec, count] of [['book', '意义', counts[0]], ['note', '例题', counts[1]]]) {
+  assert(!counts || counts.get(id), 'Known calculus card: ' + id);
+  for (const [part, sec, k] of [['book', '意义', 0], ['note', '例题', 1]]) {
     const blocks = site.cardBlocks(originals[part]).blocks.filter(block => block.sec === sec);
     assert(blocks.length, id + ': ' + sec + ' remains present');
     assert(blocks.every(block => !block.station && block.kind !== 'station'), id + ': ' + sec + ' is detached from all stations');
     const titles = details(outline, part, sec);
-    assert.equal(titles.length, count, id + ': complete ' + sec + ' item count');
+    if (counts) assert.equal(titles.length, counts.get(id)[k], id + ': complete ' + sec + ' item count');
+    else assert(titles.length >= blocks.filter(block => block.kind === 'card').length, id + ': every ' + sec + ' card is listed');
   }
   const model = site.App.dualTrackModel(id, originals.book, originals.note);
   const html = site.App.dualTrackHtml(model);
-  assertSourceCoverage(model, originals, id);
+  assertSourceCoverage(site, model, originals, id);
   const displayed = renderedRows(html);
   const lastCore = displayed.reduce((last, secs, index) => secs.some(sec => ['定义', '性质'].includes(sec)) ? index : last, -1);
   assert(lastCore >= 0, id + ': original core content is rendered');
@@ -104,6 +106,9 @@ for (const item of calculus.items) {
     });
   }
 }
+}
+checkCalculus();
+checkCalculus(PINNED, pinnedCounts);
 
 dataFiles.forEach((file, index) => assert(fs.readFileSync(file).equals(dataBefore[index]), file + ': rendering/navigation do not write source data'));
 console.log('PASS: all calculus applications are detached, complete, after core content, with independent meaning/example directory links; source data is not written.');

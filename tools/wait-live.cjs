@@ -2,7 +2,8 @@
 // 用法：node tools/wait-live.cjs
 const { read } = require("./lib.cjs");
 
-const URL = "https://xushengqwer.github.io/kaoyan-math-review/sw.js";
+// KAOYAN_LIVE_URL：只在临时克隆里试 publish.cjs 时用，指到本机起的服务
+const URL = process.env.KAOYAN_LIVE_URL || "https://xushengqwer.github.io/kaoyan-math-review/sw.js";
 const want = (read("sw.js").match(/kaoyan-math-v\d+/) || [])[0];
 if (!want) { console.error("✗ 本地 sw.js 里找不到版本号"); process.exit(1); }
 

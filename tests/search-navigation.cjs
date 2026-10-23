@@ -1,6 +1,8 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+// 这里的断言对着具体内容（线代第 2、4 章的站、小节、搜索的句子），内容数据取钉住的那一版（tools/lib.cjs 的 PINNED），以后上线不用改这里
+const { PINNED, siteSource } = require('../tools/lib.cjs');
 
 const index = fs.readFileSync('index.html', 'utf8');
 assert.match(index, /id="sidebar-collapse"/);
@@ -16,7 +18,7 @@ for (const file of [
   'assets/data/calculus.js', 'assets/data/linalg.js', 'assets/data/probability.js',
   'assets/data/notes.js', 'assets/data/superseded.js', 'assets/data/mindmaps.js',
   'assets/js/katex-init.js', 'assets/js/app.js',
-]) vm.runInContext(fs.readFileSync(file, 'utf8'), context);
+]) vm.runInContext(siteSource(file, PINNED), context);
 context.assert = assert;
 vm.runInContext(`
   App.subjects = KaoyanData.subjects();

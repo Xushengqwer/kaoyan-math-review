@@ -1,16 +1,19 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const { loadSite, loadSubjects, loadNotes, findItem } = require('../tools/lib.cjs');
+const { loadSite, loadSubjects, loadNotes, findItem, PINNED } = require('../tools/lib.cjs');
 
 // The production loader deliberately has no DOM construction APIs. Comparison
 // must work here because content checks and Markdown previews share this loader.
-const site = loadSite();
+let site = loadSite();
 const subjects = loadSubjects();
 const notes = loadNotes();
+// 对着具体内容（配对数、题型数、记号名单）的断言只对钉住的那一版（tools/lib.cjs 的 PINNED）跑；现在的内容只查规矩
+const pinned = { site: loadSite(PINNED), subjects: loadSubjects(PINNED), notes: loadNotes(PINNED) };
+function withPinned(fn) { const was = site; site = pinned.site; try { fn(pinned); } finally { site = was; } }
 const dataFiles = ['calculus', 'linalg', 'probability', 'notes', 'superseded']
   .map(name => 'assets/data/' + name + '.js');
 const dataBefore = dataFiles.map(file => fs.readFileSync(file));
-const expected = new Map([
+const pinnedPairs = new Map([
   ['calc-lim-function', 37],
   ['calc-der-derivative', 24],
   ['calc-int-antiderivative', 20],
@@ -170,6 +173,9 @@ assert(formulaHeading.html.includes('$a&lt;b$'),
 assert(!formulaHeading.html.includes('$a<b$'), 'raw station text must not become new HTML');
 assertVisible(formulaStation, 'a station name containing a math comparison');
 
+// 每张有笔记的卡：原文、HTML 区间完整；按格子的卡（教材有记号）开对照，别的照旧显示。
+// pairs 给了（钉住的那一版）就逐张核对配对数；没给（现在的内容）就查：笔记的卡教材里都有、两边都有的卡都配上
+function checkCards(subjects, notes, pairs) {
 const enabled = [];
 for (const subject of subjects) {
   for (const item of subject.items) {
@@ -179,13 +185,19 @@ for (const subject of subjects) {
     assert.equal(model.note.raw, notes[item.id], item.id + ': note source is retained');
     assertCoverage(model, item.id);
     if (model.enabled) enabled.push(item.id);
-    if (!expected.has(item.id)) {
+    if (pairs ? !pairs.has(item.id) : !site.hasMarkers(item.md)) {
       assert.equal(model.enabled, false, item.id + ': older notes retain their existing display');
       continue;
     }
     assert.equal(model.enabled, true, item.id + ': matching reconstructed notes enable comparison');
     assertVisible(model, item.id);
-    assert.equal(model.pairs.length, expected.get(item.id), item.id + ': structural pairs');
+    if (pairs) assert.equal(model.pairs.length, pairs.get(item.id), item.id + ': structural pairs');
+    else {
+      const ids = (src) => site.cardBlocks(src).blocks.filter((b) => b.kind === 'card').map((b) => b.id);
+      const bookIds = new Set(ids(item.md)), noteIds = ids(notes[item.id]);
+      assert(noteIds.every((x) => bookIds.has(x)), item.id + ': every note card has its textbook half');
+      assert.equal(model.pairs.length, noteIds.length, item.id + ': every card with both halves is paired');
+    }
     for (const pair of model.pairs) {
       // 题型写法：意义 n 对例题 n（同属 application），标题本来就不同
       const canon = (sec) => (sec === '意义' || sec === '例题' ? 'application' : sec);
@@ -206,12 +218,16 @@ for (const subject of subjects) {
     }
   }
 }
-assert.deepEqual(enabled.sort(), [...expected.keys()].sort(),
+if (pairs) assert.deepEqual(enabled.sort(), [...pairs.keys()].sort(),
   'exactly the eleven reconstructed cards currently enable comparison');
+}
+checkCards(subjects, notes);
+withPinned((p) => checkCards(p.subjects, p.notes, pinnedPairs));
 
 // 题型写法（第 1 章）：〔意义〕是「#### n. 题型名」，意义 n 和例题 n 并排；「例题 1-1」「例题 1-2」同在题型 1 那一格；
-// 三个分组行横跨两栏。旧写法的卡（意义是列表、按站排）没有意义—例题配对。
-{
+// 三个分组行横跨两栏。旧写法的卡（意义是列表、按站排）没有意义—例题配对。（钉住的那一版）
+withPinned(({ subjects, notes }) => {
+  const findItem = (id) => ({ item: subjects.flatMap((s) => s.items).find((i) => i.id === id) });
   const lim = site.App.dualTrackModel('calc-lim-function', findItem('calc-lim-function').item.md, notes['calc-lim-function']);
   const app = lim.pairs.filter((p) => p.book.sec === '意义');
   assert.equal(app.length, 10, '10 个题型各占一行');
@@ -233,7 +249,7 @@ assert.deepEqual(enabled.sort(), [...expected.keys()].sort(),
       ['vzgd', 'wgud', 'i1te', 'ntzm', 'zjyh', 'o3rn'], part + ': 只保留用户确认的前六组标记');
     assert(!blocks.some((b) => b.sec === '提示'), part + ': 删除整个提示小节');
   }
-}
+});
 
 const fixtureId = 'calc-mi-double-def';
 const simpleBook = '### 〔定义〕\n\n#### 1. 标题甲\n\n教材甲。\n\n#### 2. 标题乙\n\n教材乙。';
@@ -289,7 +305,8 @@ for (const note of ['', '### 〔提示〕\n\n只有提醒，没有对应条目�
 }
 
 // Older notes genuinely omit entries or add one. They must remain independent,
-// even though the card itself stays in its current, disabled comparison layout.
+// even though the card itself stays in its current, disabled comparison layout.（钉住的那一版）
+withPinned(({ subjects, notes }) => {
 for (const [id, part, sec, nums] of [
   ['la-det-prop-transpose', 'book', '定义', [3]],
   ['la-det-prop-transpose', 'book', '性质', [4, 5]],
@@ -307,6 +324,7 @@ for (const [id, part, sec, nums] of [
     id + ': ' + part + ' ' + sec + num + ' remains a single-sided row');
   }
 }
+});
 
 const partialNote = '### 〔定义〕\n\n#### 1. 标题甲：解释\n\n笔记甲。\n\n#### 3. 笔记独有\n\n不能遗漏。';
 const partial = site.App.dualTrackModel(fixtureId, simpleBook, partialNote);
@@ -456,9 +474,10 @@ assert.equal(crlf.note.raw, crlfNote);
 assertCoverage(crlf, fixtureId);
 
 // 阅读顺序以站为单位：该站的定义后紧接性质，再进入下一站。
-// 只重排渲染视图，前面的原文/HTML 区间覆盖检查仍要求模型保持源文顺序。
+// 只重排渲染视图，前面的原文/HTML 区间覆盖检查仍要求模型保持源文顺序。（钉住的那一版）
+withPinned(({ subjects, notes }) => {
 const stationReadModel = site.App.dualTrackModel('calc-lim-function',
-  findItem('calc-lim-function').item.md, notes['calc-lim-function']);
+  findItem('calc-lim-function', subjects).item.md, notes['calc-lim-function']);
 const stationReadHtml = site.App.dualTrackHtml(stationReadModel);
 const stationReadGroups = [...stationReadHtml.matchAll(
   /<div class="dual-row kind-entry"><div class="dual-cell dual-book" data-part="book" data-sec="([^"]+)" data-station="([^"]*)" /g)]
@@ -469,6 +488,7 @@ assert.deepEqual(stationReadGroups,
   ['①定义', '②定义', '③定义', '③性质', '④定义', '④性质', '⑤性质'],
   '第 1 章按站连续阅读，定义与该站性质相邻');
 assertCoverage(stationReadModel, 'calc-lim-function');
+});
 
 for (let i = 0; i < dataFiles.length; i++) {
   assert(fs.readFileSync(dataFiles[i]).equals(dataBefore[i]), dataFiles[i] + ': display tests never alter data bytes');

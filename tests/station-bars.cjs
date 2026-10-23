@@ -1,6 +1,8 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+// 这里的断言对着具体内容（线代第 2、4 章的站、小节、搜索的句子），内容数据取钉住的那一版（tools/lib.cjs 的 PINNED），以后上线不用改这里
+const { PINNED, siteSource } = require('../tools/lib.cjs');
 const storage = {};
 const context = vm.createContext({
   console,
@@ -13,7 +15,7 @@ const context = vm.createContext({
   localStorage: { getItem: k => storage[k] || null, setItem: (k, v) => { storage[k] = v; } },
 });
 for (const f of ['assets/vendor/marked/marked.umd.js', 'assets/js/data-loader.js', 'assets/js/storage.js', 'assets/data/linalg.js', 'assets/data/notes.js', 'assets/data/superseded.js', 'assets/js/katex-init.js', 'assets/js/app.js']) {
-  vm.runInContext(fs.readFileSync(f, 'utf8'), context);
+  vm.runInContext(siteSource(f, PINNED), context);
 }
 context.assert = assert;
 vm.runInContext(`

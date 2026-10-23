@@ -9,7 +9,7 @@
 //   --write 只接和 drafts/审过/ 里一字不差的（审过后改过的，先 git diff --no-index 只审改动，再 --reviewed）；
 //           写完把 待提交/ 里的文件挪进 待提交/已提交/、镜像 审稿意见/ 里的同名意见挪进 审稿意见/已提交/，drafts/审过/ 里这几份删掉
 //
-// 三种操作（文件开头 --- 之间的「操作:」）：
+// 六种操作（文件开头 --- 之间的「操作:」）：
 //   追加意义例题  <!-- 意义 --> 接在〔意义〕末尾、<!-- 例题 --> 接在〔例题〕末尾（这一节后面的 --- 分隔线之前），共用一个新记号
 //   替换卡        「记号: xxxx」那张卡：<!-- 教材 -->/<!-- 意义 --> 换教材那一半，<!-- 笔记 -->/<!-- 例题 --> 换笔记那一半
 //   替换本卡主线  <!-- 教材 --> 换掉〔定义〕开头「### 〔定义〕」和第一个站记号之间的「本卡主线」
@@ -17,7 +17,10 @@
 //                 （一张卡一个 ####，第一个 #### 前面的字是站引子，不写就沿用旧的；写「（无）」删掉这一节的这一站）；
 //                 教材第 n 张和笔记第 n 张配成一对、共用一个新记号，旧卡和分组整站换掉，站记号和站名行照旧；
 //                 只交了〔性质〕两段时〔定义〕不动
-// 写完还要：改测试里的条数（追加、重写站）→ supersede → bump-sw → test-all → 提交推送 → wait-live → mirror，见 CLAUDE.md。
+//   删卡          「记号: xxxx yyyy」这几张卡的教材、笔记两半一起删（卡后面紧挨下一节的 --- 留着）；没有正文
+//   删旧版        〔意义〕〔例题〕〔提示〕里只留「保留: xxxx yyyy」这几张卡：这几节开头的旧版正文、别的卡、没有留下卡的站和分组都删掉，
+//                 〔提示〕一张都不留就整节删（连同前面的 ---）；没有正文（2026-10-20，照 aac0e76 第 4 章那次）
+// 写完还要：supersede → bump-sw → test-all → 提交推送 → wait-live → mirror；这一串由 tools/publish.cjs 一次跑完。
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
@@ -46,7 +49,7 @@ function markReviewed(file, dir = REVIEWED) {
 // 交稿文件 → { head: {卡片, 操作, 记号, 说明, …}, parts: { book: {name, text}, note: {name, text} } }
 function parseHandoff(text) {
   const t = text.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n");
-  const m = t.match(/^---\n([\s\S]*?)\n---\n/);
+  const m = t.match(/^---\n([\s\S]*?)\n---(?:\n|$)/);
   must(m, "交稿文件开头要有 --- 包起来的几行（卡片、操作……）");
   const head = {};
   for (const line of m[1].split("\n")) {
@@ -57,6 +60,8 @@ function parseHandoff(text) {
   const re = /^<!--\s*(意义|例题|教材|笔记)(?:\s*[·・.．]\s*(定义|性质))?\s*-->[ \t]*$/gm;
   const body = t.slice(m[0].length);
   const hits = [...body.matchAll(re)];
+  // 删卡、删旧版只有开头几行，没有正文
+  if (!hits.length && !body.trim()) return { head, parts };
   must(hits.length, "正文里没有 <!-- 意义 --> / <!-- 例题 --> / <!-- 教材 --> / <!-- 笔记 --> 分段行");
   must(!body.slice(0, hits[0].index).trim(), "第一个分段行前面还有字：" + body.slice(0, 40).trim());
   hits.forEach((h, i) => {
@@ -96,7 +101,7 @@ function stationPieces(p) {
   for (const q of pieces) {
     const lines = q.text.split("\n");
     if (lines.some((l) => /^\*\*[①-⑳]/.test(l.trim()) && /\*\*[ \t]*$/.test(l)))
-      errors.push(q.name + "：有整行加粗、圈号开头的行（站名行不用写，会多出一个站牌；要改站名写在「说明」里）");
+      errors.push(q.name + "：有整行加粗、圈号开头的行（站名行不用写，会多出一个站牌；要改站名写在开头「站名:」那一行）");
     if (lines.some((l) => /^#{1,3}[ \t]/.test(l))) warns.push(q.name + "：有 #/##/### 标题（会打乱小节结构）");
   }
   s.cards.forEach((c, k) => {
@@ -165,6 +170,20 @@ function rewriteIn(src, sec, st, seg, ids, name) {
   return src.slice(0, at) + "\n\n" + text + src.slice(at);
 }
 
+// 一半里所有小节的这一站，站名行换成 line（「站名:」，2026-10-20；以前写在说明里、Claude 手改）
+function renameStation(src, st, line) {
+  const cb = loadSite().cardBlocks(src);
+  if (!cb) return src;
+  let out = src;
+  for (const b of cb.blocks.filter((x) => x.kind === "station" && x.value === st).reverse()) {
+    const text = out.slice(b.start, b.end), lead = text.match(/^\s*/)[0], nl = text.indexOf("\n", lead.length);
+    const first = text.slice(lead.length, nl < 0 ? text.length : nl);
+    must(/^\*\*[①-⑳]/.test(first.trim()), "第" + st + "站的记号后面不是站名行：" + first.slice(0, 40));
+    out = out.slice(0, b.start + lead.length) + line + out.slice(b.start + lead.length + first.length);
+  }
+  return out;
+}
+
 // base = { book, note } → { out: { book, note }, ids: { 定义: [...], 性质: [...] }, summary: [给人看的几行] }；nextId() 给每一对新记号
 function rewriteStation(base, h, nextId) {
   const st = h.head["站"];
@@ -172,7 +191,13 @@ function rewriteStation(base, h, nextId) {
   for (const [k, p] of Object.entries(h.parts))
     must(/^(book|note):(定义|性质)$/.test(k), "重写站只收 教材·定义、笔记·定义、教材·性质、笔记·性质 四段，不收「" + p.name + "」");
   const site = loadSite();
-  const name = stationName(base, st);
+  const rename = String(h.head["站名"] || "").trim();
+  if (rename) {
+    must(rename.startsWith(st) && !(rename.slice(st.length).startsWith("′")) && rename.slice(st.length).trim(), "「站名」要以这一站的圈号 " + st + " 开头，后面跟名字，现在是「" + rename + "」");
+    must(!/[*\n]/.test(rename), "「站名」里不要写 *（工具会加粗）");
+  }
+  const old = stationName(base, st);
+  const name = rename ? "**" + rename + "**" : old;
   const out = { ...base }, ids = {}, summary = [];
   for (const sec of ["定义", "性质"]) {
     const b = h.parts["book:" + sec], n = h.parts["note:" + sec];
@@ -194,6 +219,11 @@ function rewriteStation(base, h, nextId) {
     out.note = rewriteIn(out.note, sec, st, sn, cardIds, name);
   }
   must(Object.keys(ids).length, "重写站一段都没交");
+  if (rename) {
+    out.book = renameStation(out.book, st, name);
+    out.note = renameStation(out.note, st, name);
+    summary.push(old === name ? "站名不变：" + name : "站名改成 " + name + (old ? "（原来 " + old + "）" : "（新站）"));
+  }
   return { out, ids, summary };
 }
 
@@ -282,6 +312,111 @@ function replaceStoryline(book, text) {
   return book.slice(0, b.start) + head[0] + "\n" + String(text).trim() + body.match(/\s*$/)[0] + book.slice(b.end);
 }
 
+// ── 删卡、删旧版（2026-10-20）──
+const SEP_TAIL = /\n+---[ \t]*\n\s*$/;
+const idList = (s) => String(s || "").split(/[\s,，、;；]+/).filter(Boolean);
+const titleOf = (src, b) => (src.slice(b.start, b.end).trim().split("\n")[0] || "").replace(/^#+[ \t]*/, "").slice(0, 30);
+
+// 删掉一半里的一张卡：卡后面紧挨下一节的 --- 留给下一节；删的是最后一块就连前面的空行一起去掉
+function cutCard(src, id) {
+  const cb = loadSite().cardBlocks(src);
+  const b = cb && cb.blocks.find((x) => x.kind === "card" && x.id === id);
+  if (!b) return null;
+  const sep = src.slice(b.mstart, b.end).match(SEP_TAIL);
+  if (b.end === src.length) return src.slice(0, b.mstart).replace(/\s+$/, "");
+  return src.slice(0, b.mstart) + (sep ? sep[0].replace(/^\n+/, "") : "") + src.slice(b.end);
+}
+
+function deleteCards(base, h) {
+  const ids = idList(h.head["记号"]);
+  must(ids.length, "删卡要写「记号: xxxx」（几张用空格隔开）");
+  must(new Set(ids).size === ids.length, "「记号」里有重复的");
+  must(!Object.keys(h.parts).length, "删卡不用正文，只写开头几行（卡片、操作、记号、说明）");
+  const site = loadSite(), out = { ...base }, summary = [];
+  for (const id of ids) {
+    const where = [];
+    for (const part of ["book", "note"]) {
+      const cb = site.cardBlocks(out[part]);
+      const b = cb && cb.blocks.find((x) => x.kind === "card" && x.id === id);
+      if (!b) continue;
+      where.push((part === "book" ? "教材" : "笔记") + "〔" + b.sec + "〕" + (b.station ? "第" + b.station + "站" : "") + "「" + titleOf(out[part], b) + "」");
+      out[part] = cutCard(out[part], id);
+    }
+    must(where.length, "找不到记号 card:" + id + "（教材、笔记里都没有）");
+    summary.push("删掉 " + id + "：" + where.join("、"));
+  }
+  // 删完空掉的站、分组只提醒（站名还在，下面没有卡）
+  for (const part of ["book", "note"]) {
+    const cb = site.cardBlocks(out[part]);
+    if (!cb) continue;
+    cb.blocks.forEach((b, i) => {
+      if (b.kind !== "station" && b.kind !== "group") return;
+      const next = cb.blocks[i + 1];
+      if (!next || next.kind === "section" || (b.kind === "station" && next.kind === "station"))
+        summary.push("⚠ 删完" + (part === "book" ? "教材" : "笔记") + "〔" + b.sec + "〕" + (b.kind === "station" ? "第" + b.value + "站" : "分组 " + b.id) + "下面没有卡了");
+    });
+  }
+  return { out, summary };
+}
+
+// 一半里的一节只留 keep 里的卡：开头的旧版正文、别的卡、没有留下卡的站和分组删掉；一张都不留、又不是 keepHead 的节整节删掉
+function dropOldIn(src, sec, keep, keepHead) {
+  const cb = loadSite().cardBlocks(src);
+  if (!cb) return { src, note: null };
+  const k = cb.blocks.findIndex((b) => b.kind === "section" && b.value === sec);
+  if (k < 0) return { src, note: null };
+  let e = k + 1;
+  while (e < cb.blocks.length && cb.blocks[e].kind !== "section") e++;
+  const head = cb.blocks[k], inner = cb.blocks.slice(k + 1, e);
+  const from = head.mstart, to = e < cb.blocks.length ? cb.blocks[e].mstart : src.length;
+  const tail = (src.slice(from, to).match(SEP_TAIL) || src.slice(from, to).match(/\s*$/))[0];
+  const cards = inner.filter((b) => b.kind === "card"), kept = cards.filter((b) => keep.has(b.id));
+  const lost = cards.filter((b) => !keep.has(b.id)).map((b) => b.id + " " + titleOf(src, b));
+  const headText = src.slice(head.start, head.end), lines = headText.trim().split("\n");
+  const old = lines.slice(1).join("\n").trim();
+  const blocks = inner.filter((b) => b.kind === "card" ? keep.has(b.id)
+    : kept.some((c) => (b.kind === "station" ? c.station === b.value : c.group === b.id)));
+  // 站、分组记号下面的字（站名行、引子，旧写法整站的内容）跟着站一起删
+  const extra = inner.filter((b) => b.kind !== "card" && !blocks.includes(b))
+    .map((b) => (b.kind === "station" ? "第" + b.value + "站" : "分组 " + b.id) + " " + src.slice(b.start, b.end).trim().length + " 字");
+  const report = { old: old.length, oldFirst: old.split("\n")[0].slice(0, 30), extra, lost, kept: kept.map((b) => b.id), whole: false };
+  if (!kept.length && !keepHead) {
+    report.whole = true;
+    if (e < cb.blocks.length) return { src: src.slice(0, from) + src.slice(to), note: report };
+    return { src: src.slice(0, from).replace(SEP_TAIL, "").replace(/\s+$/, ""), note: report };
+  }
+  const pieces = [src.slice(head.mstart, head.start) + lines[0].replace(/\s+$/, "")]
+    .concat(blocks.map((b) => src.slice(b.mstart, b.end).replace(SEP_TAIL, "").replace(/\s+$/, "")));
+  return { src: src.slice(0, from) + pieces.join("\n\n") + (tail || (to < src.length ? "\n\n" : "")) + src.slice(to), note: report };
+}
+
+function dropOld(base, h) {
+  const raw = String(h.head["保留"] || "").trim();
+  must(raw, "删旧版要写「保留: xxxx yyyy」（新写的、要留下的意义例题记号）");
+  const keep = new Set(idList(raw));
+  must(!Object.keys(h.parts).length, "删旧版不用正文，只写开头几行（卡片、操作、保留、说明）");
+  const site = loadSite();
+  const appIds = (src) => new Set(((site.cardBlocks(src) || { blocks: [] }).blocks)
+    .filter((b) => b.kind === "card" && ["意义", "例题", "提示"].includes(b.sec)).map((b) => b.id));
+  const have = new Set([...appIds(base.book), ...appIds(base.note)]);
+  const missing = [...keep].filter((id) => !have.has(id));
+  must(!missing.length, "「保留」里的 " + missing.join("、") + " 不在这张卡的〔意义〕〔例题〕〔提示〕里（记号写错了？写错会把要留的卡删掉）");
+  const out = { ...base }, summary = [];
+  for (const [part, secs] of [["book", ["意义", "例题", "提示"]], ["note", ["意义", "例题", "提示"]]]) {
+    for (const sec of secs) {
+      const r = dropOldIn(out[part], sec, keep, sec !== "提示");
+      if (!r.note) continue;
+      out[part] = r.src;
+      const n = r.note, side = (part === "book" ? "教材" : "笔记") + "〔" + sec + "〕";
+      const gone = [n.old ? "开头旧版正文 " + n.old + " 字（「" + n.oldFirst + "…」）" : "", n.extra.length ? n.extra.join("、") : "",
+        n.lost.length ? "卡 " + n.lost.length + " 张：" + n.lost.join("；") : ""].filter(Boolean).join("、");
+      if (n.whole) summary.push(side + "整节删掉" + (gone ? "：" + gone : ""));
+      else summary.push(side + (gone ? "删掉" + gone + "；" : "不动；") + "留下 " + (n.kept.length ? n.kept.join(" ") : "（无）"));
+    }
+  }
+  return { out, summary };
+}
+
 // 纯函数：base = { book, note } → { book, note }（测试用它对着历史版本复现）；重写站时 id 是给新记号的函数
 function applyHandoff(base, h, id) {
   const op = h.head["操作"];
@@ -301,7 +436,9 @@ function applyHandoff(base, h, id) {
   } else if (op === "替换本卡主线") {
     must(h.parts.book && Object.keys(h.parts).length === 1, "替换本卡主线只收一段 <!-- 教材 -->");
     out.book = replaceStoryline(base.book, h.parts.book.text);
-  } else fail("不认识的操作「" + (op || "") + "」：只有 追加意义例题、替换卡、重写站、替换本卡主线");
+  } else if (op === "删卡") return deleteCards(base, h).out;
+  else if (op === "删旧版") return dropOld(base, h).out;
+  else fail("不认识的操作「" + (op || "") + "」：只有 追加意义例题、替换卡、重写站、替换本卡主线、删卡、删旧版");
   return out;
 }
 
@@ -349,6 +486,13 @@ function applyAll(bases, list, nextId) {
       out[card] = r.out;
       continue;
     }
+    if (x.h.head["操作"] === "删卡" || x.h.head["操作"] === "删旧版") {
+      const r = (x.h.head["操作"] === "删卡" ? deleteCards : dropOld)(out[card], x.h);
+      x.id = "";
+      x.summary = r.summary;
+      out[card] = r.out;
+      continue;
+    }
     x.id = x.h.head["操作"] === "替换卡" ? x.h.head["记号"] : x.h.head["操作"] === "替换本卡主线" ? "" : nextId();
     out[card] = applyHandoff(out[card], x.h, x.id);
   }
@@ -356,7 +500,7 @@ function applyAll(bases, list, nextId) {
 }
 
 module.exports = { parseHandoff, lintPart, appendToSection, replaceCard, applyHandoff, applyAll, reviewState, markReviewed, reviewNotes, REVIEWED,
-  splitStationPart, stationPieces, rewriteStation, pendingCards, replaceStoryline };
+  splitStationPart, stationPieces, rewriteStation, pendingCards, replaceStoryline, deleteCards, dropOld, inspect, usedIds, newId };
 if (require.main === module) main(() => {
   const args = process.argv.slice(2);
   const write = args.includes("--write"), reviewed = args.includes("--reviewed");
@@ -393,7 +537,8 @@ if (require.main === module) main(() => {
   for (const x of list) {
     x.state = reviewState(x.file);
     console.log("交稿：" + path.basename(x.file) + (x.h.head["说明"] ? "（" + x.h.head["说明"] + "）" : "") + " · " + x.state);
-    console.log("  " + x.h.head["卡片"] + " · " + x.h.head["操作"] + (x.ids ? " · 第" + x.h.head["站"] + "站" : x.id ? " · 记号 " + x.id : "") + " · " +
+    console.log("  " + x.h.head["卡片"] + " · " + x.h.head["操作"] + (x.ids ? " · 第" + x.h.head["站"] + "站" : x.id ? " · 记号 " + x.id : "") +
+      (x.h.head["操作"] === "删卡" ? " · 记号 " + x.h.head["记号"] : x.h.head["操作"] === "删旧版" ? " · 保留 " + x.h.head["保留"] : "") + " · " +
       Object.values(x.h.parts).map((p) => p.name + " " + p.text.length + " 字").join("、") + (x.h.head["审稿"] ? " · 审稿：" + x.h.head["审稿"] : ""));
     for (const line of x.summary || []) console.log("  " + line);
     for (const w of x.warns) console.log("  ⚠ " + w);
@@ -424,16 +569,16 @@ if (require.main === module) main(() => {
     const rest = mine.filter((x) => x.h.head["操作"] !== "重写站");
     const stations = rest.every((x) => x.h.head["操作"] === "替换本卡主线") ? mine.filter((x) => x.ids || x.h.head["操作"] === "重写站").map((x) => x.h.head["站"]).join("") : "";
     const what = (stations ? "重写第" + stations + "站" + (rest.length ? "与本卡主线" : "") :(mine[0].h.head["说明"] || mine[0].h.head["操作"]).split(/[：:]/)[0] + (mine.length > 1 ? "等 " + mine.length + " 份" : "")).replace(/[\\/:*?"<>|]/g, "-");
-    const arch = path.join(os.homedir(), "Downloads", subj + "第" + ch.order + "章-教材与笔记存档（交稿" + what + "前）-" + date + "-" + hash + ".md");
+    // 同一天、同一版上第二次接（上次中途失败、撤回了）：存档名加 -2、-3，旧存档不覆盖
+    const stem = path.join(os.homedir(), "Downloads", subj + "第" + ch.order + "章-教材与笔记存档（交稿" + what + "前）-" + date + "-" + hash);
+    let arch = stem + ".md";
+    for (let k = 2; fs.existsSync(arch); k++) arch = stem + "-" + k + ".md";
     const r = cp.spawnSync(process.execPath, [path.join(REPO, "tools", "archive.cjs"), arch, subj + "第" + ch.order + "章 教材与笔记存档（交稿" + what + "前）", card, "book:" + card],
       { cwd: REPO, encoding: "utf8" });
     must(r.status === 0, "存档失败：" + (r.stderr || r.stdout).trim());
     console.log("  " + (r.stdout || "").trim());
     if (v.book !== bases[card].book) console.log("✓ " + card + " 教材：" + writeBook(card, v.book));
     if (v.note !== bases[card].note) console.log("✓ " + card + " 笔记：" + writeNote(card, v.note));
-    const added = mine.filter((x) => x.h.head["操作"] === "追加意义例题").length;
-    if (added) console.log("  " + card + " 追加了 " + added + " 对：测试条数要改（station-cards、detached-applications、dual-track，第 4 章还有 app-stack）");
-    if (mine.some((x) => x.ids)) console.log("  " + card + " 重写了站：〔定义〕〔性质〕卡数变了的话改 station-cards、dual-track 的条数");
   }
   for (const x of list) {
     if (path.basename(path.dirname(path.resolve(x.file))) !== "待提交") continue;
@@ -447,5 +592,5 @@ if (require.main === module) main(() => {
     }
   }
   for (const x of list) fs.rmSync(path.join(REVIEWED, path.basename(x.file)), { force: true });
-  console.log("下一步：supersede → bump-sw → test-all → 提交推送 → wait-live → mirror（交稿文件、审稿意见已挪进各自的 已提交/，审过的副本已删）");
+  console.log("下一步：supersede → bump-sw → test-all → 提交推送 → wait-live → mirror（交稿文件、审稿意见已挪进各自的 已提交/，审过的副本已删；tools/publish.cjs --go 一次跑完）");
 });

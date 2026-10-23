@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
+const { PINNED, loadSubjects, loadNotes } = require('../tools/lib.cjs');
 const storage = {};
 const context = vm.createContext({
   console,
@@ -18,6 +19,8 @@ for (const f of ['assets/vendor/marked/marked.umd.js', 'assets/js/data-loader.js
   vm.runInContext(fs.readFileSync(f, 'utf8'), context);
 }
 context.assert = assert;
+// 第 4 章第①站的外壳断言对着钉住的那一版内容（tools/lib.cjs 的 PINNED），以后上线、改这一站都不用改这里
+context.pinnedCh4 = { md: loadSubjects(PINNED)[0].items.find((i) => i.id === 'calc-vec-coordinates').md, note: loadNotes(PINNED)['calc-vec-coordinates'] };
 vm.runInContext(`
 // 配色改版（2026-10-15）的外壳只加标签和属性、不动一个字：
 // 全站每张教材、每条笔记、每张对照卡，拆掉外壳以后必须和不加外壳时的渲染逐字相同；对照的配对也不能变。
@@ -71,7 +74,7 @@ for (const it of KaoyanData.allItems()) {
 }
 
 // 第 4 章第①站（Gemini 新格式）每种外壳都用上了
-const ch4 = App.dualTrackHtml(App.dualTrackModel('calc-vec-coordinates', KaoyanData.find('calc-vec-coordinates').md, Notes.get('calc-vec-coordinates')));
+const ch4 = App.dualTrackHtml(App.dualTrackModel('calc-vec-coordinates', pinnedCh4.md, pinnedCh4.note));
 assert(ch4.includes('<h4><span class="hno">1</span><span class="hdot">. </span><span class="httl">向量与坐标</span></h4>'));
 assert(ch4.includes('<h5><span class="h5-topic">向量</span><span class="h5-colon">：</span><span class="h5-punch">只认大小和方向，不认起点</span></h5>'));
 assert(ch4.includes('<li class="li-key" data-emo="🎯"><span class="emo">🎯</span> <strong class="key">点是死位置，向量是活位移</strong>'));

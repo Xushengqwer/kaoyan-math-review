@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const { abs, loadSite, loadSubjects, loadNotes, findItem } = require('../tools/lib.cjs');
+const { abs, loadSite, loadSubjects, loadNotes, findItem, PINNED } = require('../tools/lib.cjs');
 
 const dataFiles = ['calculus', 'linalg', 'probability', 'notes', 'superseded', 'mindmaps']
   .map(name => abs('assets/data/' + name + '.js'));
@@ -110,11 +110,14 @@ function markerId(row, book) {
   return block ? block.id : null;
 }
 
+// 第 2 章的六个题型、各站的卡：对着钉住的那一版内容（tools/lib.cjs 的 PINNED），以后上线不用改这里
 const id = 'calc-der-derivative';
-const book = findItem(id).item.md, note = loadNotes()[id];
-const model = site.App.dualTrackModel(id, book, note);
+const pinnedSite = loadSite(PINNED), pinnedSubjects = loadSubjects(PINNED), pinnedItem = findItem(id, pinnedSubjects).item;
+pinnedSite.App.subjects = pinnedSubjects;
+const book = pinnedItem.md, note = loadNotes(PINNED)[id];
+const model = pinnedSite.App.dualTrackModel(id, book, note);
 const entry = renderedEntry(model);
-const railHtml = site.App.stationRailHtml(findItem(id).item, 'calculus', findItem(id).item.chapterId).body;
+const railHtml = pinnedSite.App.stationRailHtml(pinnedItem, 'calculus', pinnedItem.chapterId).body;
 const links = Array.from(railHtml.matchAll(/<a class="rl-item"([^>]*)>/g), match => new Element('a', attributes(match[1])));
 const applications = links.filter(link => link.dataset.sec === '意义');
 const target = (node, sec, station, ord) => site.App.railItemTarget(node, sec, station, ord);
