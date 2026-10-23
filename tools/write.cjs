@@ -6,7 +6,7 @@
 //                                                key 例：la-eig-def-eigen（卡片笔记）、flow:linalg/eigen（决策流）、ch:linalg/eigen（章节总结）
 //   node tools/write.cjs book <卡片id> <草稿.md>  写进这张卡的教材（数据文件里的 md 字段）
 //
-// 写完还要：node tools/supersede.cjs（登记旧版本）→ node tools/bump-sw.cjs → 测试与体检，见 AGENTS.md。
+// 写完还要：node tools/supersede.cjs（登记旧版本）→ node tools/bump-sw.cjs → 测试与体检，见 docs/code-workflow.md。
 const { main, must, read, splitLines, writeLines, parseNotes, parseSubject, findItem, readDraft } = require("./lib.cjs");
 const J = JSON.stringify;
 

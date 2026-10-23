@@ -1,6 +1,6 @@
 // 生成给 Antigravity（Gemini 写稿）用的只读镜像：全部章节的可读 markdown + 规矩文档 + 交稿文件夹。
 // 内容取 git 的某一版（默认 HEAD，就是推送上线的那一版），不带工作区里没提交的改动。
-// 每次推送后跑一次（CLAUDE.md「提交导出的固定步骤」第 5 条）。
+// 每次推送后跑一次（docs/code-workflow.md「提交导出的固定步骤」第 5 条）。
 //
 // 用法：
 //   node tools/mirror.cjs [镜像目录] [--rev HEAD]     --rev work：用工作区（没提交的也算，自己试的时候用）
