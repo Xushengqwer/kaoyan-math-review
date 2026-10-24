@@ -42,12 +42,13 @@ assert(stacked >= 3, '至少有几行意义、例题叠成满格');
 assert(checked > stacked, '也检查到只有一半或小节标题的行');
 
 // 右侧目录（现在的全部高数卡）：题型写法（有例题条目）的，意义 1、2、3……依次排，每道例题 n 跟在意义 n 后面、意义 n+1 前面；
-// 旧写法（意义、例题各一整段）每段从 1 起依次排
+// 旧写法（意义、例题各一整段）每段从 1 起依次排；例题那一段（rl-sec ex）记作「题」，「例题 n-1」「例题 n-2」同号（2026-10-24，第 5 章新旧并存时）
 const railOrder = (id, chapter, { subjects, site } = pinned) => {
   const item = subjects.flatMap(s => s.items).find(i => i.id === id);
   const r = site.App.stationRailHtml(item, 'calculus', chapter);
-  return Array.from((typeof r === 'string' ? r : r.body).matchAll(/<li( class="rl-ex")?>[\s\S]*?<span class="rl-tno">([^<]*)<\/span>/g),
-    m => (m[1] ? '例' : '意') + m[2].replace(/^例 /, ''));
+  const body = typeof r === 'string' ? r : r.body, exAt = body.indexOf('<div class="rl-sec ex">');
+  return Array.from(body.matchAll(/<li( class="rl-ex")?>[\s\S]*?<span class="rl-tno">([^<]*)<\/span>/g),
+    m => (m[1] ? '例' : exAt >= 0 && m.index > exAt ? '题' : '意') + m[2].replace(/^例 /, ''));
 };
 for (const item of now.subjects.find(s => s.id === 'calculus').items) {
   const order = railOrder(item.id, item.chapterId, now), typed = order.some(x => x[0] === '例');
@@ -55,6 +56,7 @@ for (const item of now.subjects.find(s => s.id === 'calculus').items) {
   for (const x of order) {
     const n = parseInt(x.slice(1), 10);
     if (x[0] === '例') assert.equal(n, last, item.id + '：例题 ' + n + ' 跟在意义 ' + n + ' 后面');
+    else if (x[0] === '题') { assert(n === last + 1 || n === 1 || n === last, item.id + '：目录里例题按顺序编号（' + order.join(' ') + '）'); last = n; }
     else { assert(n === last + 1 || (!typed && n === 1), item.id + '：目录里意义按顺序编号（' + order.join(' ') + '）'); last = n; }
   }
 }

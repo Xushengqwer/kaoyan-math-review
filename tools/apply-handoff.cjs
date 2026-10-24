@@ -245,7 +245,10 @@ function lintPart(name, text) {
   const heads = lines.filter((l) => /^####[ \t]/.test(l));
   if (name === "意义" && !/^####[ \t]+\d+\.[ \t]*\S/.test(lines[0])) warns.push("意义第一行不是「#### n. 方向名：一句话」：" + lines[0].slice(0, 40));
   if (name === "例题" && !/^####[ \t]+例题[ \t]*\d+/.test(lines[0])) warns.push("例题第一行不是「#### 例题 n：……」：" + lines[0].slice(0, 40));
-  if (heads.length > 1) warns.push(name + "：有 " + heads.length + " 个 #### 标题（一张卡只该有一个，后面的会显示成卡片里的大标题）");
+  // 「例题 n-1」「例题 n-2」是同一题型的几道，网站放在同一格（app.js 解析例题标题处），不算多出来的标题
+  const exNo = (l) => (l.match(/^####[ \t]+例题[ \t]*(\d+)-\d+/) || [])[1];
+  const sameType = name === "例题" && heads.every((l) => exNo(l) && exNo(l) === exNo(heads[0]));
+  if (heads.length > 1 && !sameType) warns.push(name + "：有 " + heads.length + " 个 #### 标题（一张卡只该有一个，后面的会显示成卡片里的大标题）");
   // 「⚠️ 边界与避坑」前的 --- 只是〔意义〕的规矩（GEMINI.md「格式规矩」），〔定义〕〔性质〕的卡里不用
   if (name === "意义") lines.forEach((l, i) => {
     if (!/^[*-]?\s*⚠️\s*\*\*边界与避坑\*\*/.test(l)) return;
